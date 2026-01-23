@@ -1,0 +1,1149 @@
+{
+  "owner": "PlasmaPuffs",
+  "title": "GloomCraft",
+  "slug": "gloomcraft",
+  "tags": [
+    "game",
+    "dungeons",
+    "crafting",
+    "magic",
+    "roguelike",
+    "roguelite",
+    "2d",
+    "top down",
+    "cool",
+    "singleplayer",
+    "microscript"
+  ],
+  "orientation": "any",
+  "aspect": "16x9",
+  "platforms": [
+    "computer",
+    "phone",
+    "tablet"
+  ],
+  "controls": [
+    "touch",
+    "mouse"
+  ],
+  "type": "app",
+  "language": "microscript_v2",
+  "graphics": "M1",
+  "networking": false,
+  "libs": [
+  ],
+  "tabs": {
+    "assets": true,
+    "sync": true
+  },
+  "plugins": {
+    "279276": {
+      "folder": ""
+    }
+  },
+  "libraries": {
+    "86962": {
+      "active": true
+    },
+    "137976": {
+      "active": true
+    },
+    "191313": {
+      "active": true
+    },
+    "282686": {
+      "active": true
+    },
+    "282736": {
+      "active": true
+    }
+  },
+  "date_created": 1721509982314,
+  "last_modified": 1725303416864,
+  "first_published": 1722402492373,
+  "files": {
+    "ms/lib-plasmapuffs-dungeon_generation-dungeon.ms": {
+      "version": 33,
+      "size": 7064
+    },
+    "ms/lib-plasmapuffs-hsl-objects.ms": {
+      "version": 3,
+      "size": 447
+    },
+    "ms/lib-plasmapuffs-hsl-rendering.ms": {
+      "version": 23,
+      "size": 1943
+    },
+    "ms/lib-skaruts-debug_tools-debug_tools.ms": {
+      "version": 1,
+      "size": 22665
+    },
+    "assets/font.ttf": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 9704
+    },
+    "sprites/player-idle.png": {
+      "properties": {
+        "frames": 2,
+        "fps": 2
+      },
+      "version": 6,
+      "size": 260
+    },
+    "sounds/step.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 5842
+    },
+    "sprites/player-running.png": {
+      "properties": {
+        "frames": 4,
+        "fps": 10
+      },
+      "version": 3,
+      "size": 342
+    },
+    "sprites/player-rolling.png": {
+      "properties": {
+        "frames": 13,
+        "fps": 12
+      },
+      "version": 3,
+      "size": 1791
+    },
+    "sounds/swoosh.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 40676
+    },
+    "sounds/hit.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 3756
+    },
+    "sprites/bars-life_bar-background.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 116
+    },
+    "sprites/bars-life_bar-foreground.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 118
+    },
+    "sprites/bars-life_bar-outline.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 118
+    },
+    "sprites/player-dying.png": {
+      "properties": {
+        "frames": 4,
+        "fps": 8
+      },
+      "version": 3,
+      "size": 676
+    },
+    "sounds/death.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 16938
+    },
+    "sprites/player-hand.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 102
+    },
+    "sprites/lantern.png": {
+      "version": 3,
+      "size": 229,
+      "properties": {
+        "frames": 9,
+        "fps": 12
+      }
+    },
+    "sprites/projectiles-tiny.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 102
+    },
+    "sprites/projectiles-small.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 4,
+      "size": 123
+    },
+    "sprites/projectiles-medium.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 125
+    },
+    "sprites/projectiles-large.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 8,
+      "size": 127
+    },
+    "sprites/projectiles-huge.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 5,
+      "size": 134
+    },
+    "sounds/shoot.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 4048
+    },
+    "ms/global-clock.ms": {
+      "properties": {
+      },
+      "version": 10,
+      "size": 459
+    },
+    "ms/global-debug.ms": {
+      "properties": {
+      },
+      "version": 38,
+      "size": 1537
+    },
+    "sprites/bars-mana_bar-background.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 5,
+      "size": 116
+    },
+    "sprites/bars-mana_bar-outline.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 118
+    },
+    "sprites/bars-mana_bar-foreground.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 119
+    },
+    "sprites/icon.png": {
+      "version": 11,
+      "size": 173,
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      }
+    },
+    "sprites/coins-gold.png": {
+      "properties": {
+        "frames": 4,
+        "fps": 6
+      },
+      "version": 4,
+      "size": 333
+    },
+    "sprites/coins-silver.png": {
+      "properties": {
+        "frames": 4,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 334
+    },
+    "sprites/coins-bronze.png": {
+      "properties": {
+        "frames": 4,
+        "fps": 4
+      },
+      "version": 4,
+      "size": 327
+    },
+    "sprites/shadows-medium.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 98
+    },
+    "sprites/shadows-small.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 97
+    },
+    "sounds/coin.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 23204
+    },
+    "sprites/furniture-crafting_benches-1.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 381
+    },
+    "sprites/furniture-crafting_benches-0.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 326
+    },
+    "sprites/furniture-crafting_benches-3.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 306
+    },
+    "sprites/furniture-crafting_benches-2.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 279
+    },
+    "ms/_main.ms": {
+      "properties": {
+      },
+      "version": 488,
+      "size": 827
+    },
+    "ms/scenes-_scene_manager.ms": {
+      "properties": {
+      },
+      "version": 23,
+      "size": 1049
+    },
+    "ms/game-timer.ms": {
+      "properties": {
+      },
+      "version": 18,
+      "size": 475
+    },
+    "ms/game-camera.ms": {
+      "properties": {
+      },
+      "version": 79,
+      "size": 1486
+    },
+    "ms/game-classes-coin.ms": {
+      "properties": {
+      },
+      "version": 71,
+      "size": 1789
+    },
+    "ms/game-classes-projectile.ms": {
+      "properties": {
+      },
+      "version": 268,
+      "size": 5236
+    },
+    "ms/game-classes-bars.ms": {
+      "properties": {
+      },
+      "version": 80,
+      "size": 2412
+    },
+    "ms/global-tweens-easings.ms": {
+      "properties": {
+      },
+      "version": 4,
+      "size": 1431
+    },
+    "ms/global-tweens-tween_service.ms": {
+      "properties": {
+      },
+      "version": 2,
+      "size": 694
+    },
+    "ms/global-tweens-_tweens.ms": {
+      "properties": {
+      },
+      "version": 25,
+      "size": 630
+    },
+    "ms/global-afterimage.ms": {
+      "properties": {
+      },
+      "version": 23,
+      "size": 572
+    },
+    "ms/scenes-game_scene.ms": {
+      "properties": {
+      },
+      "version": 454,
+      "size": 6205
+    },
+    "ms/scenes-game_over_scene.ms": {
+      "properties": {
+      },
+      "version": 50,
+      "size": 1989
+    },
+    "ms/scenes-introduction_scene.ms": {
+      "properties": {
+      },
+      "version": 43,
+      "size": 1085
+    },
+    "ms/scenes-main_menu_scene.ms": {
+      "properties": {
+      },
+      "version": 116,
+      "size": 2933
+    },
+    "ms/game-classes-furniture-crafting_bench.ms": {
+      "properties": {
+      },
+      "version": 34,
+      "size": 1163
+    },
+    "ms/game-classes-equipment-lantern.ms": {
+      "properties": {
+      },
+      "version": 57,
+      "size": 1303
+    },
+    "ms/game-classes-entities-player.ms": {
+      "properties": {
+      },
+      "version": 793,
+      "size": 15946
+    },
+    "ms/game-classes-entities-enemy.ms": {
+      "properties": {
+      },
+      "version": 314,
+      "size": 8905
+    },
+    "ms/_notes.ms": {
+      "properties": {
+      },
+      "version": 187,
+      "size": 1786
+    },
+    "ms/global-extensions-random.ms": {
+      "properties": {
+      },
+      "version": 17,
+      "size": 396
+    },
+    "ms/global-cursor.ms": {
+      "properties": {
+      },
+      "version": 69,
+      "size": 1255
+    },
+    "ms/game-calculations-pathfinding.ms": {
+      "properties": {
+      },
+      "version": 70,
+      "size": 2986
+    },
+    "ms/game-calculations-physics.ms": {
+      "properties": {
+      },
+      "version": 172,
+      "size": 3155
+    },
+    "ms/game-classes-hitbox.ms": {
+      "properties": {
+      },
+      "version": 33,
+      "size": 1456
+    },
+    "ms/game-classes-interaction.ms": {
+      "properties": {
+      },
+      "version": 10,
+      "size": 522
+    },
+    "sprites/dungeon-tileset.png": {
+      "properties": {
+        "frames": 15,
+        "fps": 5
+      },
+      "version": 40,
+      "size": 901
+    },
+    "sprites/dungeon-stairs.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 203
+    },
+    "ms/game-classes-furniture-stairs.ms": {
+      "properties": {
+      },
+      "version": 46,
+      "size": 820
+    },
+    "sprites/scroll.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 229
+    },
+    "sprites/furniture-shop_stand.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 515
+    },
+    "ms/game-classes-furniture-shop_stand.ms": {
+      "properties": {
+      },
+      "version": 50,
+      "size": 1857
+    },
+    "ms/game-classes-inventory-_inventory.ms": {
+      "properties": {
+      },
+      "version": 180,
+      "size": 2164
+    },
+    "ms/game-classes-inventory-pouch.ms": {
+      "properties": {
+      },
+      "version": 224,
+      "size": 4230
+    },
+    "ms/game-classes-inventory-slots.ms": {
+      "properties": {
+      },
+      "version": 90,
+      "size": 3001
+    },
+    "ms/game-dungeon-collider.ms": {
+      "properties": {
+      },
+      "version": 11,
+      "size": 441
+    },
+    "ms/game-dungeon-furnishing.ms": {
+      "properties": {
+      },
+      "version": 139,
+      "size": 3934
+    },
+    "ms/game-dungeon-rendering.ms": {
+      "properties": {
+      },
+      "version": 149,
+      "size": 3074
+    },
+    "ms/game-dungeon-surfaces.ms": {
+      "properties": {
+      },
+      "version": 401,
+      "size": 4740
+    },
+    "ms/game-classes-furniture-treasure_chest.ms": {
+      "properties": {
+      },
+      "version": 176,
+      "size": 2620
+    },
+    "sprites/furniture-treasure_chest.png": {
+      "properties": {
+        "frames": 8,
+        "fps": 12
+      },
+      "version": 10,
+      "size": 470
+    },
+    "sprites/shadows-large.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 99
+    },
+    "ms/game-classes-damage.ms": {
+      "properties": {
+      },
+      "version": 25,
+      "size": 1085
+    },
+    "ms/global-transition.ms": {
+      "properties": {
+      },
+      "version": 18,
+      "size": 1017
+    },
+    "ms/game-classes-particles-emitter.ms": {
+      "properties": {
+      },
+      "version": 85,
+      "size": 1398
+    },
+    "ms/game-classes-particles-particle.ms": {
+      "properties": {
+      },
+      "version": 12,
+      "size": 2088
+    },
+    "sounds/boom.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 28790
+    },
+    "sprites/enemies-slimes-purple.png": {
+      "properties": {
+        "frames": 6,
+        "fps": 11
+      },
+      "version": 13,
+      "size": 550
+    },
+    "sprites/cursor-pointing.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 181
+    },
+    "sprites/cursor-idle.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 4,
+      "size": 167
+    },
+    "sprites/projectiles-outlines-tiny.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 101
+    },
+    "sprites/projectiles-outlines-small.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 115
+    },
+    "sprites/projectiles-outlines-medium.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 118
+    },
+    "sprites/projectiles-outlines-large.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 119
+    },
+    "sprites/projectiles-outlines-huge.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 4,
+      "size": 127
+    },
+    "sprites/projectiles-fills-huge.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 122
+    },
+    "sprites/projectiles-fills-large.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 115
+    },
+    "sprites/projectiles-fills-medium.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 113
+    },
+    "sprites/projectiles-fills-small.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 112
+    },
+    "sprites/projectiles-fills-tiny.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 97
+    },
+    "ms/lib-bruhder-colorsprite-colored_sprite.ms": {
+      "version": 3,
+      "size": 359
+    },
+    "ms/lib-bruhder-glow-glow.ms": {
+      "version": 14,
+      "size": 661
+    },
+    "ms/game-classes-inventory-description.ms": {
+      "properties": {
+      },
+      "version": 248,
+      "size": 4072
+    },
+    "sprites/enemies-slimes-orange.png": {
+      "properties": {
+        "frames": 6,
+        "fps": 12
+      },
+      "version": 6,
+      "size": 542
+    },
+    "sprites/enemies-slimes-blue.png": {
+      "properties": {
+        "frames": 6,
+        "fps": 9
+      },
+      "version": 9,
+      "size": 548
+    },
+    "sprites/enemies-slimes-green.png": {
+      "properties": {
+        "frames": 6,
+        "fps": 8
+      },
+      "version": 5,
+      "size": 547
+    },
+    "sprites/ingredients-goo-purple.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 160
+    },
+    "ms/game-classes-ingredient.ms": {
+      "properties": {
+      },
+      "version": 172,
+      "size": 5161
+    },
+    "sprites/ingredients-goo-orange.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 158
+    },
+    "sprites/ingredients-goo-blue.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 160
+    },
+    "sprites/ingredients-goo-green.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 160
+    },
+    "ms/game-classes-inventory-table.ms": {
+      "properties": {
+      },
+      "version": 215,
+      "size": 4720
+    },
+    "ms/game-classes-inventory-shop.ms": {
+      "properties": {
+      },
+      "version": 114,
+      "size": 3607
+    },
+    "sprites/title.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 5143
+    },
+    "ms/game-calculations-crafting.ms": {
+      "properties": {
+      },
+      "version": 37,
+      "size": 1014
+    },
+    "sprites/ingredients-goo-black.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 152
+    },
+    "sprites/transmutation_circle.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 2488
+    },
+    "sprites/book.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 1404
+    },
+    "sprites/planks-half.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 922
+    },
+    "sprites/planks-quarter.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 552
+    },
+    "sprites/slots-stone-current.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 183
+    },
+    "sprites/slots-stone-focused.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 181
+    },
+    "sprites/slots-stone-hover.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 181
+    },
+    "sprites/slots-stone-idle.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 184
+    },
+    "sprites/ingredients-shards-purple.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 155
+    },
+    "sprites/ingredients-shards-orange.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 128
+    },
+    "sprites/ingredients-shards-blue.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 169
+    },
+    "sprites/ingredients-shards-green.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 149
+    },
+    "sprites/slots-wooden-idle_24.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 183
+    },
+    "sprites/slots-wooden-hover_16.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 152
+    },
+    "sprites/slots-wooden-idle_16.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 155
+    },
+    "sprites/slots-wooden-hover_24.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 181
+    },
+    "sprites/flask-outline.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 4,
+      "size": 190
+    },
+    "ms/game-classes-equipment-flask.ms": {
+      "properties": {
+      },
+      "version": 180,
+      "size": 5864
+    },
+    "sprites/flask-fill.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 5,
+      "size": 151
+    },
+    "sprites/icons-knockback.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 240
+    },
+    "sprites/icons-recoil.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 221
+    },
+    "sprites/icons-speed.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 195
+    },
+    "sprites/icons-size.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 172
+    },
+    "sprites/icons-cooldown.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 239
+    },
+    "sprites/icons-vision.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 203
+    },
+    "sprites/icons-color.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 274
+    },
+    "sprites/pixelpuff.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 28,
+      "size": 1185
+    },
+    "sprites/icons-mana.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 227
+    },
+    "sounds/transaction.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 45068
+    },
+    "sprites/bars-enemy-outline.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 105
+    },
+    "sprites/bars-enemy-background.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 103
+    },
+    "sprites/bars-enemy-foreground.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 100
+    },
+    "sprites/arrow.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 215
+    },
+    "sprites/icons-life.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 215
+    },
+    "sprites/icons-power.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 196
+    },
+    "ms/global-button.ms": {
+      "properties": {
+      },
+      "version": 29,
+      "size": 1336
+    },
+    "sounds/click.wav": {
+      "version": 1,
+      "size": 7862,
+      "properties": {
+      }
+    },
+    "sprites/game_over.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 3929
+    },
+    "music/menu.mp3": {
+      "properties": {
+      },
+      "version": 0,
+      "size": 615026
+    },
+    "sprites/weapons-thick_staff.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 16,
+      "size": 239
+    },
+    "sprites/weapons-staff.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 2,
+      "size": 219
+    },
+    "sprites/weapons-wand.png": {
+      "properties": {
+        "frames": 1,
+        "fps": 5
+      },
+      "version": 3,
+      "size": 140
+    },
+    "sprites/weapons-scepter.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 268
+    },
+    "sprites/weapons-short_staff.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 181
+    },
+    "ms/game-classes-equipment-weapons.ms": {
+      "properties": {
+      },
+      "version": 346,
+      "size": 5333
+    },
+    "ms/scenes-instructions_scene.ms": {
+      "properties": {
+      },
+      "version": 143,
+      "size": 3990
+    },
+    "sprites/icons-pouch.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 309
+    },
+    "music/ost.mp3": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 5028049
+    },
+    "sounds/pickup.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 15698
+    },
+    "sounds/craft.wav": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 30630
+    },
+    "sprites/poster.png": {
+      "properties": {
+      },
+      "version": 1,
+      "size": 1622762
+    }
+  },
+  "description": "GloomCraft is a two dimensional top down roguelike/roguelite which uses hard shadows as an advantage against the player to hide enemies or important elements. The player plays as a mage that can brew potions and upgrade weapons with different alchemical resources gathered from the dungeon.\n\nControls:\n- WASD or Arrow Keys to Move\n- 'Z' Key to Show or Hide Inventory\n- Left Shift, Right Shift, or Space to Roll\n- 'Q' to Interact with Stairs\n- 'E' to Interact with Treasure Chests, Shop Stands, or Crafting Benches\n- Mouse to Aim, Left Click to Shoot, Right Click to Throw Away Potion/Flask\n- Click on Slots of Digit Keys to Select Equipment\n\nThis game has been made in 14 days for the Pirate Software Game Jam #15. All of the assets used in this game (sprites, images, sounds, music, font, code) has been made by me. Most of those have been made within the two-week timeframe.\n\nLink to my Submission: https://itch.io/jam/pirate/rate/2856425\nLink to the Game Jam: https://itch.io/jam/pirate\n\nSprites made using Pixilart\nFont made using PixelForge\nMusic made using UltraBox (BeepBox Mod)\nSounds generated using JSFXR"
+}
