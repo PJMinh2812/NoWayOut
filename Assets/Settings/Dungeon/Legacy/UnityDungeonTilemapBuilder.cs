@@ -5,12 +5,25 @@ using UnityEngine.Tilemaps;
 namespace GloomCraft.Dungeon
 {
     /// <summary>
-    /// Builds a Unity Tilemap (floor + walls) from DungeonMap.
-    /// Collider: use TilemapCollider2D + CompositeCollider2D on the Walls tilemap.
+    /// [DEPRECATED] Legacy dungeon builder - use MapInitializationManager instead.
+    /// This class is kept for backward compatibility with existing scenes.
+    /// 
+    /// New architecture:
+    /// - MapInitializationManager (orchestrator)
+    /// - TilemapDungeonRenderer (rendering with object pooling)
+    /// - EntitySpawner (enemies/furniture with pooling)
+    /// - DungeonConfig (ScriptableObject configuration)
     /// </summary>
+    [System.Obsolete("Use MapInitializationManager with TilemapDungeonRenderer and EntitySpawner instead.")]
     public sealed class UnityDungeonTilemapBuilder : MonoBehaviour
     {
-        [Header("Generation")]
+        [Header("=== NEW SYSTEM (Recommended) ===")]
+        [Tooltip("Enable to use new optimized system with pooling")]
+        [SerializeField] private bool useNewSystem = false;
+        [SerializeField] private MapInitializationManager mapManager;
+        [SerializeField] private DungeonConfig dungeonConfig;
+        
+        [Header("=== LEGACY SETTINGS ===")]
         [SerializeField] private int columns = 30;
         [SerializeField] private int rows = 30;
         [SerializeField] private int minRoom = 7;
@@ -44,6 +57,11 @@ namespace GloomCraft.Dungeon
         [SerializeField] private DungeonFurnisher2D furnisher;
 
         public DungeonGenerator2D.Result LastResult { get; private set; }
+        
+        /// <summary>
+        /// Get the new MapInitializationManager if using new system
+        /// </summary>
+        public MapInitializationManager MapManager => mapManager;
 
         private readonly Dictionary<int, Tile> _tileCache = new();
         private readonly List<GameObject> _overlayInstances = new();
@@ -51,6 +69,13 @@ namespace GloomCraft.Dungeon
         [ContextMenu("Generate Dungeon Now")]
         public void GenerateNow()
         {
+            // NEW SYSTEM: Delegate to MapInitializationManager
+            if (useNewSystem && TryUseNewSystem())
+            {
+                return;
+            }
+            
+            // LEGACY: Original implementation
             EnsureTilemaps();
             EnsureOverlayContainer();
 
@@ -184,6 +209,84 @@ namespace GloomCraft.Dungeon
             t.sprite = tilesetConfig.frames[frameIndex];
             _tileCache[frameIndex] = t;
             return t;
+        }
+        
+        /// <summary>
+        /// Try to use the new MapInitializationManager system
+        /// </summary>
+        private bool TryUseNewSystem()
+        {
+            if (mapManager == null)
+            {
+                mapManager = FindFirstObjectByType<MapInitializationManager>();
+            }
+            
+            if (mapManager == null)
+            {
+                Debug.LogWarning("[UnityDungeonTilemapBuilder] useNewSystem=true but no MapInitializationManager found. Falling back to legacy.");
+                return false;
+            }
+            
+            // Create or update config from legacy settings
+            if (dungeonConfig == null)
+            {
+                dungeonConfig = ScriptableObject.CreateInstance<DungeonConfig>();
+            }
+            
+            // Sync legacy settings to config
+            dungeonConfig.columns = columns;
+            dungeonConfig.rows = rows;
+            dungeonConfig.minRoomSize = minRoom;
+            dungeonConfig.maxRoomSize = maxRoom;
+            dungeonConfig.density = density;
+            dungeonConfig.useSeed = useSeed;
+            dungeonConfig.seed = seed;
+            
+            mapManager.InitializeMap(dungeonConfig);
+            LastResult = mapManager.CurrentResult;
+            
+            Debug.Log("[UnityDungeonTilemapBuilder] Delegated to MapInitializationManager (new system)");
+            return true;
+        }
+        
+        /// <summary>
+        /// Migrate this GameObject to use new system components.
+        /// Call from editor context menu to upgrade.
+        /// </summary>
+        [ContextMenu("Migrate to New System")]
+        private void MigrateToNewSystem()
+        {
+            #if UNITY_EDITOR
+            Debug.Log("[UnityDungeonTilemapBuilder] Starting migration to new system...");
+            
+            // Create MapInitializationManager if not exists
+            if (mapManager == null)
+            {
+                mapManager = gameObject.AddComponent<MapInitializationManager>();
+            }
+            
+            // Create DungeonConfig asset
+            if (dungeonConfig == null)
+            {
+                dungeonConfig = ScriptableObject.CreateInstance<DungeonConfig>();
+                dungeonConfig.columns = columns;
+                dungeonConfig.rows = rows;
+                dungeonConfig.minRoomSize = minRoom;
+                dungeonConfig.maxRoomSize = maxRoom;
+                dungeonConfig.density = density;
+                dungeonConfig.useSeed = useSeed;
+                dungeonConfig.seed = seed;
+                
+                // Save as asset
+                string path = "Assets/Settings/Dungeon/DungeonConfig_Migrated.asset";
+                UnityEditor.AssetDatabase.CreateAsset(dungeonConfig, path);
+                UnityEditor.AssetDatabase.SaveAssets();
+                Debug.Log($"[UnityDungeonTilemapBuilder] Created DungeonConfig at {path}");
+            }
+            
+            useNewSystem = true;
+            Debug.Log("[UnityDungeonTilemapBuilder] Migration complete! Enable 'Use New System' to switch.");
+            #endif
         }
     }
 }
