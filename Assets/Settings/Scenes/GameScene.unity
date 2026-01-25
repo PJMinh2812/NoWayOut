@@ -15658,6 +15658,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2d2e4e74363f8f44b2682cda6e34c0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.Dungeon.UnityDungeonTilemapBuilder
+  useNewSystem: 0
+  mapManager: {fileID: 0}
+  dungeonConfig: {fileID: 0}
   columns: 60
   rows: 60
   minRoom: 7
@@ -35014,6 +35017,10 @@ PrefabInstance:
       propertyPath: healthBarUI
       value: 
       objectReference: {fileID: 2051891846}
+    - target: {fileID: 5515767105191945407, guid: aeb30f29267efe54099b73a43708e941, type: 3}
+      propertyPath: rollSpeed
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 5515767105191945407, guid: aeb30f29267efe54099b73a43708e941, type: 3}
       propertyPath: worldCamera
       value: 
