@@ -12,6 +12,7 @@ namespace GloomCraft
         [SerializeField] private float invincibleDuration = 0.5f;
 
         public int CurrentHealth { get; private set; }
+        public int MaxHealth => maxHealth;
         public bool IsDead { get; private set; }
 
         private float _invincibleTimer;
@@ -39,10 +40,16 @@ namespace GloomCraft
         {
             if (IsDead) return;
             if (amount <= 0) return;
-            if (_invincibleTimer > 0f) return;
+            if (_invincibleTimer > 0f)
+            {
+                Debug.Log("[Player] Still invincible!");
+                return;
+            }
 
             _invincibleTimer = invincibleDuration;
             CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+
+            Debug.Log($"[Player] Took {amount} damage! HP: {CurrentHealth}/{maxHealth}");
 
             if (rb != null)
             {
@@ -59,6 +66,7 @@ namespace GloomCraft
         {
             if (IsDead) return;
             IsDead = true;
+            Debug.Log("[Player] DIED!");
             // Sau này có thể gọi GameStateMachine để chuyển sang GameOver.
         }
     }

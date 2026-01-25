@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 7703700257350433264}
   - component: {fileID: 1948629175183217453}
   - component: {fileID: 4313655723014830900}
-  - component: {fileID: 3582827677367329963}
   - component: {fileID: 7646366351003596611}
+  - component: {fileID: 5169706949777103304}
   m_Layer: 0
   m_Name: Projectile
   m_TagString: Untagged
@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.86525, y: -0.11029, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3.1441684, y: 3.1254938, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -121,8 +121,23 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!58 &3582827677367329963
-CircleCollider2D:
+--- !u!114 &7646366351003596611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2480018996427395476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30752db07cabd654b8beadbc04e2b782, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.Projectile2D
+  lifetime: 2
+  speed: 12
+  damage: 10
+--- !u!61 &5169706949777103304
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -156,19 +171,14 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
---- !u!114 &7646366351003596611
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2480018996427395476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30752db07cabd654b8beadbc04e2b782, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.Projectile2D
-  lifetime: 2
-  speed: 12
-  damage: 10
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.04, y: 0.04}
+    newSize: {x: 0.04, y: 0.04}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 0.04, y: 0.04}
+  m_EdgeRadius: 0

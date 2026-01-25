@@ -35,9 +35,13 @@ namespace GloomCraft
             if (other.TryGetComponent<Enemy2D>(out var enemy))
             {
                 var dir = (Vector2)enemy.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit enemy! Dealing {damage} damage");
                 enemy.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                Destroy(gameObject);
+                return;
             }
 
+            // Destroy on any collision
             Destroy(gameObject);
         }
     }

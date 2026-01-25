@@ -140,6 +140,7 @@ MonoBehaviour:
   maxMoveSpeed: 3.5
   friction: 8
   aggroRadius: 8
+  healthBarPrefab: {fileID: 7355916300128518898, guid: fb5c5160dbff80e4ca00994c55a9dc64, type: 3}
 --- !u!61 &2353045970238356814
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -178,7 +179,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.16, y: 0.16}
+    oldSize: {x: 0.16, y: 0.11}
     newSize: {x: 0.16, y: 0.16}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
