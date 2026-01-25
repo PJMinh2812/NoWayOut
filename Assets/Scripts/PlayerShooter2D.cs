@@ -11,6 +11,7 @@ namespace GloomCraft
     {
         [SerializeField] private PlayerController2D controller;
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private PlayerEquipment equipment;
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Projectile2D projectilePrefab;
         [SerializeField] private Transform muzzle;
@@ -23,6 +24,7 @@ namespace GloomCraft
         {
             if (controller == null) controller = GetComponent<PlayerController2D>();
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+            if (equipment == null) equipment = GetComponent<PlayerEquipment>();
             if (worldCamera == null) worldCamera = Camera.main;
             
             // Auto-create muzzle if not assigned
@@ -71,9 +73,25 @@ namespace GloomCraft
 
         private bool Fire()
         {
-            if (projectilePrefab == null)
+            // Check if player has equipped weapon
+            Projectile2D projToFire = projectilePrefab;
+            
+            if (equipment != null && equipment.CurrentWeapon != null)
             {
-                Debug.LogWarning("[PlayerShooter2D] Projectile Prefab not assigned!");
+                var weapon = equipment.CurrentWeapon;
+                
+                // Use weapon's projectile if it's a ranged weapon
+                if (weapon.isRanged && weapon.projectilePrefab != null)
+                {
+                    projToFire = weapon.projectilePrefab;
+                }
+                
+                Debug.Log($"[PlayerShooter2D] Firing {weapon.itemName} (Damage: {weapon.damage})");
+            }
+            
+            if (projToFire == null)
+            {
+                Debug.LogWarning("[PlayerShooter2D] No projectile! Assign Projectile Prefab or equip a weapon.");
                 return false;
             }
             
@@ -88,9 +106,9 @@ namespace GloomCraft
 
             var mousePos = mouse.position.ReadValue();
             var world = worldCamera.ScreenToWorldPoint(mousePos);
-            var dir = (Vector2)world - (Vector2)muzzle.position;
+            var dir = (Vector2)world - (Vector2)transform.position; // Direction from player center, not muzzle!
 
-            var proj = Instantiate(projectilePrefab, muzzle.position, Quaternion.identity); // Spawn at edge
+            var proj = Instantiate(projToFire, muzzle.position, Quaternion.identity);
             proj.Fire(dir);
             
             return true; // Success!
