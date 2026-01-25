@@ -17,6 +17,10 @@ GameObject:
   - component: {fileID: 5858655995130126833}
   - component: {fileID: 6236228472708960616}
   - component: {fileID: 6360238711570071402}
+  - component: {fileID: 5000495892221568656}
+  - component: {fileID: 1692829268006881985}
+  - component: {fileID: 9205908654835257963}
+  - component: {fileID: 6963697297728729691}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -173,6 +177,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.PlayerShooter2D
   controller: {fileID: 5515767105191945407}
   spriteRenderer: {fileID: 0}
+  equipment: {fileID: 0}
   worldCamera: {fileID: 0}
   projectilePrefab: {fileID: 7646366351003596611, guid: 6dac20429b20b2648857869449c23dd8, type: 3}
   muzzle: {fileID: 0}
@@ -260,7 +265,70 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.PlayerSpriteController
   controller: {fileID: 0}
   spriteRenderer: {fileID: 0}
-  rotationMode: 1
+  rotationMode: 4
   smoothRotation: 1
   rotationSpeed: 720
   flipThreshold: 90
+--- !u!114 &5000495892221568656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446768691500841505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 454f4db4128e5d249a5b54e74597380d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.UI.PlayerHealthBarController
+  healthBarUI: {fileID: 0}
+  autoFindHealthBar: 1
+--- !u!114 &1692829268006881985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446768691500841505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3665ca69f23c5c4408cafb5ea40cb5cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.PlayerEquipment
+  controller: {fileID: 0}
+  handTransform: {fileID: 0}
+  weaponRenderer: {fileID: 0}
+  currentWeapon: {fileID: 0}
+--- !u!114 &9205908654835257963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446768691500841505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1576929de2f11c8469a7c87449a805cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.InventoryManager
+  hotbarSize: 9
+  selectedSlot: 0
+  player: {fileID: 0}
+  equipment: {fileID: 0}
+--- !u!114 &6963697297728729691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446768691500841505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 910f727d5f9f51240b72bbe3093d2e72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.TestInventorySetup
+  inventory: {fileID: 0}
+  testWeapons:
+  - {fileID: 11400000, guid: 51b1a6e5ce892d4499de462ea7130e0c, type: 2}
+  - {fileID: 11400000, guid: 4fcae5d36705cd7438ae89533c757f49, type: 2}
+  createDefaultWeapons: 1
