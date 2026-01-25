@@ -40,6 +40,21 @@ namespace GloomCraft.Dungeon
         {
             if (initializeOnStart)
             {
+                // Check if we should generate a new random map (from Main Menu Play button)
+                if (PlayerPrefs.GetInt("GenerateNewMap", 0) == 1)
+                {
+                    PlayerPrefs.DeleteKey("GenerateNewMap");
+                    PlayerPrefs.Save();
+                    
+                    if (config != null)
+                    {
+                        // Generate new random seed for different map
+                        config.seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+                        config.useSeed = true;
+                        Debug.Log($"[MapInitializationManager] New game - generating with seed: {config.seed}");
+                    }
+                }
+                
                 InitializeMap();
             }
         }
@@ -94,6 +109,30 @@ namespace GloomCraft.Dungeon
         [ContextMenu("Regenerate Map")]
         public void RegenerateMap()
         {
+            _isInitialized = false;
+            InitializeMap();
+        }
+
+        /// <summary>
+        /// Regenerate the map with a new random seed.
+        /// This ensures a completely different layout each time.
+        /// </summary>
+        public void RegenerateWithNewSeed()
+        {
+            if (config == null)
+            {
+                Debug.LogError("[MapInitializationManager] No DungeonConfig assigned!");
+                return;
+            }
+
+            // Generate new random seed
+            config.seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            config.useSeed = true;
+            
+            Debug.Log($"[MapInitializationManager] Regenerating map with new seed: {config.seed}");
+            
+            // Clear and regenerate
+            ClearMap();
             _isInitialized = false;
             InitializeMap();
         }

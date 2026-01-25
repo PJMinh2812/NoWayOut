@@ -34,9 +34,9 @@ namespace GloomCraft
             }
         }
 
-        /// <summary>
+
         /// Call this when player dies
-        /// </summary>
+
         public void TriggerGameOver()
         {
             if (isGameOver) return; // Already game over
@@ -52,19 +52,58 @@ namespace GloomCraft
             Debug.Log("[GameManager] Game Over!");
         }
 
-        /// <summary>
+
         /// Restart current scene
-        /// </summary>
+
         public void RestartGame()
         {
             Time.timeScale = 1f; // Resume time
             isGameOver = false;
+            
+            // Hide game over UI first
+            if (gameOverUI != null)
+            {
+                gameOverUI.SetActive(false);
+            }
+            
+            // Reset player health
+            var playerHealth = FindFirstObjectByType<PlayerHealth2D>();
+            if (playerHealth != null)
+            {
+                playerHealth.ResetHealth();
+            }
+            
+            // Try to regenerate map with new layout instead of reloading scene
+            // Support both new and legacy dungeon systems
+            var mapManager = FindFirstObjectByType<GloomCraft.Dungeon.MapInitializationManager>();
+            if (mapManager != null)
+            {
+                // New system
+                mapManager.RegenerateWithNewSeed();
+                Debug.Log("[GameManager] Map regenerated with new layout (new system)!");
+                return;
+            }
+            
+            // Try legacy system
+            #pragma warning disable CS0618 // Type is obsolete but needed for backward compatibility
+            var legacyBuilder = FindFirstObjectByType<GloomCraft.Dungeon.UnityDungeonTilemapBuilder>();
+            #pragma warning restore CS0618
+            if (legacyBuilder != null)
+            {
+                // Legacy system
+                legacyBuilder.RegenerateWithNewSeed();
+                Debug.Log("[GameManager] Map regenerated with new layout (legacy system)!");
+                return;
+            }
+            
+            // Fallback: reload scene if no dungeon manager found
+            Debug.LogWarning("[GameManager] No dungeon manager found, reloading scene...");
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
-        /// <summary>
+
         /// Load main menu (if you have one)
-        /// </summary>
+
         public void LoadMainMenu()
         {
             Time.timeScale = 1f;
@@ -72,9 +111,9 @@ namespace GloomCraft
             SceneManager.LoadScene("MainMenu"); // Change to your menu scene name
         }
 
-        /// <summary>
+
         /// Quit game
-        /// </summary>
+
         public void QuitGame()
         {
             Debug.Log("[GameManager] Quitting game...");

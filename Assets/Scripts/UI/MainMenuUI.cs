@@ -63,6 +63,11 @@ public class MainMenuUI : MonoBehaviour
     public void OnPlayClicked()
     {
         Debug.Log("Loading game scene: " + gameSceneName);
+        
+        // Set flag to generate new random map when game scene loads
+        PlayerPrefs.SetInt("GenerateNewMap", 1);
+        PlayerPrefs.Save();
+        
         SceneManager.LoadScene(gameSceneName);
     }
 

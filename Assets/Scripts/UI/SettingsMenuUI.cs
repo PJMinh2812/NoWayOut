@@ -127,10 +127,12 @@ public class SettingsMenuUI : MonoBehaviour
         if (resolutions == null || resolutionIndex >= resolutions.Length) return;
 
         Resolution resolution = resolutions[resolutionIndex];
-        Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen, resolution.refreshRate);
+        Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreenMode, resolution.refreshRateRatio);
         PlayerPrefs.SetInt("ResolutionIndex", resolutionIndex);
         
-        Debug.Log($"Resolution changed to: {resolution.width}x{resolution.height} @ {resolution.refreshRate}Hz");
+        // Convert refreshRateRatio to display value
+        double refreshRate = resolution.refreshRateRatio.value;
+        Debug.Log($"Resolution changed to: {resolution.width}x{resolution.height} @ {refreshRate:F2}Hz");
     }
 
     public void SetQuality(int qualityIndex)
