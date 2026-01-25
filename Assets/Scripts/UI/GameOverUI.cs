@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 namespace GloomCraft
@@ -11,11 +12,12 @@ namespace GloomCraft
     {
         [Header("UI References")]
         [SerializeField] private Button restartButton;
-        [SerializeField] private Button quitButton;
+        [SerializeField] private Button mainMenuButton;
         [SerializeField] private TextMeshProUGUI gameOverText;
 
         [Header("Settings")]
         [SerializeField] private string gameOverMessage = "GAME OVER";
+        [SerializeField] private string mainMenuSceneName = "MainMenu";
 
         private void Awake()
         {
@@ -25,9 +27,9 @@ namespace GloomCraft
                 restartButton.onClick.AddListener(OnRestartClicked);
             }
 
-            if (quitButton != null)
+            if (mainMenuButton != null)
             {
-                quitButton.onClick.AddListener(OnQuitClicked);
+                mainMenuButton.onClick.AddListener(OnMainMenuClicked);
             }
 
             // Set game over text
@@ -45,12 +47,11 @@ namespace GloomCraft
             }
         }
 
-        private void OnQuitClicked()
+        private void OnMainMenuClicked()
         {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.QuitGame();
-            }
+            // Load Main Menu scene
+            Time.timeScale = 1f; // Reset time scale in case game was paused
+            SceneManager.LoadScene(mainMenuSceneName);
         }
 
         private void OnDestroy()
@@ -61,9 +62,9 @@ namespace GloomCraft
                 restartButton.onClick.RemoveListener(OnRestartClicked);
             }
 
-            if (quitButton != null)
+            if (mainMenuButton != null)
             {
-                quitButton.onClick.RemoveListener(OnQuitClicked);
+                mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
             }
         }
     }
