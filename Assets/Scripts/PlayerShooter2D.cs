@@ -90,7 +90,7 @@ namespace GloomCraft
             var world = worldCamera.ScreenToWorldPoint(mousePos);
             var dir = (Vector2)world - (Vector2)muzzle.position;
 
-            var proj = Instantiate(projectilePrefab, muzzle.position, Quaternion.identity);
+            var proj = Instantiate(projectilePrefab, muzzle.position, Quaternion.identity); // Spawn at edge
             proj.Fire(dir);
             
             return true; // Success!

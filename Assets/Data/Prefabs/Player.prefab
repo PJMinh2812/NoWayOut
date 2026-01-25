@@ -172,11 +172,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.PlayerShooter2D
   controller: {fileID: 5515767105191945407}
+  spriteRenderer: {fileID: 0}
   worldCamera: {fileID: 0}
   projectilePrefab: {fileID: 7646366351003596611, guid: 6dac20429b20b2648857869449c23dd8, type: 3}
   muzzle: {fileID: 0}
   fireCooldown: 0.12
-  muzzleDistance: 0.3
+  muzzleDistance: 0.1
 --- !u!61 &5858655995130126833
 BoxCollider2D:
   m_ObjectHideFlags: 0
