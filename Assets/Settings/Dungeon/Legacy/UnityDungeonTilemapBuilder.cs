@@ -66,6 +66,35 @@ namespace GloomCraft.Dungeon
         private readonly Dictionary<int, Tile> _tileCache = new();
         private readonly List<GameObject> _overlayInstances = new();
 
+        private void Start()
+        {
+            bool shouldGenerate = false;
+            
+            // Check if we should generate a new random map (from Main Menu Play button)
+            if (PlayerPrefs.GetInt("GenerateNewMap", 0) == 1)
+            {
+                PlayerPrefs.DeleteKey("GenerateNewMap");
+                PlayerPrefs.Save();
+                
+                // Generate new random seed for different map
+                seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+                useSeed = true;
+                shouldGenerate = true;
+                Debug.Log($"[UnityDungeonTilemapBuilder] New game from Main Menu - generating with seed: {seed}");
+            }
+            else if (floorTilemap != null && floorTilemap.GetUsedTilesCount() == 0)
+            {
+                // If no map exists in scene, generate one
+                shouldGenerate = true;
+                Debug.Log("[UnityDungeonTilemapBuilder] No map in scene - generating...");
+            }
+            
+            if (shouldGenerate)
+            {
+                GenerateNow();
+            }
+        }
+
         [ContextMenu("Generate Dungeon Now")]
         public void GenerateNow()
         {
@@ -95,6 +124,21 @@ namespace GloomCraft.Dungeon
             {
                 furnisher.Furnish(result);
             }
+        }
+
+        /// <summary>
+        /// Regenerate dungeon with a new random seed (for random map on restart)
+        /// </summary>
+        public void RegenerateWithNewSeed()
+        {
+            // Generate new random seed
+            seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            useSeed = true;
+            
+            Debug.Log($"[UnityDungeonTilemapBuilder] Regenerating with new seed: {seed}");
+            
+            // Regenerate map
+            GenerateNow();
         }
 
         private void EnsureTilemaps()

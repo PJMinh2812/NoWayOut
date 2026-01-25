@@ -62,6 +62,22 @@ namespace GloomCraft
             }
         }
 
+        /// <summary>
+        /// Reset health to full and revive player
+        /// </summary>
+        public void ResetHealth()
+        {
+            CurrentHealth = maxHealth;
+            IsDead = false;
+            _invincibleTimer = 0f;
+            
+            // Re-enable player controls
+            var controller = GetComponent<PlayerController2D>();
+            if (controller != null) controller.enabled = true;
+            
+            Debug.Log("[Player] Health reset!");
+        }
+
         private void Die()
         {
             if (IsDead) return;
