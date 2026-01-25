@@ -106,7 +106,7 @@ namespace GloomCraft
 
             var mousePos = mouse.position.ReadValue();
             var world = worldCamera.ScreenToWorldPoint(mousePos);
-            var dir = (Vector2)world - (Vector2)muzzle.position;
+            var dir = (Vector2)world - (Vector2)transform.position; // Direction from player center, not muzzle!
 
             var proj = Instantiate(projToFire, muzzle.position, Quaternion.identity);
             proj.Fire(dir);

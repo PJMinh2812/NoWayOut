@@ -21,7 +21,7 @@ MonoBehaviour:
   attackSpeed: 1.5
   attackRange: 1.5
   weaponSprite: {fileID: 8979405933268748967, guid: c524f761a2bcbb14397faea55af57a57, type: 3}
-  holdOffset: {x: 0.4, y: 0}
+  holdOffset: {x: 0.1, y: 0}
   holdRotation: 0
   isRanged: 0
   projectilePrefab: {fileID: 7646366351003596611, guid: 6dac20429b20b2648857869449c23dd8, type: 3}
