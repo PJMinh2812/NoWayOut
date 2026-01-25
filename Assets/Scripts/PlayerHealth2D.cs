@@ -67,7 +67,19 @@ namespace GloomCraft
             if (IsDead) return;
             IsDead = true;
             Debug.Log("[Player] DIED!");
-            // Sau này có thể gọi GameStateMachine để chuyển sang GameOver.
+            
+            // Trigger game over
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.TriggerGameOver();
+            }
+            
+            // Disable player controls
+            var controller = GetComponent<PlayerController2D>();
+            if (controller != null) controller.enabled = false;
+            
+            var shooter = GetComponent<PlayerShooter2D>();
+            if (shooter != null) shooter.enabled = false;
         }
     }
 }
