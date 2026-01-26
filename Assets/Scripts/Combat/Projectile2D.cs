@@ -16,7 +16,12 @@ namespace GloomCraft
         {
             direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
             _rb.linearVelocity = direction * speed;
-            transform.right = direction;
+            
+            // Rotate projectile to face direction
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0, 0, angle);
+            
+            Debug.Log($"[Projectile] Fired! Dir: {direction}, Speed: {speed}, Velocity: {_rb.linearVelocity}");
         }
 
         private void Awake()
