@@ -58,21 +58,17 @@ namespace GloomCraft
         {
             if (muzzle == null || controller == null) return;
             
-            // Position muzzle in front of player based on aim angle
-            var angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
-            var direction = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0);
+            // Position muzzle based on player's aim angle
+            float angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
+            var dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0);
             
-            // Adjust for sprite flip - when sprite is flipped, mirror the X position
-            if (spriteRenderer != null && spriteRenderer.flipX)
-            {
-                direction.x = -direction.x;
-            }
-            
-            muzzle.localPosition = direction * muzzleDistance;
+            muzzle.localPosition = dir * muzzleDistance;
         }
 
         private bool Fire()
         {
+            if (controller == null) return false;
+            
             // Check if player has equipped weapon
             Projectile2D projToFire = projectilePrefab;
             
@@ -94,20 +90,13 @@ namespace GloomCraft
                 Debug.LogWarning("[PlayerShooter2D] No projectile! Assign Projectile Prefab or equip a weapon.");
                 return false;
             }
+
+            // Fire in the direction of player's aim angle
+            float angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
+            var dir = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+
+            Debug.Log($"[PlayerShooter2D] Angle: {controller.AimAngleDeg}°, Dir: {dir}, Muzzle: {muzzle.position}");
             
-            if (worldCamera == null)
-            {
-                Debug.LogWarning("[PlayerShooter2D] World Camera not assigned!");
-                return false;
-            }
-
-            var mouse = Mouse.current;
-            if (mouse == null) return false;
-
-            var mousePos = mouse.position.ReadValue();
-            var world = worldCamera.ScreenToWorldPoint(mousePos);
-            var dir = (Vector2)world - (Vector2)transform.position; // Direction from player center, not muzzle!
-
             var proj = Instantiate(projToFire, muzzle.position, Quaternion.identity);
             proj.Fire(dir);
             
