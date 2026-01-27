@@ -362,7 +362,7 @@ MonoBehaviour:
   damageKey: 34
   deathKey: 32
   resetKey: 40
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!114 &704498379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -384,9 +384,9 @@ MonoBehaviour:
   spell01Range: 5
   spell02Range: 7
   spell03Range: 10
-  spell01Projectile: {fileID: 2530940161012633211, guid: 3f8853875d5a2e74bb2f2fcd3a28c67d, type: 3}
-  spell02Projectile: {fileID: 0}
-  spell03Projectile: {fileID: 0}
+  spell01Projectile: {fileID: 3494719040433803232, guid: 659addb9b029c614ca1eb32fdf69b39c, type: 3}
+  spell02Projectile: {fileID: 7133381205109121596, guid: 47b7561743780f04dbc502c48ef25e54, type: 3}
+  spell03Projectile: {fileID: 3389529604998335603, guid: 0caf6978abf50ba48b24d4a87f48e217, type: 3}
 --- !u!1 &1751970696
 GameObject:
   m_ObjectHideFlags: 0

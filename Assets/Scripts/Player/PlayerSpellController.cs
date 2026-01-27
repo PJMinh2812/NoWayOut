@@ -18,9 +18,11 @@ namespace GloomCraft
         [SerializeField] private int spell03Damage = 35;
 
         [Header("Spell Range")]
+        #pragma warning disable CS0414
         [SerializeField] private float spell01Range = 5f;
         [SerializeField] private float spell02Range = 7f;
         [SerializeField] private float spell03Range = 10f;
+        #pragma warning restore CS0414
 
         [Header("Spell Prefabs (Optional)")]
         [SerializeField] private GameObject spell01Projectile;
@@ -34,8 +36,10 @@ namespace GloomCraft
         private float _spell02CooldownRemaining;
         private float _spell03CooldownRemaining;
 
-        private int _currentSpell = 1; // Default spell 1
+        private int _currentSpell = 0; // 0=Idle, 1-3=Spell
         private bool _isCasting;
+        private float _castingTime = 0f;
+        private const float MAX_CAST_TIME = 2f;
 
         public int CurrentSpell => _currentSpell;
         public bool IsCasting => _isCasting;
@@ -46,21 +50,36 @@ namespace GloomCraft
             _controller = GetComponent<PlayerController2D>();
         }
 
+        private void Start()
+        {
+            _animator.SetInteger("SpellType", 0);
+            Debug.Log("[Spell] Initial state: Dage_Idle (SpellType = 0)");
+        }
+
         private void Update()
         {
-            // Cooldown timers
+            // Giảm cooldown
             if (_spell01CooldownRemaining > 0f) _spell01CooldownRemaining -= Time.deltaTime;
             if (_spell02CooldownRemaining > 0f) _spell02CooldownRemaining -= Time.deltaTime;
             if (_spell03CooldownRemaining > 0f) _spell03CooldownRemaining -= Time.deltaTime;
 
-            // Không cast khi đang dash hoặc đang cast
+            // Timeout nếu animation event không gọi
+            if (_isCasting)
+            {
+                _castingTime += Time.deltaTime;
+                if (_castingTime >= MAX_CAST_TIME)
+                {
+                    Debug.LogWarning("[Spell] Casting timeout! Animation event may be missing.");
+                    _isCasting = false;
+                    _castingTime = 0f;
+                }
+            }
+
+            HandleSpellSwitch();
+
             if (_controller != null && (_controller.IsRolling || _isCasting))
                 return;
 
-            // Switch spell type
-            HandleSpellSwitch();
-
-            // Cast spell
             HandleSpellCast();
         }
 
@@ -69,7 +88,12 @@ namespace GloomCraft
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
 
-            if (keyboard.digit1Key.wasPressedThisFrame)
+            // 0/ESC: Idle, 1-3: Spell
+            if (keyboard.digit0Key.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
+            {
+                SwitchToSpell(0);
+            }
+            else if (keyboard.digit1Key.wasPressedThisFrame)
             {
                 SwitchToSpell(1);
             }
@@ -90,7 +114,20 @@ namespace GloomCraft
             _currentSpell = spellNumber;
             _animator.SetInteger("SpellType", spellNumber);
 
-            Debug.Log($"[Spell] Switched to Spell {spellNumber}");
+            if (_isCasting)
+            {
+                _isCasting = false;
+                Debug.Log("[Spell] Casting cancelled!");
+            }
+
+            if (spellNumber == 0)
+            {
+                Debug.Log("[Spell] Returned to Idle (SpellType = 0)");
+            }
+            else
+            {
+                Debug.Log($"[Spell] Switched to Spell {spellNumber}");
+            }
         }
 
         private void HandleSpellCast()
@@ -98,13 +135,17 @@ namespace GloomCraft
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Cast spell với Left Click hoặc Q key
+            // Left Click hoặc Q để cast
             bool castInput = mouse.leftButton.wasPressedThisFrame
                           || Keyboard.current.qKey.wasPressedThisFrame;
 
             if (!castInput) return;
 
-            // Check cooldown
+            if (_currentSpell == 0)
+            {
+                Debug.Log("[Spell] No spell selected! Press 1, 2, or 3 to select a spell.");
+                return;
+            }
             bool canCast = _currentSpell switch
             {
                 1 => _spell01CooldownRemaining <= 0f,
@@ -125,11 +166,9 @@ namespace GloomCraft
 
         private void CastCurrentSpell()
         {
-            // Trigger animation
             _animator.SetTrigger("CastSpell");
             _isCasting = true;
-
-            // Set cooldown
+            _castingTime = 0f;
             switch (_currentSpell)
             {
                 case 1:
@@ -146,7 +185,10 @@ namespace GloomCraft
                     break;
             }
 
-            // Spawn projectile sẽ được gọi từ Animation Event
+            // TEMPORARY FIX: Spawn projectile ngay và complete sau delay ngắn
+            // TODO: Setup Animation Events (xem SETUP_SPELL_ANIMATION_EVENTS.md)
+            OnSpawnSpellProjectile();
+            Invoke(nameof(OnSpellCastComplete), 0.3f); // Reset sau 0.3s
         }
 
         /// <summary>
@@ -155,6 +197,7 @@ namespace GloomCraft
         public void OnSpellCastComplete()
         {
             _isCasting = false;
+            _castingTime = 0f;
             Debug.Log("[Spell] Cast complete!");
         }
 
@@ -173,8 +216,8 @@ namespace GloomCraft
 
             if (projectilePrefab == null) return;
 
-            // Get aim direction
-            Vector2 aimDirection = Vector2.right; // Default
+            // Tính hướng bắn
+            Vector2 aimDirection = Vector2.right;
             if (_controller != null)
             {
                 float aimAngle = _controller.AimAngleDeg;
@@ -184,24 +227,40 @@ namespace GloomCraft
                 );
             }
 
-            // Spawn projectile
+            // Spawn cách Player 0.5 units
+            float spawnOffset = 0.5f;
+            Vector2 spawnPosition = (Vector2)transform.position + (aimDirection * spawnOffset);
+            
             var projectile = Instantiate(
                 projectilePrefab,
-                transform.position,
+                spawnPosition,
                 Quaternion.identity
             );
 
-            // Set projectile direction
-            var proj = projectile.GetComponent<Projectile2D>();
+            // Tắt va chạm với Player
+            var projectileCollider = projectile.GetComponent<Collider2D>();
+            var playerCollider = GetComponent<Collider2D>();
+            if (projectileCollider != null && playerCollider != null)
+            {
+                Physics2D.IgnoreCollision(projectileCollider, playerCollider);
+            }
+            var proj = projectile.GetComponent<SpellProjectile>();
             if (proj != null)
             {
                 proj.Fire(aimDirection);
+            }
+            else
+            {
+                var proj2D = projectile.GetComponent<Projectile2D>();
+                if (proj2D != null)
+                {
+                    proj2D.Fire(aimDirection);
+                }
             }
 
             Debug.Log($"[Spell] Spawned projectile for Spell {_currentSpell}");
         }
 
-        // UI Helper - Get cooldown percentage
         public float GetSpellCooldownPercent(int spellNumber)
         {
             return spellNumber switch

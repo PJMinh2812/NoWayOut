@@ -26,14 +26,11 @@ namespace GloomCraft
         {
             if (animator == null || rb == null) return;
 
-            // Cập nhật Speed parameter
             float speed = rb.linearVelocity.magnitude;
             animator.SetFloat("Speed", speed);
 
-            // Cập nhật Horizontal/Vertical cho Blend Trees (Walk_8Dir và Dash_8Dir)
             if (playerController != null)
             {
-                // Nếu đang dash, dùng DashDirection
                 if (playerController.IsRolling)
                 {
                     Vector2 dashDir = playerController.DashDirection;
@@ -41,7 +38,6 @@ namespace GloomCraft
                     animator.SetFloat("Vertical", dashDir.y);
                     animator.SetBool("IsRolling", true);
                 }
-                // Nếu đang di chuyển, dùng velocity direction
                 else if (speed > 0.1f)
                 {
                     Vector2 direction = rb.linearVelocity.normalized;
@@ -51,13 +47,11 @@ namespace GloomCraft
                 }
                 else
                 {
-                    // Khi dừng lại, giữ nguyên hướng cuối (không reset về 0)
                     animator.SetBool("IsRolling", false);
                 }
             }
         }
 
-        // Gọi từ script khác khi nhận damage
         public void TriggerDamage()
         {
             if (animator != null)
@@ -66,7 +60,6 @@ namespace GloomCraft
             }
         }
 
-        // Gọi khi chết
         public void TriggerDeath()
         {
             if (animator != null)

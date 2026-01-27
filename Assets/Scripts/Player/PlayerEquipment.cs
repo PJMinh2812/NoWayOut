@@ -2,14 +2,12 @@ using UnityEngine;
 
 namespace GloomCraft
 {
-    /// <summary>
-    /// Manages equipped items and displays them visually on player
-    /// </summary>
+    // Quản lý vũ khí và hiển thị trên Player
     public sealed class PlayerEquipment : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private PlayerController2D controller;
-        [SerializeField] private Transform handTransform; // Transform cho tay cầm vũ khí
+        [SerializeField] private Transform handTransform;
         
         [Header("Equipment")]
         [SerializeField] private SpriteRenderer weaponRenderer;
@@ -23,7 +21,6 @@ namespace GloomCraft
         {
             if (controller == null) controller = GetComponent<PlayerController2D>();
             
-            // Auto-create weapon holder if not assigned
             if (handTransform == null)
             {
                 var holder = new GameObject("WeaponHolder");
@@ -33,7 +30,6 @@ namespace GloomCraft
                 _weaponHolder = holder;
             }
 
-            // Auto-create weapon sprite renderer
             if (weaponRenderer == null && handTransform != null)
             {
                 var rendererGo = new GameObject("WeaponSprite");
@@ -41,7 +37,7 @@ namespace GloomCraft
                 rendererGo.transform.localPosition = Vector3.zero;
                 weaponRenderer = rendererGo.AddComponent<SpriteRenderer>();
                 weaponRenderer.sortingLayerName = "Default";
-                weaponRenderer.sortingOrder = 1; // Render above player
+                weaponRenderer.sortingOrder = 1;
             }
 
             if (weaponRenderer != null)
@@ -58,14 +54,10 @@ namespace GloomCraft
             }
         }
 
-        /// <summary>
-        /// Equip a weapon and display its sprite
-        /// </summary>
         public void EquipWeapon(WeaponItem weapon)
         {
             if (weapon == null) return;
 
-            // Unequip current weapon first
             if (currentWeapon != null)
             {
                 UnequipWeapon();
@@ -82,9 +74,6 @@ namespace GloomCraft
             Debug.Log($"[PlayerEquipment] Equipped: {weapon.itemName}");
         }
 
-        /// <summary>
-        /// Unequip current weapon
-        /// </summary>
         public void UnequipWeapon()
         {
             if (currentWeapon == null) return;
@@ -107,32 +96,25 @@ namespace GloomCraft
             float aimAngle = controller.AimAngleDeg;
             float normalizedAngle = Mathf.DeltaAngle(0, aimAngle);
             
-            // Keep weapon at fixed position on player's side (like muzzle)
-            // Just flip left/right based on aim direction
             bool aimingLeft = normalizedAngle > 90f || normalizedAngle < -90f;
             
             Vector2 offset = currentWeapon.holdOffset;
             
             if (aimingLeft)
             {
-                // Flip offset to left side
                 handTransform.localPosition = new Vector2(-offset.x, offset.y);
             }
             else
             {
-                // Keep offset on right side
                 handTransform.localPosition = new Vector2(offset.x, offset.y);
             }
 
-            // Don't rotate the weapon transform - keep it upright
             handTransform.rotation = Quaternion.identity;
 
-            // Flip weapon sprite left/right
             if (weaponRenderer != null)
             {
                 weaponRenderer.flipX = aimingLeft;
                 
-                // Weapon sorting: always in front for 2D top-down
                 weaponRenderer.sortingOrder = 1;
             }
         }

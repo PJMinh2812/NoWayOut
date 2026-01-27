@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace GloomCraft
 {
-    /// <summary>
-    /// Lightweight camera follow for 2D top-down.
-    /// </summary>
+    // Camera smooth follow cho 2D top-down
     public sealed class CameraFollow2D : MonoBehaviour
     {
         [SerializeField] private Transform target;

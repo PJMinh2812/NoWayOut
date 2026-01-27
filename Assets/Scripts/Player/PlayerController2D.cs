@@ -3,12 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace GloomCraft
 {
-    /// <summary>
-    /// First port target: microStudio Player movement + roll using Rigidbody2D.
-    /// - WASD/Arrow to move
-    /// - Space/Shift to roll (impulse), with cooldown
-    /// - Mouse to aim angle (exposed)
-    /// </summary>
+    // WASD/Arrow di chuyển, Space/Shift dash, Mouse ngắm
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class PlayerController2D : MonoBehaviour
     {
@@ -84,7 +79,7 @@ namespace GloomCraft
             _rollingTimeRemaining = rollDuration;
             _cooldownRemaining = rollCooldown;
             _rollVelocity = dir * rollSpeed;
-            DashDirection = dir.normalized; // Lưu hướng dash cho Animator
+            DashDirection = dir.normalized;
         }
 
         private void UpdateAim()

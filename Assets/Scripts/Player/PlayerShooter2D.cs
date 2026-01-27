@@ -3,10 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace GloomCraft
 {
-    /// <summary>
-    /// Minimal shooting scaffold: left click spawns a Projectile2D prefab and fires toward mouse.
-    /// Automatically creates and manages muzzle position.
-    /// </summary>
+    // Bắn projectile theo hướng chuột, tạo và quản lý muzzle position
     public sealed class PlayerShooter2D : MonoBehaviour
     {
         [SerializeField] private PlayerController2D controller;
@@ -16,7 +13,7 @@ namespace GloomCraft
         [SerializeField] private Projectile2D projectilePrefab;
         [SerializeField] private Transform muzzle;
         [SerializeField] private float fireCooldown = 0.12f;
-        [SerializeField] private float muzzleDistance = 0.5f; // Distance from player center to edge
+        [SerializeField] private float muzzleDistance = 0.5f;
 
         private float _cooldown;
 
@@ -27,7 +24,6 @@ namespace GloomCraft
             if (equipment == null) equipment = GetComponent<PlayerEquipment>();
             if (worldCamera == null) worldCamera = Camera.main;
             
-            // Auto-create muzzle if not assigned
             if (muzzle == null)
             {
                 var muzzleGo = new GameObject("Muzzle");
@@ -47,7 +43,7 @@ namespace GloomCraft
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.isPressed)
             {
-                if (Fire()) // Only set cooldown if Fire() succeeded
+                if (Fire())
                 {
                     _cooldown = fireCooldown;
                 }
@@ -58,7 +54,6 @@ namespace GloomCraft
         {
             if (muzzle == null || controller == null) return;
             
-            // Position muzzle based on player's aim angle
             float angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
             var dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0);
             
@@ -69,14 +64,12 @@ namespace GloomCraft
         {
             if (controller == null) return false;
             
-            // Check if player has equipped weapon
             Projectile2D projToFire = projectilePrefab;
             
             if (equipment != null && equipment.CurrentWeapon != null)
             {
                 var weapon = equipment.CurrentWeapon;
                 
-                // Use weapon's projectile if it's a ranged weapon
                 if (weapon.isRanged && weapon.projectilePrefab != null)
                 {
                     projToFire = weapon.projectilePrefab;
@@ -91,7 +84,6 @@ namespace GloomCraft
                 return false;
             }
 
-            // Fire in the direction of player's aim angle
             float angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
             var dir = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
 
@@ -100,7 +92,7 @@ namespace GloomCraft
             var proj = Instantiate(projToFire, muzzle.position, Quaternion.identity);
             proj.Fire(dir);
             
-            return true; // Success!
+            return true;
         }
     }
 }
