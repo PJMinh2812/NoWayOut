@@ -91,7 +91,8 @@ namespace GloomCraft
         {
             if (worldCamera == null) return;
             var mouse = Mouse.current.position.ReadValue();
-            var world = worldCamera.ScreenToWorldPoint(mouse);
+            var mousePos = new Vector3(mouse.x, mouse.y, worldCamera.nearClipPlane);
+            var world = worldCamera.ScreenToWorldPoint(mousePos);
             var delta = (Vector2)world - (Vector2)transform.position;
             AimAngleDeg = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
         }
