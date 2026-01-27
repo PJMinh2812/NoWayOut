@@ -30,10 +30,30 @@ namespace GloomCraft
             float speed = rb.linearVelocity.magnitude;
             animator.SetFloat("Speed", speed);
 
-            // Cập nhật IsRolling
+            // Cập nhật Horizontal/Vertical cho Blend Trees (Walk_8Dir và Dash_8Dir)
             if (playerController != null)
             {
-                animator.SetBool("IsRolling", playerController.IsRolling);
+                // Nếu đang dash, dùng DashDirection
+                if (playerController.IsRolling)
+                {
+                    Vector2 dashDir = playerController.DashDirection;
+                    animator.SetFloat("Horizontal", dashDir.x);
+                    animator.SetFloat("Vertical", dashDir.y);
+                    animator.SetBool("IsRolling", true);
+                }
+                // Nếu đang di chuyển, dùng velocity direction
+                else if (speed > 0.1f)
+                {
+                    Vector2 direction = rb.linearVelocity.normalized;
+                    animator.SetFloat("Horizontal", direction.x);
+                    animator.SetFloat("Vertical", direction.y);
+                    animator.SetBool("IsRolling", false);
+                }
+                else
+                {
+                    // Khi dừng lại, giữ nguyên hướng cuối (không reset về 0)
+                    animator.SetBool("IsRolling", false);
+                }
             }
         }
 

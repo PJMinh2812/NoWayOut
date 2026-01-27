@@ -27,6 +27,7 @@ namespace GloomCraft
 
         public float AimAngleDeg { get; private set; }
         public bool IsRolling => _rollingTimeRemaining > 0f;
+        public Vector2 DashDirection { get; private set; }
 
         private Rigidbody2D _rb;
         private float _cooldownRemaining;
@@ -83,6 +84,7 @@ namespace GloomCraft
             _rollingTimeRemaining = rollDuration;
             _cooldownRemaining = rollCooldown;
             _rollVelocity = dir * rollSpeed;
+            DashDirection = dir.normalized; // Lưu hướng dash cho Animator
         }
 
         private void UpdateAim()
