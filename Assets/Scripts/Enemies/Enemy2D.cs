@@ -93,6 +93,14 @@ namespace GloomCraft
         {
             Debug.Log($"[Enemy] Died at position {transform.position}");
             
+            // Check if this is a boss and notify BossManager
+            BossManager bossManager = FindFirstObjectByType<BossManager>();
+            if (bossManager != null)
+            {
+                Debug.Log("[Enemy] Notifying BossManager of boss defeat!");
+                bossManager.OnBossDefeated();
+            }
+            
             // Destroy health bar first
             if (_healthBarController != null)
             {

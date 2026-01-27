@@ -174,11 +174,24 @@ public class PlayerSlideController : MonoBehaviour
         if (!isSliding) return;
         
         // Nếu đụng vào thùng hoặc tường thì dừng trượt
-        if (canBreak && (collision.gameObject.CompareTag("Obstacle") || 
-                         collision.gameObject.CompareTag("Wall") ||
+        if (canBreak && (HasTag(collision.gameObject, "Obstacle") || 
+                         HasTag(collision.gameObject, "Wall") ||
                          collision.gameObject.layer == LayerMask.NameToLayer("Environment")))
         {
             StopSlide();
+        }
+    }
+    
+    // Helper method to safely check tags without errors
+    private bool HasTag(GameObject obj, string tag)
+    {
+        try
+        {
+            return obj.CompareTag(tag);
+        }
+        catch
+        {
+            return false;
         }
     }
     
