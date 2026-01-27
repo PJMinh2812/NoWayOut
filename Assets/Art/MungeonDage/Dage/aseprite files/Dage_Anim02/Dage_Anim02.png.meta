@@ -1,0 +1,1418 @@
+fileFormatVersion: 2
+guid: 57b5524108c12df4b9bb95edf763fe66
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3332399882913275446
+    second: Dage_Anim02_0
+  - first:
+      213: 4640025655763164150
+    second: Dage_Anim02_1
+  - first:
+      213: 5639894705141381714
+    second: Dage_Anim02_2
+  - first:
+      213: 4534338485149157713
+    second: Dage_Anim02_3
+  - first:
+      213: -3749814241653859414
+    second: Dage_Anim02_4
+  - first:
+      213: 3007830965986567557
+    second: Dage_Anim02_5
+  - first:
+      213: -6810445677765223551
+    second: Dage_Anim02_6
+  - first:
+      213: 8016522478872131876
+    second: Dage_Anim02_7
+  - first:
+      213: 6176120576848735396
+    second: Dage_Anim02_8
+  - first:
+      213: -3094550202321708107
+    second: Dage_Anim02_9
+  - first:
+      213: 1898253722049648743
+    second: Dage_Anim02_10
+  - first:
+      213: -4841410650664089181
+    second: Dage_Anim02_11
+  - first:
+      213: -960342094497061209
+    second: Dage_Anim02_12
+  - first:
+      213: 8004233792014760683
+    second: Dage_Anim02_13
+  - first:
+      213: -4578349121774155344
+    second: Dage_Anim02_14
+  - first:
+      213: -3740231224640971424
+    second: Dage_Anim02_15
+  - first:
+      213: -2289309547280801752
+    second: Dage_Anim02_16
+  - first:
+      213: 8391092690698071117
+    second: Dage_Anim02_17
+  - first:
+      213: 7231839655711846589
+    second: Dage_Anim02_18
+  - first:
+      213: 5095300166327860565
+    second: Dage_Anim02_19
+  - first:
+      213: -5253347586178831561
+    second: Dage_Anim02_20
+  - first:
+      213: -3706264855818921712
+    second: Dage_Anim02_21
+  - first:
+      213: 239629186870702575
+    second: Dage_Anim02_22
+  - first:
+      213: -3483832046846558081
+    second: Dage_Anim02_23
+  - first:
+      213: 8514823511722570026
+    second: Dage_Anim02_24
+  - first:
+      213: -5822557718972142603
+    second: Dage_Anim02_25
+  - first:
+      213: -8072783285805403572
+    second: Dage_Anim02_26
+  - first:
+      213: 6648734129479765016
+    second: Dage_Anim02_27
+  - first:
+      213: 4071295085415641615
+    second: Dage_Anim02_28
+  - first:
+      213: 7240513620877945278
+    second: Dage_Anim02_29
+  - first:
+      213: 1634057108436814138
+    second: Dage_Anim02_30
+  - first:
+      213: 8283530049735984623
+    second: Dage_Anim02_31
+  - first:
+      213: -4954349682568661065
+    second: Dage_Anim02_32
+  - first:
+      213: 8924632556406323077
+    second: Dage_Anim02_33
+  - first:
+      213: 4203517952237527414
+    second: Dage_Anim02_34
+  - first:
+      213: -4341358464573547368
+    second: Dage_Anim02_35
+  - first:
+      213: -6510908144245282142
+    second: Dage_Anim0200
+  - first:
+      213: -1158616110787531841
+    second: Dage_Anim0201
+  - first:
+      213: -8131168871476964200
+    second: Dage_Anim0202
+  - first:
+      213: -5782569143265489852
+    second: Dage_Anim0203
+  - first:
+      213: -5862998528526739313
+    second: Dage_Anim0204
+  - first:
+      213: 6904484894751220938
+    second: Dage_Anim0205
+  - first:
+      213: 7024936086465015269
+    second: Dage_Anim0206
+  - first:
+      213: 1872976642439090477
+    second: Dage_Anim0207
+  - first:
+      213: -3511697867884658209
+    second: Dage_Anim0208
+  - first:
+      213: 5200732029862301633
+    second: Dage_Anim0209
+  - first:
+      213: 4214124859526280368
+    second: Dage_Anim0210
+  - first:
+      213: 7173971299435006000
+    second: Dage_Anim0211
+  - first:
+      213: 4983295831513256756
+    second: Dage_Anim0212
+  - first:
+      213: -1128434343110254381
+    second: Dage_Anim0213
+  - first:
+      213: 7193899807544451889
+    second: Dage_Anim0214
+  - first:
+      213: 5981791790464094924
+    second: Dage_Anim0215
+  - first:
+      213: -2192668059989221503
+    second: Dage_Anim0216
+  - first:
+      213: 724909623096198063
+    second: Dage_Anim0217
+  - first:
+      213: -1108476174976663101
+    second: Dage_Anim0218
+  - first:
+      213: -6802382106169648278
+    second: Dage_Anim0219
+  - first:
+      213: -4811533658216688259
+    second: Dage_Anim0220
+  - first:
+      213: 6778747093217110633
+    second: Dage_Anim0221
+  - first:
+      213: -356833699630708709
+    second: Dage_Anim0222
+  - first:
+      213: 4036232325733454287
+    second: Dage_Anim0223
+  - first:
+      213: 6550195514965003754
+    second: Dage_Anim0224
+  - first:
+      213: -1302903779345526355
+    second: Dage_Anim0225
+  - first:
+      213: 7705417603016034271
+    second: Dage_Anim0226
+  - first:
+      213: 858202902022962103
+    second: Dage_Anim0227
+  - first:
+      213: 4166360490051046868
+    second: Dage_Anim0228
+  - first:
+      213: -2904304168136899652
+    second: Dage_Anim0229
+  - first:
+      213: 7875271576413987002
+    second: Dage_Anim0230
+  - first:
+      213: -3464217253980558873
+    second: Dage_Anim0231
+  - first:
+      213: -7320578657620485384
+    second: Dage_Anim0232
+  - first:
+      213: -6482856425572234890
+    second: Dage_Anim0233
+  - first:
+      213: -141414690946310242
+    second: Dage_Anim0234
+  - first:
+      213: -2087735512387621246
+    second: Dage_Anim0235
+  - first:
+      213: 1003132795583739280
+    second: Dage_Anim0236
+  - first:
+      213: -3525216067920055786
+    second: Dage_Anim0237
+  - first:
+      213: 4384089359000028147
+    second: Dage_Anim0238
+  - first:
+      213: -5779858725785607336
+    second: Dage_Anim0239
+  - first:
+      213: 2858825640397951452
+    second: Dage_Anim0240
+  - first:
+      213: 8155065485660129237
+    second: Dage_Anim0241
+  - first:
+      213: -1474454477504423793
+    second: Dage_Anim0242
+  - first:
+      213: 5278687945713869338
+    second: Dage_Anim0243
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Dage_Anim0200
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2aaef010a8b94a5a0800000000000000
+      internalID: -6510908144245282142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0201
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbbe67d29c4cbefe0800000000000000
+      internalID: -1158616110787531841
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0202
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 894d6eefdf8482f80800000000000000
+      internalID: -8131168871476964200
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0203
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44c8686600030cfa0800000000000000
+      internalID: -5782569143265489852
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0204
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f88968cd6e172aea0800000000000000
+      internalID: -5862998528526739313
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0205
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac462b42e68a1df50800000000000000
+      internalID: 6904484894751220938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0206
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 301
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ede193a6269d7160800000000000000
+      internalID: 7024936086465015269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0207
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d219f2535562ef910800000000000000
+      internalID: 1872976642439090477
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0208
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd10d3a1561f34fc0800000000000000
+      internalID: -3511697867884658209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0209
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cf40fbf936bc2840800000000000000
+      internalID: 5200732029862301633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0210
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b4f43b7b349b7a30800000000000000
+      internalID: 4214124859526280368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0211
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 038cba333e01f8360800000000000000
+      internalID: 7173971299435006000
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0212
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4335808f729382540800000000000000
+      internalID: 4983295831513256756
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0213
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 251
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d0ef8291fef650f0800000000000000
+      internalID: -1128434343110254381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0214
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 133207292cdd5d360800000000000000
+      internalID: 7193899807544451889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0215
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc2d5f6c0f7930350800000000000000
+      internalID: 5981791790464094924
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0216
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18f5ff544041291e0800000000000000
+      internalID: -2192668059989221503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0217
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa349e226756f0a00800000000000000
+      internalID: 724909623096198063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0218
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c14884bac6ed90f0800000000000000
+      internalID: -1108476174976663101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0219
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6bd847d3851991a0800000000000000
+      internalID: -6802382106169648278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0220
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d75982561aff93db0800000000000000
+      internalID: -4811533658216688259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0221
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96aea61e092f21e50800000000000000
+      internalID: 6778747093217110633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0222
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b188f9904a54c0bf0800000000000000
+      internalID: -356833699630708709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0223
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc19a465ae3930830800000000000000
+      internalID: 4036232325733454287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0224
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aed88decd18f6ea50800000000000000
+      internalID: 6550195514965003754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0225
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da1989f6ae72bede0800000000000000
+      internalID: -1302903779345526355
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0226
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd700d12c742fea60800000000000000
+      internalID: 7705417603016034271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0227
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bbb9401ef2f8eb00800000000000000
+      internalID: 858202902022962103
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0228
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dd07b79ac2e1d930800000000000000
+      internalID: 4166360490051046868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0229
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb3838a2fb6d1b7d0800000000000000
+      internalID: -2904304168136899652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0230
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab0e2e516c59a4d60800000000000000
+      internalID: 7875271576413987002
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0231
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e9a5bff2c0acefc0800000000000000
+      internalID: -3464217253980558873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0232
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8fa993a3f74186a90800000000000000
+      internalID: -7320578657620485384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0233
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67988e7bd644806a0800000000000000
+      internalID: -6482856425572234890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0234
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9f9f1c7618990ef0800000000000000
+      internalID: -141414690946310242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0235
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28eea2fdc9fd603e0800000000000000
+      internalID: -2087735512387621246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0236
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 095305776f7dbed00800000000000000
+      internalID: 1003132795583739280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0237
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6123023e9aae31fc0800000000000000
+      internalID: -3525216067920055786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0238
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f344ca4b0a67dc30800000000000000
+      internalID: 4384089359000028147
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0239
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8536b95ac11d9cfa0800000000000000
+      internalID: -5779858725785607336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0240
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd1d2b2f5c69ca720800000000000000
+      internalID: 2858825640397951452
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0241
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d702d01adc9c2170800000000000000
+      internalID: 8155065485660129237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0242
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f885dd6f67fa98be0800000000000000
+      internalID: -1474454477504423793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Dage_Anim0243
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a12696c08baa14940800000000000000
+      internalID: 5278687945713869338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Dage_Anim0200: -6510908144245282142
+      Dage_Anim0201: -1158616110787531841
+      Dage_Anim0202: -8131168871476964200
+      Dage_Anim0203: -5782569143265489852
+      Dage_Anim0204: -5862998528526739313
+      Dage_Anim0205: 6904484894751220938
+      Dage_Anim0206: 7024936086465015269
+      Dage_Anim0207: 1872976642439090477
+      Dage_Anim0208: -3511697867884658209
+      Dage_Anim0209: 5200732029862301633
+      Dage_Anim0210: 4214124859526280368
+      Dage_Anim0211: 7173971299435006000
+      Dage_Anim0212: 4983295831513256756
+      Dage_Anim0213: -1128434343110254381
+      Dage_Anim0214: 7193899807544451889
+      Dage_Anim0215: 5981791790464094924
+      Dage_Anim0216: -2192668059989221503
+      Dage_Anim0217: 724909623096198063
+      Dage_Anim0218: -1108476174976663101
+      Dage_Anim0219: -6802382106169648278
+      Dage_Anim0220: -4811533658216688259
+      Dage_Anim0221: 6778747093217110633
+      Dage_Anim0222: -356833699630708709
+      Dage_Anim0223: 4036232325733454287
+      Dage_Anim0224: 6550195514965003754
+      Dage_Anim0225: -1302903779345526355
+      Dage_Anim0226: 7705417603016034271
+      Dage_Anim0227: 858202902022962103
+      Dage_Anim0228: 4166360490051046868
+      Dage_Anim0229: -2904304168136899652
+      Dage_Anim0230: 7875271576413987002
+      Dage_Anim0231: -3464217253980558873
+      Dage_Anim0232: -7320578657620485384
+      Dage_Anim0233: -6482856425572234890
+      Dage_Anim0234: -141414690946310242
+      Dage_Anim0235: -2087735512387621246
+      Dage_Anim0236: 1003132795583739280
+      Dage_Anim0237: -3525216067920055786
+      Dage_Anim0238: 4384089359000028147
+      Dage_Anim0239: -5779858725785607336
+      Dage_Anim0240: 2858825640397951452
+      Dage_Anim0241: 8155065485660129237
+      Dage_Anim0242: -1474454477504423793
+      Dage_Anim0243: 5278687945713869338
+      Dage_Anim02_0: 3332399882913275446
+      Dage_Anim02_1: 4640025655763164150
+      Dage_Anim02_10: 1898253722049648743
+      Dage_Anim02_11: -4841410650664089181
+      Dage_Anim02_12: -960342094497061209
+      Dage_Anim02_13: 8004233792014760683
+      Dage_Anim02_14: -4578349121774155344
+      Dage_Anim02_15: -3740231224640971424
+      Dage_Anim02_16: -2289309547280801752
+      Dage_Anim02_17: 8391092690698071117
+      Dage_Anim02_18: 7231839655711846589
+      Dage_Anim02_19: 5095300166327860565
+      Dage_Anim02_2: 5639894705141381714
+      Dage_Anim02_20: -5253347586178831561
+      Dage_Anim02_21: -3706264855818921712
+      Dage_Anim02_22: 239629186870702575
+      Dage_Anim02_23: -3483832046846558081
+      Dage_Anim02_24: 8514823511722570026
+      Dage_Anim02_25: -5822557718972142603
+      Dage_Anim02_26: -8072783285805403572
+      Dage_Anim02_27: 6648734129479765016
+      Dage_Anim02_28: 4071295085415641615
+      Dage_Anim02_29: 7240513620877945278
+      Dage_Anim02_3: 4534338485149157713
+      Dage_Anim02_30: 1634057108436814138
+      Dage_Anim02_31: 8283530049735984623
+      Dage_Anim02_32: -4954349682568661065
+      Dage_Anim02_33: 8924632556406323077
+      Dage_Anim02_34: 4203517952237527414
+      Dage_Anim02_35: -4341358464573547368
+      Dage_Anim02_4: -3749814241653859414
+      Dage_Anim02_5: 3007830965986567557
+      Dage_Anim02_6: -6810445677765223551
+      Dage_Anim02_7: 8016522478872131876
+      Dage_Anim02_8: 6176120576848735396
+      Dage_Anim02_9: -3094550202321708107
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

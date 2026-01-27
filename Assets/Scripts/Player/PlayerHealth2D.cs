@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace GloomCraft
 {
-    /// <summary>
-    /// Đơn giản hóa hệ thống Bar/HP của microStudio thành component sức khỏe cho Player.
-    /// </summary>
+    // Quản lý HP và regeneration cho Player
     public sealed class PlayerHealth2D : MonoBehaviour
     {
         [SerializeField] private int maxHealth = 100;
@@ -62,16 +60,12 @@ namespace GloomCraft
             }
         }
 
-        /// <summary>
-        /// Reset health to full and revive player
-        /// </summary>
         public void ResetHealth()
         {
             CurrentHealth = maxHealth;
             IsDead = false;
             _invincibleTimer = 0f;
             
-            // Re-enable player controls
             var controller = GetComponent<PlayerController2D>();
             if (controller != null) controller.enabled = true;
             
@@ -84,13 +78,11 @@ namespace GloomCraft
             IsDead = true;
             Debug.Log("[Player] DIED!");
             
-            // Trigger game over
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.TriggerGameOver();
             }
             
-            // Disable player controls
             var controller = GetComponent<PlayerController2D>();
             if (controller != null) controller.enabled = false;
             

@@ -1,0 +1,902 @@
+fileFormatVersion: 2
+guid: faa2b74ab25b09848a4c702a5148c159
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4178480552900893998
+    second: marsmallow_ANIM_0
+  - first:
+      213: -8004152254834047831
+    second: marsmallow_ANIM_1
+  - first:
+      213: 3351806531087571076
+    second: marsmallow_ANIM_2
+  - first:
+      213: -560444458240474103
+    second: marsmallow_ANIM_3
+  - first:
+      213: 1861645843961667668
+    second: marsmallow_ANIM_4
+  - first:
+      213: -9203124019878909564
+    second: marsmallow_ANIM_5
+  - first:
+      213: 1211251905075498727
+    second: marsmallow_ANIM_6
+  - first:
+      213: -7653623879712909001
+    second: marsmallow_ANIM_7
+  - first:
+      213: -845887802789350023
+    second: marsmallow_ANIM_8
+  - first:
+      213: 3930939200560223640
+    second: marsmallow_ANIM_9
+  - first:
+      213: -197817992970122778
+    second: marsmallow_ANIM_10
+  - first:
+      213: 2191335048522273726
+    second: marsmallow_ANIM_11
+  - first:
+      213: 2869827496932661339
+    second: marsmallow_ANIM_12
+  - first:
+      213: -5931060165434374123
+    second: marsmallow_ANIM_13
+  - first:
+      213: -3043270930899336320
+    second: marsmallow_ANIM_14
+  - first:
+      213: 833208076616205739
+    second: marsmallow_ANIM_15
+  - first:
+      213: 6500236691386503349
+    second: marsmallow_ANIM_16
+  - first:
+      213: -920979097741054969
+    second: marsmallow_ANIM_17
+  - first:
+      213: -757227512905137772
+    second: marsmallow_ANIM_18
+  - first:
+      213: -8148698415972203702
+    second: marsmallow_ANIM_19
+  - first:
+      213: -4404500099953181976
+    second: marsmallow_ANIM_20
+  - first:
+      213: 6993004440015551776
+    second: marsmallow_ANIM_21
+  - first:
+      213: 1361009382297875428
+    second: marsmallow_ANIM_22
+  - first:
+      213: -1148015856601223306
+    second: marsmallow_ANIM_23
+  - first:
+      213: -7366800872954338385
+    second: marsmallow_ANIM_24
+  - first:
+      213: 7030229879158033218
+    second: marsmallow_ANIM_25
+  - first:
+      213: -8134995398418220849
+    second: marsmallow_ANIM_26
+  - first:
+      213: 8846265294573877613
+    second: marsmallow_ANIM_27
+  - first:
+      213: 217274702821859315
+    second: marsmallow_ANIM_28
+  - first:
+      213: -4609023469671024897
+    second: marsmallow_ANIM_29
+  - first:
+      213: -8628351074433075961
+    second: marsmallow_ANIM_30
+  - first:
+      213: 5433742351738152718
+    second: marsmallow_ANIM_31
+  - first:
+      213: -4252416847128418561
+    second: marsmallow_ANIM_32
+  - first:
+      213: 3992495046423256916
+    second: marsmallow_ANIM_33
+  - first:
+      213: -2204881139635248330
+    second: marsmallow_ANIM_34
+  - first:
+      213: -2090862997408078201
+    second: marsmallow_ANIM_35
+  - first:
+      213: 7830811820432445956
+    second: marsmallow_ANIM_36
+  - first:
+      213: -5240880450338939769
+    second: marsmallow_ANIM00
+  - first:
+      213: 2115304623268990062
+    second: marsmallow_ANIM01
+  - first:
+      213: 8036399349568236811
+    second: marsmallow_ANIM02
+  - first:
+      213: -8995499729928940761
+    second: marsmallow_ANIM03
+  - first:
+      213: 1626171806313825986
+    second: marsmallow_ANIM04
+  - first:
+      213: -6410762091441738764
+    second: marsmallow_ANIM05
+  - first:
+      213: 8574836575644777552
+    second: marsmallow_ANIM06
+  - first:
+      213: 465504508359731359
+    second: marsmallow_ANIM07
+  - first:
+      213: -7925094781202496762
+    second: marsmallow_ANIM08
+  - first:
+      213: -45977239568249529
+    second: marsmallow_ANIM09
+  - first:
+      213: 8887707865304288848
+    second: marsmallow_ANIM10
+  - first:
+      213: -4921464091421653548
+    second: marsmallow_ANIM11
+  - first:
+      213: -5682728058941540782
+    second: marsmallow_ANIM12
+  - first:
+      213: 8636838560507854352
+    second: marsmallow_ANIM13
+  - first:
+      213: -6554508596648919637
+    second: marsmallow_ANIM14
+  - first:
+      213: 4977936446143993474
+    second: marsmallow_ANIM15
+  - first:
+      213: -4980012737271307373
+    second: marsmallow_ANIM16
+  - first:
+      213: -6541833332932474006
+    second: marsmallow_ANIM17
+  - first:
+      213: 1526812320130094213
+    second: marsmallow_ANIM18
+  - first:
+      213: -1998953436777739289
+    second: marsmallow_ANIM19
+  - first:
+      213: 1218715659334819487
+    second: marsmallow_ANIM20
+  - first:
+      213: -562605467702644843
+    second: marsmallow_ANIM21
+  - first:
+      213: 7553301751322823798
+    second: marsmallow_ANIM22
+  - first:
+      213: -7153276075162948773
+    second: marsmallow_ANIM23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: marsmallow_ANIM00
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78c124f6ff6a447b0800000000000000
+      internalID: -5240880450338939769
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM01
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6c80b5f8521b5d10800000000000000
+      internalID: 2115304623268990062
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM02
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0de13831a6078f60800000000000000
+      internalID: 8036399349568236811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM03
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7239674e7a0992380800000000000000
+      internalID: -8995499729928940761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM04
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 201
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c6471b54a2519610800000000000000
+      internalID: 1626171806313825986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM05
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4fb2310f7d56807a0800000000000000
+      internalID: -6410762091441738764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM06
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05c75522f60fff670800000000000000
+      internalID: 8574836575644777552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM07
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f98ef1e42edc57600800000000000000
+      internalID: 465504508359731359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM08
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6038f131948640290800000000000000
+      internalID: -7925094781202496762
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM09
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 151
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74d08c7b1f7ac5ff0800000000000000
+      internalID: -45977239568249529
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM10
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05e48e2e63b775b70800000000000000
+      internalID: 8887707865304288848
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM11
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d5c8ffdb7273bbb0800000000000000
+      internalID: -4921464091421653548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM12
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 256f4a350f4e221b0800000000000000
+      internalID: -5682728058941540782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM13
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 01e777d29e63cd770800000000000000
+      internalID: 8636838560507854352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM14
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 101
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bad3f7b9825b905a0800000000000000
+      internalID: -6554508596648919637
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM15
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28612e2d2de251540800000000000000
+      internalID: 4977936446143993474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM16
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 393e50afcc073eab0800000000000000
+      internalID: -4980012737271307373
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM17
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6b00ca6e3db635a0800000000000000
+      internalID: -6541833332932474006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM18
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5845b0c37b3503510800000000000000
+      internalID: 1526812320130094213
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM19
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 51
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7eb015ea07a4244e0800000000000000
+      internalID: -1998953436777739289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM20
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9e9bd46f6fb9e010800000000000000
+      internalID: 1218715659334819487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM21
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59f24e4de493138f0800000000000000
+      internalID: -562605467702644843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM22
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67ccee87ce7b2d860800000000000000
+      internalID: 7553301751322823798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: marsmallow_ANIM23
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 1
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5bac9f2f457abc90800000000000000
+      internalID: -7153276075162948773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      marsmallow_ANIM00: -5240880450338939769
+      marsmallow_ANIM01: 2115304623268990062
+      marsmallow_ANIM02: 8036399349568236811
+      marsmallow_ANIM03: -8995499729928940761
+      marsmallow_ANIM04: 1626171806313825986
+      marsmallow_ANIM05: -6410762091441738764
+      marsmallow_ANIM06: 8574836575644777552
+      marsmallow_ANIM07: 465504508359731359
+      marsmallow_ANIM08: -7925094781202496762
+      marsmallow_ANIM09: -45977239568249529
+      marsmallow_ANIM10: 8887707865304288848
+      marsmallow_ANIM11: -4921464091421653548
+      marsmallow_ANIM12: -5682728058941540782
+      marsmallow_ANIM13: 8636838560507854352
+      marsmallow_ANIM14: -6554508596648919637
+      marsmallow_ANIM15: 4977936446143993474
+      marsmallow_ANIM16: -4980012737271307373
+      marsmallow_ANIM17: -6541833332932474006
+      marsmallow_ANIM18: 1526812320130094213
+      marsmallow_ANIM19: -1998953436777739289
+      marsmallow_ANIM20: 1218715659334819487
+      marsmallow_ANIM21: -562605467702644843
+      marsmallow_ANIM22: 7553301751322823798
+      marsmallow_ANIM23: -7153276075162948773
+      marsmallow_ANIM_0: -4178480552900893998
+      marsmallow_ANIM_1: -8004152254834047831
+      marsmallow_ANIM_10: -197817992970122778
+      marsmallow_ANIM_11: 2191335048522273726
+      marsmallow_ANIM_12: 2869827496932661339
+      marsmallow_ANIM_13: -5931060165434374123
+      marsmallow_ANIM_14: -3043270930899336320
+      marsmallow_ANIM_15: 833208076616205739
+      marsmallow_ANIM_16: 6500236691386503349
+      marsmallow_ANIM_17: -920979097741054969
+      marsmallow_ANIM_18: -757227512905137772
+      marsmallow_ANIM_19: -8148698415972203702
+      marsmallow_ANIM_2: 3351806531087571076
+      marsmallow_ANIM_20: -4404500099953181976
+      marsmallow_ANIM_21: 6993004440015551776
+      marsmallow_ANIM_22: 1361009382297875428
+      marsmallow_ANIM_23: -1148015856601223306
+      marsmallow_ANIM_24: -7366800872954338385
+      marsmallow_ANIM_25: 7030229879158033218
+      marsmallow_ANIM_26: -8134995398418220849
+      marsmallow_ANIM_27: 8846265294573877613
+      marsmallow_ANIM_28: 217274702821859315
+      marsmallow_ANIM_29: -4609023469671024897
+      marsmallow_ANIM_3: -560444458240474103
+      marsmallow_ANIM_30: -8628351074433075961
+      marsmallow_ANIM_31: 5433742351738152718
+      marsmallow_ANIM_32: -4252416847128418561
+      marsmallow_ANIM_33: 3992495046423256916
+      marsmallow_ANIM_34: -2204881139635248330
+      marsmallow_ANIM_35: -2090862997408078201
+      marsmallow_ANIM_36: 7830811820432445956
+      marsmallow_ANIM_4: 1861645843961667668
+      marsmallow_ANIM_5: -9203124019878909564
+      marsmallow_ANIM_6: 1211251905075498727
+      marsmallow_ANIM_7: -7653623879712909001
+      marsmallow_ANIM_8: -845887802789350023
+      marsmallow_ANIM_9: 3930939200560223640
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
