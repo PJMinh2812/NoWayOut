@@ -7,7 +7,7 @@ namespace GloomCraft
     {
         [SerializeField] private float lifetime = 2.0f;
         [SerializeField] private float speed = 12f;
-        [SerializeField] private float damage = 10f;
+        [SerializeField] private float damage = 5f;
 
         private Rigidbody2D _rb;
         private float _t;
@@ -37,17 +37,31 @@ namespace GloomCraft
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            // Check for Enemy2D
             if (other.TryGetComponent<Enemy2D>(out var enemy))
             {
                 var dir = (Vector2)enemy.transform.position - (Vector2)transform.position;
-                Debug.Log($"[Projectile] Hit enemy! Dealing {damage} damage");
+                Debug.Log($"[Projectile] Hit Enemy2D! Dealing {damage} damage");
                 enemy.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
                 Destroy(gameObject);
                 return;
             }
+            
+            // Check for RatMiniBoss
+            if (other.TryGetComponent<RatMiniBoss>(out var boss))
+            {
+                var dir = (Vector2)boss.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit RatMiniBoss! Dealing {damage} damage");
+                boss.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                Destroy(gameObject);
+                return;
+            }
 
-            // Destroy on any collision
-            Destroy(gameObject);
+            // Destroy on any other collision (wall, etc)
+            if (!other.CompareTag("Player")) // Không destroy khi chạm player
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }
