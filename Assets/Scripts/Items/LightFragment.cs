@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Mảnh Sáng - Item người chơi cần thu thập để mở rộng tầm nhìn

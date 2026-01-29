@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     public enum GameState
     {
@@ -26,7 +26,7 @@ namespace GloomCraft
         {
             if (CurrentState == next) return;
             CurrentState = next;
-            Debug.Log($"[GloomCraft] State -> {next}");
+            Debug.Log($"[NWO] State -> {next}");
             OnStateChanged?.Invoke(next);
         }
     }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     // Camera smooth follow cho 2D top-down
     public sealed class CameraFollow2D : MonoBehaviour

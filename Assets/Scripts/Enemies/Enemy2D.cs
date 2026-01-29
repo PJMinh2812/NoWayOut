@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Bản C# rút gọn từ global.Enemy: di chuyển đuổi theo Player và gây damage + knockback khi va chạm.

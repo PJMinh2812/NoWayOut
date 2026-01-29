@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     [RequireComponent(typeof(Animator))]
     public class PlayerAnimationController : MonoBehaviour

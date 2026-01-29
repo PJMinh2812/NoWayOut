@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GloomCraft
+namespace NWO
 {
     // WASD/Arrow di chuyển, Space/Shift dash, Mouse ngắm
     [RequireComponent(typeof(Rigidbody2D))]

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     // Quản lý vũ khí và hiển thị trên Player
     public sealed class PlayerEquipment : MonoBehaviour

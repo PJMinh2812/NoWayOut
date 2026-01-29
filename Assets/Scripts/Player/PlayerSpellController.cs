@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GloomCraft
+namespace NWO
 {
 
     [RequireComponent(typeof(Animator))]

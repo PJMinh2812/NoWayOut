@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GloomCraft.UI
+namespace NWO.UI
 {
     /// <summary>
     /// Mana bar UI - similar to health bar but with different color scheme

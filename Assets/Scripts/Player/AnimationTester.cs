@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Script test animation tạm thời - XÓA sau khi test xong

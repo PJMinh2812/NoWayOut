@@ -1,7 +1,7 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Mini-Boss: Con chuột trong phòng băng (Phòng 3)

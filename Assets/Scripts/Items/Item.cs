@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Base class for all items in the game
     /// </summary>
-    [CreateAssetMenu(fileName = "NewItem", menuName = "GloomCraft/Items/Item")]
+    [CreateAssetMenu(fileName = "NewItem", menuName = "NWO/Items/Item")]
     public class Item : ScriptableObject
     {
         [Header("Basic Info")]

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Individual hotbar slot UI

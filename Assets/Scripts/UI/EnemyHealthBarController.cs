@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft.UI
+namespace NWO.UI
 {
     /// <summary>
     /// World-space health bar that follows an enemy

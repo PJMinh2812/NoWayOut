@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
     public sealed class Projectile2D : MonoBehaviour

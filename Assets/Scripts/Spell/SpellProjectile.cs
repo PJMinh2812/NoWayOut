@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     // Projectile bay, gây damage, tự hủy sau thời gian hoặc va chạm
     [RequireComponent(typeof(Rigidbody2D), typeof(Animator), typeof(Collider2D))]

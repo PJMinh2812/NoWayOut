@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Hotbar UI controller

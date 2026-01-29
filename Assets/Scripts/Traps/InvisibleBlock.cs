@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Gạch tàng hình - Khối vô hình trên không trung đập đầu người chơi khi nhảy

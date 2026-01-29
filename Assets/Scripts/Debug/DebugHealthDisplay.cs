@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Debug script để hiển thị HP trên đầu Entity (Player/Enemy)

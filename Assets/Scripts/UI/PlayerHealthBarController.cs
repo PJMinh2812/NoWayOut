@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft.UI
+namespace NWO.UI
 {
     /// <summary>
     /// Controller that connects PlayerHealth2D to HealthBarUI

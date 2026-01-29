@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Camera shake effect - Hiệu ứng rung camera khi có va chạm hoặc bẫy kích hoạt

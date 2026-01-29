@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Sàn trơn - Người chơi bị trượt không kiểm soát được

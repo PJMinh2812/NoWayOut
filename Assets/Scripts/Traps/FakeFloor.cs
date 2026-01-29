@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Gạch rơi giả - Trông giống sàn thường nhưng sẽ biến mất khi người chơi bước vào

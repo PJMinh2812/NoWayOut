@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     // Quản lý HP và regeneration cho Player
     public sealed class PlayerHealth2D : MonoBehaviour

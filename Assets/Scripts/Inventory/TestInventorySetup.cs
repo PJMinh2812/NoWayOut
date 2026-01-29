@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Test script to add weapons to player inventory on start

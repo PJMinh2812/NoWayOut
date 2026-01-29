@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GloomCraft.UI
+namespace NWO.UI
 {
     /// <summary>
     /// UI Health Bar component - works with both HUD (screen space) and world space health bars

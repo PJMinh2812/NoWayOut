@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Manages player inventory and hotbar

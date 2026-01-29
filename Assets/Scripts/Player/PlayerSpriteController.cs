@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     // Xoay/flip sprite Player theo hướng ngắm
     public sealed class PlayerSpriteController : MonoBehaviour

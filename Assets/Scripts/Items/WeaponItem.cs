@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Weapon item that can be equipped and displayed on player
     /// </summary>
-    [CreateAssetMenu(fileName = "NewWeapon", menuName = "GloomCraft/Items/Weapon")]
+    [CreateAssetMenu(fileName = "NewWeapon", menuName = "NWO/Items/Weapon")]
     public class WeaponItem : Item
     {
         [Header("Weapon Stats")]

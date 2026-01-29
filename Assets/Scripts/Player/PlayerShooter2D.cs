@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GloomCraft
+namespace NWO
 {
     // Bắn projectile theo hướng chuột, tạo và quản lý muzzle position
     public sealed class PlayerShooter2D : MonoBehaviour

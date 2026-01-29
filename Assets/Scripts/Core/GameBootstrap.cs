@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft
+namespace NWO
 {
     /// <summary>
     /// Minimal bootstrap similar to microStudio's global.init/update.
@@ -22,7 +22,7 @@ namespace GloomCraft
         {
             if (stateMachine == null)
             {
-                Debug.LogError("[GloomCraft] Missing GameStateMachine in scene.");
+                Debug.LogError("[NWO] Missing GameStateMachine in scene.");
                 enabled = false;
                 return;
             }

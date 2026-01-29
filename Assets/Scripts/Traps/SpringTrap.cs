@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Lò xo troll - Bật người chơi bay ngược về phòng trước

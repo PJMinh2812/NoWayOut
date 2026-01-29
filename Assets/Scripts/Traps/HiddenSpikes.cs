@@ -1,5 +1,5 @@
 using UnityEngine;
-using GloomCraft;
+using NWO;
 
 /// <summary>
 /// Chông ẩn - Mọc lên khi người chơi đứng vào vị trí kích hoạt
