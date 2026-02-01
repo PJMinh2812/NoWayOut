@@ -22,7 +22,8 @@ namespace GloomCraft.Dungeon
         {
             if (player == null && findPlayerIfNull)
             {
-                var playerController = FindFirstObjectByType<PlayerController2D>();
+                var playerController = FindFirstObjectByType<NWO.PlayerController2D>();
+
                 if (playerController != null)
                 {
                     player = playerController.transform;
