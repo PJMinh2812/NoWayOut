@@ -20,11 +20,19 @@ namespace NWO
         [Header("Aim")]
         [SerializeField] private Camera worldCamera;
 
+        [Header("Sprite Flip")]
+        [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private bool flipByMovement = true;
+        [SerializeField] private bool flipByAim = true;
+        [SerializeField] private float flipThreshold = 0.1f; // Ngưỡng để tránh flip liên tục
+
         public float AimAngleDeg { get; private set; }
         public bool IsRolling => _rollingTimeRemaining > 0f;
         public Vector2 DashDirection { get; private set; }
+        public bool IsFacingRight { get; private set; } = true;
 
         private Rigidbody2D _rb;
+        private PlayerStamina _stamina;
         private float _cooldownRemaining;
         private float _rollingTimeRemaining;
         private Vector2 _rollVelocity;
@@ -32,12 +40,15 @@ namespace NWO
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
+            _stamina = GetComponent<PlayerStamina>();
             if (worldCamera == null) worldCamera = Camera.main;
+            if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
         private void Update()
         {
             UpdateAim();
+            UpdateFlip();
 
             if (_cooldownRemaining > 0f) _cooldownRemaining -= Time.deltaTime;
             if (_rollingTimeRemaining > 0f) _rollingTimeRemaining -= Time.deltaTime;
@@ -47,7 +58,15 @@ namespace NWO
                 var input = GetMoveInput();
                 if (input.sqrMagnitude > 0.0001f)
                 {
-                    StartRoll(input.normalized);
+                    // Kiểm tra stamina trước khi roll
+                    if (_stamina == null || _stamina.CanRoll())
+                    {
+                        StartRoll(input.normalized);
+                    }
+                    else
+                    {
+                        Debug.Log("[Player] Not enough stamina to roll!");
+                    }
                 }
             }
         }
@@ -80,6 +99,52 @@ namespace NWO
             _cooldownRemaining = rollCooldown;
             _rollVelocity = dir * rollSpeed;
             DashDirection = dir.normalized;
+            
+            // Tiêu tốn stamina
+            if (_stamina != null)
+            {
+                _stamina.TryConsumeRoll();
+            }
+        }
+
+        private void UpdateFlip()
+        {
+            if (spriteRenderer == null) return;
+
+            bool shouldFlip = false;
+            bool faceRight = IsFacingRight;
+
+            // Ưu tiên flip theo aim (khi cast spell)
+            if (flipByAim)
+            {
+                // Aim angle: 0° = right, 180° = left, ±90° = up/down
+                float aimX = Mathf.Cos(AimAngleDeg * Mathf.Deg2Rad);
+                
+                if (Mathf.Abs(aimX) > flipThreshold)
+                {
+                    faceRight = aimX > 0f;
+                    shouldFlip = true;
+                }
+            }
+
+            // Nếu không aim hoặc aim thẳng đứng, flip theo movement
+            if (!shouldFlip && flipByMovement)
+            {
+                var input = GetMoveInput();
+                
+                if (Mathf.Abs(input.x) > flipThreshold)
+                {
+                    faceRight = input.x > 0f;
+                    shouldFlip = true;
+                }
+            }
+
+            // Thực hiện flip nếu hướng thay đổi
+            if (shouldFlip && faceRight != IsFacingRight)
+            {
+                IsFacingRight = faceRight;
+                spriteRenderer.flipX = !IsFacingRight;
+            }
         }
 
         private void UpdateAim()

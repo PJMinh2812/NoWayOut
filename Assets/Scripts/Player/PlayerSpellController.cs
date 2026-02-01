@@ -31,6 +31,7 @@ namespace NWO
 
         private Animator _animator;
         private PlayerController2D _controller;
+        private PlayerStamina _stamina;
 
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
@@ -48,6 +49,7 @@ namespace NWO
         {
             _animator = GetComponent<Animator>();
             _controller = GetComponent<PlayerController2D>();
+            _stamina = GetComponent<PlayerStamina>();
         }
 
         private void Start()
@@ -148,9 +150,9 @@ namespace NWO
             }
             bool canCast = _currentSpell switch
             {
-                1 => _spell01CooldownRemaining <= 0f,
-                2 => _spell02CooldownRemaining <= 0f,
-                3 => _spell03CooldownRemaining <= 0f,
+                1 => _spell01CooldownRemaining <= 0f && (_stamina == null || _stamina.CanCastSpell(1)),
+                2 => _spell02CooldownRemaining <= 0f && (_stamina == null || _stamina.CanCastSpell(2)),
+                3 => _spell03CooldownRemaining <= 0f && (_stamina == null || _stamina.CanCastSpell(3)),
                 _ => false
             };
 
@@ -160,12 +162,35 @@ namespace NWO
             }
             else
             {
-                Debug.Log($"[Spell] Spell {_currentSpell} on cooldown!");
+                // Phân biệt lỗi cooldown vs stamina
+                bool onCooldown = _currentSpell switch
+                {
+                    1 => _spell01CooldownRemaining > 0f,
+                    2 => _spell02CooldownRemaining > 0f,
+                    3 => _spell03CooldownRemaining > 0f,
+                    _ => false
+                };
+                
+                if (onCooldown)
+                {
+                    Debug.Log($"[Spell] Spell {_currentSpell} on cooldown!");
+                }
+                else if (_stamina != null && !_stamina.CanCastSpell(_currentSpell))
+                {
+                    Debug.Log($"[Spell] Not enough stamina for Spell {_currentSpell}!");
+                }
             }
         }
 
         private void CastCurrentSpell()
         {
+            // Tiêu tốn stamina trước
+            if (_stamina != null && !_stamina.TryConsumeSpell(_currentSpell))
+            {
+                Debug.LogWarning("[Spell] Failed to consume stamina!");
+                return;
+            }
+            
             _animator.SetTrigger("CastSpell");
             _isCasting = true;
             _castingTime = 0f;
