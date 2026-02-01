@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Central orchestrator for dungeon map initialization.

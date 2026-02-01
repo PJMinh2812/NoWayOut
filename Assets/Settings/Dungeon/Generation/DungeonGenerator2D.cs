@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// C# port của ms/lib/plasmapuffs/dungeon_generation/dungeon.ms (rooms + tunnels + border + start/finish).

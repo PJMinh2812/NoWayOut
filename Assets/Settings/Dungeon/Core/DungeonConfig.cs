@@ -1,13 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// ScriptableObject containing dungeon generation parameters.
     /// Allows for easy difficulty scaling and level design.
     /// </summary>
-    [CreateAssetMenu(fileName = "DungeonConfig", menuName = "GloomCraft/Dungeon Config")]
+    [CreateAssetMenu(fileName = "DungeonConfig", menuName = "NWO/Dungeon Config")]
     public sealed class DungeonConfig : ScriptableObject
     {
         [Header("Map Size")]

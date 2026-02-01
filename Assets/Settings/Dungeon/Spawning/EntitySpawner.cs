@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Handles spawning of entities (enemies, furniture) in the dungeon.

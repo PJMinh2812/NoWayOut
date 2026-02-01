@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Interface for dungeon rendering implementations.

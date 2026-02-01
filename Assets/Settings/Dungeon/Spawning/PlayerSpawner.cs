@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Handles player spawning and positioning in the dungeon.

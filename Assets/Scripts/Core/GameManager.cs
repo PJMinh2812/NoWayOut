@@ -110,7 +110,7 @@ namespace NWO
             
             // Try to regenerate map with new layout instead of reloading scene
             // Support both new and legacy dungeon systems
-            var mapManager = FindFirstObjectByType<GloomCraft.Dungeon.MapInitializationManager>();
+            var mapManager = FindFirstObjectByType<NWO.Dungeon.MapInitializationManager>();
             if (mapManager != null)
             {
                 // New system
@@ -121,7 +121,7 @@ namespace NWO
             
             // Try legacy system
             #pragma warning disable CS0618 // Type is obsolete but needed for backward compatibility
-            var legacyBuilder = FindFirstObjectByType<GloomCraft.Dungeon.UnityDungeonTilemapBuilder>();
+            var legacyBuilder = FindFirstObjectByType<NWO.Dungeon.UnityDungeonTilemapBuilder>();
             #pragma warning restore CS0618
             if (legacyBuilder != null)
             {

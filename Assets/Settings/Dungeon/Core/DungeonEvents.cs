@@ -1,6 +1,6 @@
 using System;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Central event hub for dungeon-related events.

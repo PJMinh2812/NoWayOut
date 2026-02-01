@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     public enum DungeonCell
     {

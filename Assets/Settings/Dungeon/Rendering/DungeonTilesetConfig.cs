@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// ScriptableObject chứa danh sách sprites cho dungeon/tileset (theo thứ tự frame microStudio).

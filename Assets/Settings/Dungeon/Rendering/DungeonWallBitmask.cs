@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GloomCraft.Dungeon
+namespace NWO.Dungeon
 {
     /// <summary>
     /// Port của global.dungeonWallBitmasks(dungeon, column, row) trong ms/game/dungeon/rendering.ms.
