@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 namespace NWO
 {
@@ -29,6 +30,26 @@ namespace NWO
         private PlayerHealth2D _playerHealth;
         private UI.EnemyHealthBarController _healthBarController;
 
+        [Header("Animation")]
+        [SerializeField] private Animator animator;
+        [Tooltip("Seconds to show attack animation before resetting isAttacking")]
+        [SerializeField] private float attackAnimDuration = 0.25f;
+        [Tooltip("Delay before destroying enemy to allow death animation to play. Increase if animation is cut off.")]
+        [SerializeField] private float deathAnimDuration = 2f;
+
+        // Sprite flip for facing direction
+        [SerializeField] private SpriteRenderer spriteRenderer;
+
+        [Header("Combat")]
+        [Tooltip("Distance within which enemy will attempt to attack")]
+        [SerializeField] private float attackRange = 1f;
+        [Tooltip("Seconds between consecutive attacks")]
+        [SerializeField] private float attackCooldown = 0.8f;
+
+        private bool _canAttack = true;
+        private bool _isAttacking = false;
+        private bool _isDead = false;
+
         public int GetCurrentHealth() => _currentHealth;
         public int GetMaxHealth() => maxHealth;
 
@@ -36,7 +57,25 @@ namespace NWO
         {
             _rb = GetComponent<Rigidbody2D>();
             _player = FindFirstObjectByType<PlayerController2D>();
-            if (_player != null) _playerHealth = _player.GetComponent<PlayerHealth2D>();
+            
+            if (_player != null)
+            {
+                Debug.Log($"[Enemy] Found Player: {_player.name}");
+                _playerHealth = _player.GetComponent<PlayerHealth2D>();
+                if (_playerHealth != null)
+                {
+                    Debug.Log("[Enemy] PlayerHealth2D found!");
+                }
+                else
+                {
+                    Debug.LogError("[Enemy] PlayerHealth2D component NOT FOUND on Player! Enemy cannot deal damage!");
+                }
+            }
+            else
+            {
+                Debug.LogError("[Enemy] Player with PlayerController2D NOT FOUND in scene!");
+            }
+            
             _currentHealth = maxHealth;
             
             // Spawn health bar if prefab assigned
@@ -49,19 +88,79 @@ namespace NWO
                     _healthBarController.SetTarget(this);
                 }
             }
+
+            // Auto-assign animator if not set in inspector
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
+
+            // Auto-assign sprite renderer if not set in inspector
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            }
         }
 
         private void FixedUpdate()
         {
+            if (_isDead) return;
+            
             _rb.linearDamping = friction;
 
-            if (_player == null) return;
+            if (_player == null)
+            {
+                Debug.LogWarning("[Enemy] Player reference is NULL!");
+                if (animator != null) animator.SetBool("isMoving", false);
+                return;
+            }
 
             var toPlayer = (Vector2)(_player.transform.position - transform.position);
             var dist = toPlayer.magnitude;
-            if (dist > aggroRadius) return;
+            
+            // Debug distance every second (60 fixed frames = ~1 sec)
+            if (Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[Enemy] Distance to player: {dist:F2} | AttackRange: {attackRange} | CanAttack: {_canAttack} | IsAttacking: {_isAttacking}");
+            }
+            
+            if (dist > aggroRadius)
+            {
+                if (animator != null) animator.SetBool("isMoving", false);
+                return;
+            }
 
-            if (dist > 0.1f)
+            // Start attack if within range and ready
+            if (_player != null && _playerHealth != null && dist <= attackRange && _canAttack && !_isAttacking)
+            {
+                Debug.Log($"[Enemy] Starting attack! Distance: {dist}, Range: {attackRange}");
+                StartCoroutine(PerformAttack());
+            }
+            else if (dist <= attackRange)
+            {
+                // Debug why attack not starting
+                if (_playerHealth == null) Debug.LogWarning("[Enemy] PlayerHealth is NULL!");
+                if (!_canAttack) Debug.Log("[Enemy] Cannot attack - on cooldown");
+                if (_isAttacking) Debug.Log("[Enemy] Already attacking");
+            }
+
+            // Don't move during attack - stop and play attack animation
+            if (_isAttacking)
+            {
+                if (animator != null) animator.SetBool("isMoving", false);
+                _rb.linearVelocity = Vector2.zero;
+                
+                // Flip sprite to face player during attack
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.flipX = (_player.transform.position.x - transform.position.x) < 0f;
+                }
+                return;
+            }
+
+            // Move towards player (even if in attack range but on cooldown)
+            // Stop only when very close to avoid jittering
+            if (dist > 0.5f)
             {
                 var dir = toPlayer / dist;
                 _rb.AddForce(dir * moveAcceleration, ForceMode2D.Force);
@@ -70,6 +169,27 @@ namespace NWO
                 if (v.magnitude > maxMoveSpeed)
                 {
                     _rb.linearVelocity = v.normalized * maxMoveSpeed;
+                }
+            }
+
+            // Update animator isMoving param
+            if (animator != null)
+            {
+                bool isMoving = _rb.linearVelocity.magnitude > 0.1f;
+                animator.SetBool("isMoving", isMoving);
+            }
+
+            // Flip sprite to face movement/player
+            if (spriteRenderer != null)
+            {
+                float vx = _rb.linearVelocity.x;
+                if (Mathf.Abs(vx) > 0.05f)
+                {
+                    spriteRenderer.flipX = vx < 0f; // flip when moving left
+                }
+                else if (_player != null)
+                {
+                    spriteRenderer.flipX = (_player.transform.position.x - transform.position.x) < 0f;
                 }
             }
         }
@@ -91,23 +211,95 @@ namespace NWO
 
         private void Die()
         {
-            Debug.Log($"[Enemy] Died at position {transform.position}");
+            if (_isDead) return;
+            _isDead = true;
             
+            // Play death animation - use Trigger to avoid re-triggering from Any State
+            if (animator != null)
+            {
+                animator.SetTrigger("Death"); // Use Trigger instead of Bool
+                animator.SetBool("isDead", true); // Optional: can be used for conditions
+            }
+
+            // disable physics and collisions
+            var cols = GetComponents<Collider2D>();
+            foreach (var c in cols) c.enabled = false;
+            _rb.linearVelocity = Vector2.zero;
+            _rb.bodyType = RigidbodyType2D.Kinematic;
+
             // Check if this is a boss and notify BossManager
             BossManager bossManager = FindFirstObjectByType<BossManager>();
             if (bossManager != null)
             {
-                Debug.Log("[Enemy] Notifying BossManager of boss defeat!");
                 bossManager.OnBossDefeated();
             }
-            
-            // Destroy health bar first
-            if (_healthBarController != null)
-            {
-                Destroy(_healthBarController.gameObject);
-            }
-            
+
+            // Delay destroy so death animation can play
+            StartCoroutine(DelayedDestroy(deathAnimDuration));
+        }
+
+        private IEnumerator DelayedDestroy(float delay)
+        {
+            yield return new WaitForSeconds(delay);
             Destroy(gameObject);
+        }
+
+        /// <summary>
+        /// Perform complete attack sequence: animation -> deal damage -> cooldown
+        /// </summary>
+        private IEnumerator PerformAttack()
+        {
+            if (_isDead || _player == null || _playerHealth == null) yield break;
+
+            _isAttacking = true;
+            _canAttack = false;
+
+            // Start attack animation
+            if (animator != null)
+            {
+                Debug.Log("[Enemy] Setting isAttacking = true on animator");
+                animator.SetBool("isAttacking", true);
+            }
+            else
+            {
+                Debug.LogWarning("[Enemy] Animator is NULL! Cannot play attack animation!");
+            }
+
+            // Wait for attack animation to reach hit frame
+            yield return new WaitForSeconds(attackAnimDuration * 0.5f); // Deal damage halfway through animation
+
+            // Deal damage if player still in range
+            if (_player != null && _playerHealth != null)
+            {
+                float dist = Vector2.Distance(transform.position, _player.transform.position);
+                if (dist <= attackRange * 1.2f) // Slightly larger range to account for movement
+                {
+                    var dmg = Random.Range(damageRange.x, damageRange.y + 1);
+                    var dir = (Vector2)(_player.transform.position - transform.position);
+                    var knock = dir.normalized * knockbackStrength;
+                    var rb = _player.GetComponent<Rigidbody2D>();
+
+                    _playerHealth.TakeDamage(dmg, knock, rb);
+                    Debug.Log($"[Enemy] Dealt {dmg} damage to player!");
+                }
+            }
+
+            // Wait for rest of attack animation
+            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+
+            // Reset attack animation
+            if (animator != null)
+            {
+                Debug.Log("[Enemy] Setting isAttacking = false on animator");
+                animator.SetBool("isAttacking", false);
+            }
+            _isAttacking = false;
+
+            // Start cooldown
+            Debug.Log($"[Enemy] Attack cooldown started: {attackCooldown}s");
+            yield return new WaitForSeconds(attackCooldown);
+            _canAttack = true;
+            Debug.Log("[Enemy] Ready to attack again");
         }
 
         private void OnDestroy()
@@ -117,19 +309,6 @@ namespace NWO
             {
                 Destroy(_healthBarController.gameObject);
             }
-        }
-
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            if (_player == null || _playerHealth == null) return;
-            if (!collision.collider.TryGetComponent<PlayerController2D>(out var playerController)) return;
-
-            var dmg = Random.Range(damageRange.x, damageRange.y + 1);
-            var dir = (Vector2)(playerController.transform.position - transform.position);
-            var knock = dir.normalized * knockbackStrength;
-
-            var rb = playerController.GetComponent<Rigidbody2D>();
-            _playerHealth.TakeDamage(dmg, knock, rb);
         }
     }
 }
