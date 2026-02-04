@@ -60,20 +60,7 @@ namespace NWO
             
             if (_player != null)
             {
-                Debug.Log($"[Enemy] Found Player: {_player.name}");
                 _playerHealth = _player.GetComponent<PlayerHealth2D>();
-                if (_playerHealth != null)
-                {
-                    Debug.Log("[Enemy] PlayerHealth2D found!");
-                }
-                else
-                {
-                    Debug.LogError("[Enemy] PlayerHealth2D component NOT FOUND on Player! Enemy cannot deal damage!");
-                }
-            }
-            else
-            {
-                Debug.LogError("[Enemy] Player with PlayerController2D NOT FOUND in scene!");
             }
             
             _currentHealth = maxHealth;
@@ -110,19 +97,12 @@ namespace NWO
 
             if (_player == null)
             {
-                Debug.LogWarning("[Enemy] Player reference is NULL!");
                 if (animator != null) animator.SetBool("isMoving", false);
                 return;
             }
 
             var toPlayer = (Vector2)(_player.transform.position - transform.position);
             var dist = toPlayer.magnitude;
-            
-            // Debug distance every second (60 fixed frames = ~1 sec)
-            if (Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[Enemy] Distance to player: {dist:F2} | AttackRange: {attackRange} | CanAttack: {_canAttack} | IsAttacking: {_isAttacking}");
-            }
             
             if (dist > aggroRadius)
             {
@@ -133,15 +113,7 @@ namespace NWO
             // Start attack if within range and ready
             if (_player != null && _playerHealth != null && dist <= attackRange && _canAttack && !_isAttacking)
             {
-                Debug.Log($"[Enemy] Starting attack! Distance: {dist}, Range: {attackRange}");
                 StartCoroutine(PerformAttack());
-            }
-            else if (dist <= attackRange)
-            {
-                // Debug why attack not starting
-                if (_playerHealth == null) Debug.LogWarning("[Enemy] PlayerHealth is NULL!");
-                if (!_canAttack) Debug.Log("[Enemy] Cannot attack - on cooldown");
-                if (_isAttacking) Debug.Log("[Enemy] Already attacking");
             }
 
             // Don't move during attack - stop and play attack animation
@@ -201,8 +173,6 @@ namespace NWO
 
             _rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
 
-            Debug.Log($"[Enemy] Took {amount} damage! HP: {_currentHealth}/{maxHealth}");
-
             if (_currentHealth <= 0)
             {
                 Die();
@@ -257,22 +227,17 @@ namespace NWO
             // Start attack animation
             if (animator != null)
             {
-                Debug.Log("[Enemy] Setting isAttacking = true on animator");
                 animator.SetBool("isAttacking", true);
             }
-            else
-            {
-                Debug.LogWarning("[Enemy] Animator is NULL! Cannot play attack animation!");
-            }
 
-            // Wait for attack animation to reach hit frame
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f); // Deal damage halfway through animation
+            // Wait for attack animation to reach hit frame (deal damage halfway through animation)
+            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
 
-            // Deal damage if player still in range
+            // Deal damage only after animation has progressed
             if (_player != null && _playerHealth != null)
             {
                 float dist = Vector2.Distance(transform.position, _player.transform.position);
-                if (dist <= attackRange * 1.2f) // Slightly larger range to account for movement
+                if (dist <= attackRange * 1.2f)
                 {
                     var dmg = Random.Range(damageRange.x, damageRange.y + 1);
                     var dir = (Vector2)(_player.transform.position - transform.position);
@@ -280,7 +245,6 @@ namespace NWO
                     var rb = _player.GetComponent<Rigidbody2D>();
 
                     _playerHealth.TakeDamage(dmg, knock, rb);
-                    Debug.Log($"[Enemy] Dealt {dmg} damage to player!");
                 }
             }
 
@@ -290,16 +254,13 @@ namespace NWO
             // Reset attack animation
             if (animator != null)
             {
-                Debug.Log("[Enemy] Setting isAttacking = false on animator");
                 animator.SetBool("isAttacking", false);
             }
             _isAttacking = false;
 
-            // Start cooldown
-            Debug.Log($"[Enemy] Attack cooldown started: {attackCooldown}s");
+            // Start cooldown before next attack
             yield return new WaitForSeconds(attackCooldown);
             _canAttack = true;
-            Debug.Log("[Enemy] Ready to attack again");
         }
 
         private void OnDestroy()
