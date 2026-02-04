@@ -52,20 +52,20 @@ namespace NWO
             }
         }
 
-        public void TriggerDamage()
-        {
-            if (animator != null)
-            {
-                animator.SetTrigger("TakeDamage");
-            }
-        }
+        //public void TriggerDamage()
+        //{
+        //    if (animator != null)
+        //    {
+        //        animator.SetTrigger("Hurt");
+        //    }
+        //}
 
-        public void TriggerDeath()
-        {
-            if (animator != null)
-            {
-                animator.SetBool("IsDead", true);
-            }
-        }
+        //public void TriggerDeath()
+        //{
+        //    if (animator != null)
+        //    {
+        //        animator.SetBool("IsDead", true);
+        //    }
+        //}
     }
 }
