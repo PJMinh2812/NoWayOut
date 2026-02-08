@@ -271,6 +271,10 @@ MonoBehaviour:
   maxHealth: 100
   regenerationPerSecond: 0.5
   invincibleDuration: 0.5
+  animator: {fileID: 4192611349352468317}
+  hurtTrigger: Hurt
+  isDeadParameter: IsDead
+  deathDisableDelay: 0.6
 --- !u!114 &4931834133791403852
 MonoBehaviour:
   m_ObjectHideFlags: 0

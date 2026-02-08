@@ -1514,7 +1514,7 @@ MonoBehaviour:
   creditsButton: {fileID: 0}
   quitButton: {fileID: 863470166}
   backButton: {fileID: 1317344408}
-  gameSceneName: GameScene
+  gameSceneName: Level_01_TheAwakening
 --- !u!1 &765448119
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,6 +13,7 @@ namespace NWO
         [Header("UI References")]
         [SerializeField] private Button restartButton;
         [SerializeField] private Button mainMenuButton;
+        [SerializeField] private Button exitButton;
         [SerializeField] private TextMeshProUGUI gameOverText;
 
         [Header("Settings")]
@@ -30,6 +31,11 @@ namespace NWO
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.AddListener(OnMainMenuClicked);
+            }
+
+            if (exitButton != null)
+            {
+                exitButton.onClick.AddListener(OnExitClicked);
             }
 
             // Set game over text
@@ -54,6 +60,24 @@ namespace NWO
             SceneManager.LoadScene(mainMenuSceneName);
         }
 
+        private void OnExitClicked()
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.QuitGame();
+            }
+            else
+            {
+                // Fallback nếu không có GameManager
+                Debug.Log("[GameOverUI] Quitting game...");
+                #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+                #else
+                Application.Quit();
+                #endif
+            }
+        }
+
         private void OnDestroy()
         {
             // Clean up listeners
@@ -65,6 +89,11 @@ namespace NWO
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
+            }
+
+            if (exitButton != null)
+            {
+                exitButton.onClick.RemoveListener(OnExitClicked);
             }
         }
     }
