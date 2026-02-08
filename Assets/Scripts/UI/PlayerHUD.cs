@@ -5,16 +5,8 @@ using TMPro;
 namespace NWO
 {
     /// <summary>
-    /// PLAYER HUD - UI hiển thị Health và Stamina
-    /// 
-    /// HIỂN THỊ:
-    /// 1. Health Bar - Thanh máu (hearts hoặc bar)
-    /// 2. Stamina Bar - Thanh năng lượng
-    /// 3. Current values (số)
-    /// 
-    /// AUTO-SETUP:
-    /// - Tự động tìm PlayerHealth2D và PlayerStamina
-    /// - Cập nhật real-time
+    /// PlayerHUD - Quản lý hiển thị Health và Stamina bar cho Player
+    /// Sử dụng sprites từ Assets/Art/UI (ValueRed, ValueBlue, etc.)
     /// </summary>
     public class PlayerHUD : MonoBehaviour
     {
@@ -23,27 +15,39 @@ namespace NWO
         [SerializeField] private PlayerStamina staminaComponent;
 
         [Header("Health UI")]
-        [Tooltip("Image fill cho health bar")]
+        [Tooltip("Background Image cho health bar (dùng AttributesBar hoặc HealthBarPanel)")]
+        [SerializeField] private Image healthBarBackground;
+        
+        [Tooltip("Image fill cho health bar (dùng ValueRed sprite)")]
         [SerializeField] private Image healthBarFill;
         
         [Tooltip("Text hiển thị HP (optional)")]
         [SerializeField] private TextMeshProUGUI healthText;
         
         [Tooltip("Màu health bar đầy")]
-        [SerializeField] private Color fullHealthColor = Color.green;
+        [SerializeField] private Color fullHealthColor = new Color(0.8f, 0.2f, 0.2f); // Red
         
         [Tooltip("Màu health bar thấp")]
-        [SerializeField] private Color lowHealthColor = Color.red;
+        [SerializeField] private Color lowHealthColor = new Color(0.4f, 0.1f, 0.1f); // Dark red
         
         [Tooltip("Ngưỡng health thấp (%)")]
         [SerializeField] private float lowHealthThreshold = 30f;
 
         [Header("Stamina UI")]
-        [Tooltip("Image fill cho stamina bar")]
+        [Tooltip("Background Image cho stamina bar (dùng AttributesBar)")]
+        [SerializeField] private Image staminaBarBackground;
+        
+        [Tooltip("Image fill cho stamina bar (dùng ValueBlue sprite)")]
         [SerializeField] private Image staminaBarFill;
         
         [Tooltip("Text hiển thị stamina (optional)")]
         [SerializeField] private TextMeshProUGUI staminaText;
+        
+        [Tooltip("Màu stamina bar đầy")]
+        [SerializeField] private Color fullStaminaColor = new Color(0.3f, 0.8f, 1f); // Blue
+        
+        [Tooltip("Màu stamina bar thấp")]
+        [SerializeField] private Color lowStaminaColor = new Color(1f, 0.5f, 0f); // Orange
 
         [Header("Animation")]
         [Tooltip("Smooth lerp cho bars")]
@@ -58,7 +62,7 @@ namespace NWO
 
         private void Awake()
         {
-            // Auto-find components
+            // Auto-find components nếu chưa gán
             if (healthComponent == null || staminaComponent == null)
             {
                 var player = GameObject.FindGameObjectWithTag("Player");
@@ -70,14 +74,25 @@ namespace NWO
                     if (staminaComponent == null)
                         staminaComponent = player.GetComponent<PlayerStamina>();
                 }
+                else
+                {
+                    Debug.LogWarning("[PlayerHUD] Player GameObject not found! Make sure Player has 'Player' tag.");
+                }
             }
 
             // Initialize smooth values
             if (healthComponent != null)
                 _currentHealthFill = (float)healthComponent.CurrentHealth / healthComponent.MaxHealth;
+            else
+                Debug.LogError("[PlayerHUD] PlayerHealth2D component not found!");
             
             if (staminaComponent != null)
                 _currentStaminaFill = staminaComponent.StaminaPercent;
+            else
+                Debug.LogError("[PlayerHUD] PlayerStamina component not found!");
+            
+            // Validate UI references
+            ValidateUIReferences();
         }
 
         private void Update()
@@ -87,11 +102,30 @@ namespace NWO
         }
 
         /// <summary>
-        /// Cập nhật UI health bar
+        /// Validate tất cả UI references và log warnings nếu thiếu
+        /// </summary>
+        private void ValidateUIReferences()
+        {
+            if (healthBarFill == null)
+                Debug.LogWarning("[PlayerHUD] Health Bar Fill Image not assigned! Drag ValueRed sprite here.");
+            
+            if (staminaBarFill == null)
+                Debug.LogWarning("[PlayerHUD] Stamina Bar Fill Image not assigned! Drag ValueBlue sprite here.");
+            
+            // Background images are optional but recommended
+            if (healthBarBackground == null)
+                Debug.Log("[PlayerHUD] Health Bar Background not assigned (optional). Use AttributesBar or HealthBarPanel sprite.");
+            
+            if (staminaBarBackground == null)
+                Debug.Log("[PlayerHUD] Stamina Bar Background not assigned (optional). Use AttributesBar sprite.");
+        }
+
+        /// <summary>
+        /// Update Health bar UI mỗi frame
         /// </summary>
         private void UpdateHealthUI()
         {
-            if (healthComponent == null) return;
+            if (healthComponent == null || healthBarFill == null) return;
 
             float targetFill = (float)healthComponent.CurrentHealth / healthComponent.MaxHealth;
 
@@ -106,25 +140,22 @@ namespace NWO
             }
 
             // Update fill amount
-            if (healthBarFill != null)
-            {
-                healthBarFill.fillAmount = _currentHealthFill;
+            healthBarFill.fillAmount = _currentHealthFill;
 
-                // Color based on health %
-                float healthPercent = _currentHealthFill * 100f;
-                if (healthPercent <= lowHealthThreshold)
-                {
-                    healthBarFill.color = lowHealthColor;
-                }
-                else
-                {
-                    // Lerp từ low → full color
-                    float t = (healthPercent - lowHealthThreshold) / (100f - lowHealthThreshold);
-                    healthBarFill.color = Color.Lerp(lowHealthColor, fullHealthColor, t);
-                }
+            // Color based on health %
+            float healthPercent = _currentHealthFill * 100f;
+            if (healthPercent <= lowHealthThreshold)
+            {
+                healthBarFill.color = lowHealthColor;
+            }
+            else
+            {
+                // Lerp từ low → full color
+                float t = (healthPercent - lowHealthThreshold) / (100f - lowHealthThreshold);
+                healthBarFill.color = Color.Lerp(lowHealthColor, fullHealthColor, t);
             }
 
-            // Update text
+            // Update text nếu có
             if (healthText != null)
             {
                 healthText.text = $"{healthComponent.CurrentHealth} / {healthComponent.MaxHealth}";
@@ -132,11 +163,11 @@ namespace NWO
         }
 
         /// <summary>
-        /// Cập nhật UI stamina bar
+        /// Update Stamina bar UI mỗi frame
         /// </summary>
         private void UpdateStaminaUI()
         {
-            if (staminaComponent == null) return;
+            if (staminaComponent == null || staminaBarFill == null) return;
 
             float targetFill = staminaComponent.StaminaPercent;
 
@@ -151,28 +182,33 @@ namespace NWO
             }
 
             // Update fill amount
-            if (staminaBarFill != null)
-            {
-                staminaBarFill.fillAmount = _currentStaminaFill;
-                staminaBarFill.color = staminaComponent.GetStaminaBarColor();
-            }
+            staminaBarFill.fillAmount = _currentStaminaFill;
+            
+            // Update color - dùng color từ PlayerStamina component
+            staminaBarFill.color = staminaComponent.GetStaminaBarColor();
 
-            // Update text
+            // Update text nếu có
             if (staminaText != null)
             {
                 staminaText.text = $"{Mathf.RoundToInt(staminaComponent.CurrentStamina)} / {staminaComponent.MaxStamina}";
             }
         }
 
-        // === PUBLIC METHODS ===
-
         /// <summary>
-        /// Set references manually (nếu cần)
+        /// Set manual references cho health và stamina components
+        /// Dùng khi muốn override auto-find
         /// </summary>
         public void SetReferences(PlayerHealth2D health, PlayerStamina stamina)
         {
             healthComponent = health;
             staminaComponent = stamina;
+            
+            // Re-initialize smooth values
+            if (healthComponent != null)
+                _currentHealthFill = (float)healthComponent.CurrentHealth / healthComponent.MaxHealth;
+            
+            if (staminaComponent != null)
+                _currentStaminaFill = staminaComponent.StaminaPercent;
         }
     }
 }

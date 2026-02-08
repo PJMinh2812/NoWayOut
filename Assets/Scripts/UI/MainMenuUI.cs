@@ -17,7 +17,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button backButton;
 
     [Header("Settings")]
-    [SerializeField] private string gameSceneName = "GameScene";
+    [SerializeField] private string gameSceneName = "Level_01_TheAwakening";
 
     private void Start()
     {

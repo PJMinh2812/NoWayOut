@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 4484952274552153833}
   - component: {fileID: 4523477366288393800}
   - component: {fileID: 8020047373847308342}
-  - component: {fileID: 2720192271901516643}
   - component: {fileID: 1136003576512758893}
   - component: {fileID: 5547065384358357140}
   - component: {fileID: 4931834133791403852}
@@ -148,7 +147,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &4484952274552153833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,23 +232,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.7791444, y: 1.019678}
   m_EdgeRadius: 0
---- !u!114 &2720192271901516643
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1296187675758871721}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f7a3c9e2d1b8a5497e6f8c3b2d9a1e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.AnimationTester
-  animController: {fileID: 0}
-  damageKey: 34
-  deathKey: 32
-  resetKey: 40
-  showDebugInfo: 0
 --- !u!114 &1136003576512758893
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -289,6 +271,10 @@ MonoBehaviour:
   maxHealth: 100
   regenerationPerSecond: 0.5
   invincibleDuration: 0.5
+  animator: {fileID: 4192611349352468317}
+  hurtTrigger: Hurt
+  isDeadParameter: IsDead
+  deathDisableDelay: 0.6
 --- !u!114 &4931834133791403852
 MonoBehaviour:
   m_ObjectHideFlags: 0

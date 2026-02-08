@@ -18,7 +18,7 @@ namespace NWO
         [SerializeField] private int totalLightFragments = 3; // Tổng số mảnh cần thu thập
         
         [Header("References")]
-        [SerializeField] private GameObject gameOverUI;
+        [SerializeField] private GameObject gameOverUI; // GameOverPanel hoặc GameOverCanvas
 
         public bool IsGameOver => isGameOver;
         public int LightFragmentsCollected => lightFragmentsCollected;
@@ -52,7 +52,22 @@ namespace NWO
 
             if (gameOverUI != null)
             {
+                // Nếu gameOverUI là Panel, cần tìm parent Canvas
+                var canvas = gameOverUI.GetComponentInParent<Canvas>();
+                if (canvas != null && !canvas.gameObject.activeSelf)
+                {
+                    // Active Canvas trước
+                    canvas.gameObject.SetActive(true);
+                    Debug.Log("[GameManager] Activated GameOverCanvas");
+                }
+                
+                // Active panel/UI
                 gameOverUI.SetActive(true);
+                Debug.Log("[GameManager] Game Over UI Activated!");
+            }
+            else
+            {
+                Debug.LogError("[GameManager] Game Over UI reference is NULL!");
             }
 
             Debug.Log("[GameManager] Game Over!");

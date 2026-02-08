@@ -37,35 +37,35 @@ namespace NWO
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             
-            // Test Damage Animation
-            if (keyboard[damageKey].wasPressedThisFrame)
-            {
-                if (animController != null)
-                {
-                    animController.TriggerDamage();
-                    Debug.Log("🩸 [TEST] Damage animation triggered!");
-                }
-            }
+            //// Test Damage Animation
+            //if (keyboard[damageKey].wasPressedThisFrame)
+            //{
+            //    if (animController != null)
+            //    {
+            //        animController.TriggerDamage();
+            //        Debug.Log("🩸 [TEST] Damage animation triggered!");
+            //    }
+            //}
             
-            // Test Death Animation
-            if (keyboard[deathKey].wasPressedThisFrame)
-            {
-                if (animController != null)
-                {
-                    animController.TriggerDeath();
-                    Debug.Log("💀 [TEST] Death animation triggered!");
-                }
-            }
+            //// Test Death Animation
+            //if (keyboard[deathKey].wasPressedThisFrame)
+            //{
+            //    if (animController != null)
+            //    {
+            //        animController.TriggerDeath();
+            //        Debug.Log("💀 [TEST] Death animation triggered!");
+            //    }
+            //}
             
-            // Reset (revive from death)
-            if (keyboard[resetKey].wasPressedThisFrame)
-            {
-                if (animator != null)
-                {
-                    animator.SetBool("IsDead", false);
-                    Debug.Log("♻️ [TEST] Reset - Revived!");
-                }
-            }
+            //// Reset (revive from death)
+            //if (keyboard[resetKey].wasPressedThisFrame)
+            //{
+            //    if (animator != null)
+            //    {
+            //        animator.SetBool("IsDead", false);
+            //        Debug.Log("♻️ [TEST] Reset - Revived!");
+            //    }
+            //}
         }
         
         private void OnGUI()

@@ -210,15 +210,11 @@ namespace NWO
                     break;
             }
 
-            // TEMPORARY FIX: Spawn projectile ngay và complete sau delay ngắn
-            // TODO: Setup Animation Events (xem SETUP_SPELL_ANIMATION_EVENTS.md)
             OnSpawnSpellProjectile();
             Invoke(nameof(OnSpellCastComplete), 0.3f); // Reset sau 0.3s
         }
 
-        /// <summary>
-        /// Được gọi từ Animation Event khi spell animation kết thúc
-        /// </summary>
+
         public void OnSpellCastComplete()
         {
             _isCasting = false;
@@ -226,9 +222,7 @@ namespace NWO
             Debug.Log("[Spell] Cast complete!");
         }
 
-        /// <summary>
-        /// Được gọi từ Animation Event tại frame spawn projectile
-        /// </summary>
+
         public void OnSpawnSpellProjectile()
         {
             GameObject projectilePrefab = _currentSpell switch
