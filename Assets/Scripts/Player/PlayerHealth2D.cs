@@ -30,6 +30,7 @@ namespace NWO
         public bool IsDead { get; private set; }
 
         private float _invincibleTimer;
+        private PlayerSpellController _spellController;
         
         // Animation parameter hashes (tối ưu performance)
         private int _hurtHash;
@@ -43,11 +44,16 @@ namespace NWO
             if (animator == null)
                 animator = GetComponent<Animator>();
             
+            // Get spell controller reference
+            _spellController = GetComponent<PlayerSpellController>();
+            
             // Cache animation parameter hashes
             if (animator != null)
             {
-                _hurtHash = Animator.StringToHash(hurtTrigger);
-                _isDeadHash = Animator.StringToHash(isDeadParameter);
+                if (!string.IsNullOrEmpty(hurtTrigger))
+                    _hurtHash = Animator.StringToHash(hurtTrigger);
+                if (!string.IsNullOrEmpty(isDeadParameter))
+                    _isDeadHash = Animator.StringToHash(isDeadParameter);
             }
             else
             {
@@ -84,11 +90,21 @@ namespace NWO
 
             Debug.Log($"[Player] Took {amount} damage! HP: {CurrentHealth}/{maxHealth}");
 
-            // ⭐ TRIGGER ANIMATION DAMAGE
-            if (animator != null && CurrentHealth > 0)
+            // ⭐ TRIGGER ANIMATION DAMAGE (CHỈ khi KHÔNG ở spell state)
+            // Nếu đang ở spell state (1/2/3), giữ nguyên animation, không trigger Hurt
+            bool isInSpellState = _spellController != null && _spellController.CurrentSpell > 0;
+            
+            if (animator != null && CurrentHealth > 0 && _hurtHash != 0 && !isInSpellState)
             {
                 animator.SetTrigger(_hurtHash);
                 Debug.Log("[PlayerHealth2D] Playing Hurt animation");
+            }
+            else if (isInSpellState)
+            {
+                // Đang ở spell state, giữ nguyên spell animation, chỉ hiển thị damage effect
+                Debug.Log($"[PlayerHealth2D] Took damage in Spell {_spellController.CurrentSpell} state - keeping spell animation");
+                // TODO: Thêm damage flash effect ở đây (change sprite color briefly)
+                StartCoroutine(DamageFlashEffect());
             }
 
             // Apply knockback
@@ -142,6 +158,26 @@ namespace NWO
             if (GameManager.Instance != null)
             {
                 StartCoroutine(TriggerGameOverAfterDelay());
+            }
+        }
+
+        /// <summary>
+        /// Hiển thị damage flash effect khi bị đánh trong spell state (không trigger Hurt animation)
+        /// </summary>
+        private System.Collections.IEnumerator DamageFlashEffect()
+        {
+            var spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null) yield break;
+            
+            Color originalColor = spriteRenderer.color;
+            
+            // Flash đỏ 3 lần nhanh
+            for (int i = 0; i < 3; i++)
+            {
+                spriteRenderer.color = Color.red;
+                yield return new WaitForSeconds(0.05f);
+                spriteRenderer.color = originalColor;
+                yield return new WaitForSeconds(0.05f);
             }
         }
 

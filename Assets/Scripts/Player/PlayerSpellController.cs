@@ -38,6 +38,7 @@ namespace NWO
         private float _spell03CooldownRemaining;
 
         private int _currentSpell = 0; // 0=Idle, 1-3=Spell
+        private int _spellBeforeDamage = 0; // Lưu spell state trước khi bị damage
         private bool _isCasting;
         private float _castingTime = 0f;
         private const float MAX_CAST_TIME = 2f;
@@ -114,25 +115,27 @@ namespace NWO
             if (_currentSpell == spellNumber) return;
 
             _currentSpell = spellNumber;
-            _animator.SetInteger("SpellType", spellNumber);
-
-            if (_isCasting)
-            {
-                _isCasting = false;
-                Debug.Log("[Spell] Casting cancelled!");
-            }
-
-            if (spellNumber == 0)
-            {
-                Debug.Log("[Spell] Returned to Idle (SpellType = 0)");
-            }
-            else
-            {
-                Debug.Log($"[Spell] Switched to Spell {spellNumber}");
-            }
+        _spellBeforeDamage = spellNumber; // Lưu state hiện tại
+        
+        // Set animator với SetInteger
+        _animator.SetInteger("SpellType", spellNumber);
+        if (_isCasting)
+        {
+            _isCasting = false;
+            Debug.Log("[Spell] Casting cancelled!");
         }
 
-        private void HandleSpellCast()
+        if (spellNumber == 0)
+        {
+            Debug.Log("[Spell] Returned to Idle (SpellType = 0)");
+        }
+        else
+        {
+            Debug.Log($"[Spell] Switched to Spell {spellNumber}");
+        }
+    }
+
+    private void HandleSpellCast()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
@@ -278,6 +281,27 @@ namespace NWO
             }
 
             Debug.Log($"[Spell] Spawned projectile for Spell {_currentSpell}");
+        }
+
+        /// <summary>
+        /// Lưu spell state hiện tại trước khi bị damage
+        /// </summary>
+        public void SaveSpellState()
+        {
+            _spellBeforeDamage = _currentSpell;
+        }
+
+        /// <summary>
+        /// Restore spell state sau khi damage animation kết thúc
+        /// </summary>
+        public void RestoreSpellState()
+        {
+            if (_spellBeforeDamage > 0 && _spellBeforeDamage != _currentSpell)
+            {
+                _currentSpell = _spellBeforeDamage;
+                _animator.SetInteger("SpellType", _spellBeforeDamage);
+                Debug.Log($"[Spell] Restored spell state to Spell {_spellBeforeDamage}");
+            }
         }
 
         public float GetSpellCooldownPercent(int spellNumber)
