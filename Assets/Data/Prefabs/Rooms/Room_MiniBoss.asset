@@ -13,22 +13,22 @@ MonoBehaviour:
   m_Name: Room_MiniBoss
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.RoomData
   roomPrefab: {fileID: 1685653294007764663, guid: fd9ae2c1fded969499c9733c0407853f, type: 3}
-  roomType: 0
+  roomType: 3
   size: {x: 1, y: 1}
   doorAnchors:
   - direction: 0
     localPosition: {x: 0, y: 5, z: 0}
     doorObject: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
     wallObject: {fileID: 0}
-  - direction: 0
+  - direction: 1
     localPosition: {x: 0, y: -5, z: 0}
     doorObject: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
     wallObject: {fileID: 0}
-  - direction: 0
+  - direction: 2
     localPosition: {x: 5, y: 0, z: 0}
     doorObject: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
     wallObject: {fileID: 0}
-  - direction: 0
+  - direction: 3
     localPosition: {x: -5, y: 0, z: 0}
     doorObject: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
     wallObject: {fileID: 0}

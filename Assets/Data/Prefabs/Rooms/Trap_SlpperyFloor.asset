@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbc10e0a81446264c8bf7a8c0dbbc1b2, type: 3}
   m_Name: Trap_SlpperyFloor
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.TrapData
-  trapPrefab: {fileID: 0}
-  dangerScore: 5
+  trapPrefab: {fileID: 2725798540172954234, guid: d1748c549d186c04a9b2a4591ae657c1, type: 3}
+  dangerScore: 3
   minDangerLevel: 0
   spawnProbability: 1
   spawnLogic: 0

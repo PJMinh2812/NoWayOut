@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbc10e0a81446264c8bf7a8c0dbbc1b2, type: 3}
   m_Name: Trap_InvisibleBlock
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.TrapData
-  trapPrefab: {fileID: 0}
-  dangerScore: 5
+  trapPrefab: {fileID: 3944365203255322165, guid: 40272bed66895fc4995c07796dd4af37, type: 3}
+  dangerScore: 2
   minDangerLevel: 0
   spawnProbability: 1
   spawnLogic: 0

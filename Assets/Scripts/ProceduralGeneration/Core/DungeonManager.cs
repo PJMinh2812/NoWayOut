@@ -5,10 +5,10 @@ using ProceduralGeneration.Data;
 
 namespace ProceduralGeneration.Core
 {
-    /// <summary>
+    
     /// Main manager class cho procedural dungeon generation
     /// Xử lý toàn bộ flow: Start -> Archetype1 -> MidBoss -> Archetype2 -> Boss -> Goal
-    /// </summary>
+    
     public class DungeonManager : MonoBehaviour
     {
         [Header("Generation Settings")]
@@ -17,6 +17,11 @@ namespace ProceduralGeneration.Core
         
         [Tooltip("Sử dụng random seed mỗi lần generate")]
         public bool useRandomSeed = true;
+        
+        [Header("World Scale")]
+        [Tooltip("Scale từ grid cells -> world units (1 grid cell = worldScale units)")]
+        [Range(0.5f, 2f)]
+        public float worldScale = 1f; // Default 1:1 mapping
         
         [Header("Dungeon Flow Configuration")]
         [Tooltip("Số phòng Archetype 1 (trước mid-boss)")]
@@ -35,12 +40,36 @@ namespace ProceduralGeneration.Core
         [Tooltip("Danh sách RoomData có thể sử dụng")]
         public List<RoomData> roomDatabase = new List<RoomData>();
         
-        [Header("Trap Settings")]
-        [Tooltip("Danh sách TrapData có thể spawn")]
+        [Header("Trap Settings (For RoomVisualGenerator)")]
+        [Tooltip("Danh sách TrapData có thể spawn - Assign vào RoomVisualGenerator")]
         public List<TrapData> trapDatabase = new List<TrapData>();
         
-        [Tooltip("Enable trap spawning")]
-        public bool spawnTraps = true;
+        [Tooltip("Enable trap spawning - DEPRECATED: Use RoomVisualGenerator.autoFillTiles")]
+        public bool spawnTraps = false;
+        
+        [Header("Tile Configuration (For Auto-Fill)")]
+        [Tooltip("Bật auto-fill tiles (nếu tắt sẽ tạo placeholder để vẽ manual)")]
+        [SerializeField] private bool autoFillTiles = true;
+        
+        [Header("Floor Tiles")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase[] floorTiles;
+        
+        [Header("Wall Tiles")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallCenter;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallTopLeft;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallTopRight;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallBottomLeft;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallBottomRight;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallTop;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallBottom;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallLeft;
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallRight;
+        
+        [Header("Door Prefab")]
+        [SerializeField] private GameObject doorPrefab;
+        
+        [Header("Trap Types")]
+        [SerializeField] private Data.TrapData[] trapTypes;
         
         [Header("Danger Scaling")]
         [Tooltip("Danger level tăng theo khoảng cách từ start")]
@@ -71,9 +100,9 @@ namespace ProceduralGeneration.Core
         
         #region Public API
         
-        /// <summary>
+        
         /// Generate dungeon mới
-        /// </summary>
+        
         public void GenerateDungeon()
         {
             // Setup seed
@@ -107,23 +136,24 @@ namespace ProceduralGeneration.Core
             // Instantiate rooms
             InstantiateAllRooms();
             
-            // Connect doors
-            ConnectDoors();
+            // Connect doors (tracking only - visuals handled by RoomVisualGenerator)
+            // ConnectDoors(); // DEPRECATED: Door visuals now auto-generated
             
             // Spawn traps
-            if (spawnTraps)
-            {
-                SpawnTraps();
-            }
+            // NOTE: Trap spawning moved to RoomVisualGenerator.CreateAutoFilledFloor()
+            // if (spawnTraps)
+            // {
+            //     SpawnTraps();
+            // }
             
             isGenerated = true;
             
             Debug.Log($"<color=green>Dungeon generated successfully!</color> Seed: {currentSeed}, Rooms: {allRooms.Count}");
         }
         
-        /// <summary>
+        
         /// Clear dungeon hiện tại
-        /// </summary>
+        
         public void ClearDungeon()
         {
             if (dungeonContainer != null)
@@ -155,9 +185,9 @@ namespace ProceduralGeneration.Core
                 Debug.Log("Dungeon cleared");
         }
         
-        /// <summary>
+        
         /// Lấy seed hiện tại
-        /// </summary>
+        
         public int GetCurrentSeed()
         {
             return currentSeed;
@@ -167,9 +197,9 @@ namespace ProceduralGeneration.Core
         
         #region Generation Logic
         
-        /// <summary>
+        
         /// Initialize data structures
-        /// </summary>
+        
         private void Initialize()
         {
             occupiedCells = new Dictionary<Vector2Int, Room>();
@@ -191,9 +221,9 @@ namespace ProceduralGeneration.Core
             }
         }
         
-        /// <summary>
+        
         /// Generate dungeon flow theo structure: Start -> Arch1 -> MidBoss -> Arch2 -> Boss -> Goal
-        /// </summary>
+        
         private bool GenerateDungeonFlow()
         {
             // 1. Tạo Start room
@@ -247,9 +277,9 @@ namespace ProceduralGeneration.Core
             return true;
         }
         
-        /// <summary>
+        
         /// Tạo start room
-        /// </summary>
+        
         private bool CreateStartRoom()
         {
             RoomData startData = GetRoomDataOfType(RoomType.Start);
@@ -259,7 +289,10 @@ namespace ProceduralGeneration.Core
                 return false;
             }
             
-            startRoom = new Room(startData, Vector2Int.zero);
+            // Tính adjusted size: luôn là số lẻ, START room nhỏ hơn
+            Vector2Int adjustedSize = CalculateAdjustedRoomSize(startData);
+            
+            startRoom = new Room(startData, Vector2Int.zero, adjustedSize);
             startRoom.distanceFromStart = 0;
             startRoom.isMainPath = true;
             
@@ -272,9 +305,9 @@ namespace ProceduralGeneration.Core
             return true;
         }
         
-        /// <summary>
+        
         /// Tạo goal room
-        /// </summary>
+        
         private bool CreateGoalRoom()
         {
             RoomData goalData = GetRoomDataOfType(RoomType.Goal);
@@ -303,9 +336,9 @@ namespace ProceduralGeneration.Core
             return true;
         }
         
-        /// <summary>
+        
         /// Tạo một sequence các phòng cùng loại
-        /// </summary>
+        
         private bool CreateRoomSequence(RoomType roomType, int count)
         {
             for (int i = 0; i < count; i++)
@@ -325,9 +358,9 @@ namespace ProceduralGeneration.Core
             return true;
         }
         
-        /// <summary>
+        
         /// Tạo một phòng của loại chỉ định
-        /// </summary>
+        
         private bool CreateRoomOfType(RoomType roomType)
         {
             RoomData roomData = GetRoomDataOfType(roomType);
@@ -355,9 +388,9 @@ namespace ProceduralGeneration.Core
             return true;
         }
         
-        /// <summary>
+        
         /// Thử tạo branch room (phòng nhánh)
-        /// </summary>
+        
         private void TryCreateBranchRoom(RoomType roomType)
         {
             // Lấy một phòng ngẫu nhiên từ main path (không phải Start hoặc special rooms)
@@ -384,9 +417,9 @@ namespace ProceduralGeneration.Core
             }
         }
         
-        /// <summary>
+        
         /// Thử đặt phòng kế bên phòng hiện tại (với backtracking)
-        /// </summary>
+        
         private Room TryPlaceRoom(RoomData roomData, Room fromRoom)
         {
             // Lấy các hướng có thể đi
@@ -395,20 +428,30 @@ namespace ProceduralGeneration.Core
             // Shuffle để random
             DungeonUtils.Shuffle(availableDirections);
             
+            // Tính adjusted size TRƯỚC KHI check placement
+            Vector2Int adjustedSize = CalculateAdjustedRoomSize(roomData);
+            
             // Thử từng hướng
             foreach (var direction in availableDirections)
             {
                 Vector2Int offset = DungeonUtils.DirectionToVector(direction);
-                Vector2Int newPosition = fromRoom.gridPosition + offset;
                 
-                // Kiểm tra xem có thể đặt không
-                if (DungeonUtils.CanPlaceRoomAt(newPosition, roomData, occupiedCells))
+                // CRITICAL: Offset phải = size của fromRoom để không overlap
+                // Ví dụ: fromRoom.actualSize = (7,7), direction = Right → newPosition = gridPos + (7,0)
+                Vector2Int scaledOffset = new Vector2Int(
+                    offset.x * fromRoom.actualSize.x,
+                    offset.y * fromRoom.actualSize.y
+                );
+                Vector2Int newPosition = fromRoom.gridPosition + scaledOffset;
+                
+                // Kiểm tra xem có thể đặt không (dùng adjustedSize)
+                if (DungeonUtils.CanPlaceRoomAt(newPosition, adjustedSize, occupiedCells))
                 {
                     // Kiểm tra door compatibility
                     DoorDirection requiredDoor = DungeonUtils.GetOppositeDirection(direction);
                     if (roomData.doorAnchors.Any(anchor => anchor.direction == requiredDoor))
                     {
-                        Room newRoom = new Room(roomData, newPosition);
+                        Room newRoom = new Room(roomData, newPosition, adjustedSize);
                         newRoom.distanceFromStart = fromRoom.distanceFromStart + 1;
                         
                         AddRoomToGrid(newRoom);
@@ -438,9 +481,9 @@ namespace ProceduralGeneration.Core
             return null;
         }
         
-        /// <summary>
+        
         /// Lấy các hướng có thể đi từ phòng
-        /// </summary>
+        
         private List<DoorDirection> GetAvailableDirections(Room room)
         {
             List<DoorDirection> directions = new List<DoorDirection>();
@@ -458,9 +501,9 @@ namespace ProceduralGeneration.Core
             return directions;
         }
         
-        /// <summary>
+        
         /// Add room vào grid
-        /// </summary>
+        
         private void AddRoomToGrid(Room room)
         {
             // Đánh dấu tất cả các ô mà phòng này chiếm
@@ -472,9 +515,9 @@ namespace ProceduralGeneration.Core
             allRooms.Add(room);
         }
         
-        /// <summary>
+        
         /// Calculate danger level cho tất cả phòng
-        /// </summary>
+        
         private void CalculateDangerLevels()
         {
             int maxDistance = mainPath.Max(r => r.distanceFromStart);
@@ -486,161 +529,98 @@ namespace ProceduralGeneration.Core
             }
         }
         
+        
+        /// Adjust room size: Luôn là số LẺ, START/GOAL nhỏ hơn (KHÔNG modify roomData)
+        
+        private Vector2Int CalculateAdjustedRoomSize(RoomData roomData)
+        {
+            Vector2Int size = roomData.size;
+            
+            // Nếu size chẵn -> cộng 1 để thành lẻ
+            if (size.x % 2 == 0)
+                size.x += 1;
+            if (size.y % 2 == 0)
+                size.y += 1;
+            
+            // START/GOAL rooms nhỏ hơn (min 11x11, max 15x15)
+            if (roomData.roomType == RoomType.Start || roomData.roomType == RoomType.Goal)
+            {
+                size.x = Mathf.Max(11, Mathf.Min(size.x, 15));
+                size.y = Mathf.Max(11, Mathf.Min(size.y, 15));
+            }
+            // Các phòng khác (min 15x15, max 25x25)
+            else
+            {
+                size.x = Mathf.Max(15, Mathf.Min(size.x, 25));
+                size.y = Mathf.Max(15, Mathf.Min(size.y, 25));
+            }
+            
+            // Đảm bảo vẫn là số lẻ sau khi clamp
+            if (size.x % 2 == 0)
+                size.x += 1;
+            if (size.y % 2 == 0)
+                size.y += 1;
+            
+            return size;
+        }
+        
         #endregion
         
         #region Room Instantiation
         
-        /// <summary>
+        
         /// Instantiate tất cả rooms trong scene
-        /// </summary>
+        
         private void InstantiateAllRooms()
         {
+            Room startRoom = null;
+            
             foreach (var room in allRooms)
             {
-                room.InstantiateRoom(dungeonContainer);
+                // 1. Instantiate room GameObject
+                room.InstantiateRoom(dungeonContainer, worldScale);
+                
+                // 2. Configure visual generator với tile settings
+                room.ConfigureVisualGenerator(autoFillTiles, floorTiles, 
+                    wallCenter, wallTopLeft, wallTopRight, wallBottomLeft, wallBottomRight,
+                    wallTop, wallBottom, wallLeft, wallRight, doorPrefab, trapTypes);
+                
+                // 3. Generate visuals (SAU khi đã configure)
+                room.GenerateVisuals();
+                
+                // 4. Tìm start room
+                if (room.roomData.roomType == RoomType.Start || room.distanceFromStart == 0)
+                {
+                    startRoom = room;
+                }
             }
             
-            if (verboseLogging)
-                Debug.Log($"Instantiated {allRooms.Count} rooms");
-        }
-        
-        #endregion
-        
-        #region Door Connection
-        
-        /// <summary>
-        /// Kết nối doors giữa các phòng
-        /// </summary>
-        private void ConnectDoors()
-        {
+            // 5. Chỉ activate START ROOM, tất cả rooms khác SetActive(false)
             foreach (var room in allRooms)
             {
-                // Kiểm tra từng door
-                foreach (var door in room.doors)
+                if (room.roomInstance != null)
                 {
-                    DoorDirection direction = door.direction;
+                    bool isStartRoom = (room == startRoom);
+                    room.roomInstance.SetActive(isStartRoom);
                     
-                    // Kiểm tra xem có phòng kết nối không
-                    if (room.connectedRooms.TryGetValue(direction, out Room connectedRoom) && 
-                        connectedRoom != null)
+                    if (isStartRoom)
                     {
-                        // Có phòng kết nối -> mở cửa
-                        door.OpenDoor();
-                        door.connectedRoom = connectedRoom;
-                        
-                        if (verboseLogging)
-                            Debug.Log($"Opened door at {room.gridPosition} -> {direction}");
-                    }
-                    else
-                    {
-                        // Không có phòng -> đóng cửa (hiển thị tường)
-                        door.CloseDoor();
+                        Debug.Log($"[DungeonManager] START ROOM activated: {room.roomData.roomType} at {room.gridPosition}");
                     }
                 }
             }
             
-            Debug.Log($"Connected {allRooms.Sum(r => r.doors.Count(d => d.isOpen))} doors");
-        }
-        
-        #endregion
-        
-        #region Trap Spawning
-        
-        /// <summary>
-        /// Spawn traps vào các phòng
-        /// </summary>
-        private void SpawnTraps()
-        {
-            if (trapDatabase == null || trapDatabase.Count == 0)
-            {
-                Debug.LogWarning("Trap database is empty!");
-                return;
-            }
-            
-            int totalTrapsSpawned = 0;
-            
-            foreach (var room in allRooms)
-            {
-                // Skip start và goal room
-                if (room.roomData.roomType == RoomType.Start || 
-                    room.roomData.roomType == RoomType.Goal)
-                    continue;
-                
-                int trapsSpawned = SpawnTrapsInRoom(room);
-                totalTrapsSpawned += trapsSpawned;
-            }
-            
-            Debug.Log($"Spawned {totalTrapsSpawned} traps across {allRooms.Count} rooms");
-        }
-        
-        /// <summary>
-        /// Spawn traps trong một phòng
-        /// </summary>
-        private int SpawnTrapsInRoom(Room room)
-        {
-            if (room.trapSpawnPoints.Count == 0) return 0;
-            
-            int trapsSpawned = 0;
-            int maxTraps = Mathf.Min(room.roomData.maxTrapSpawnPoints, room.trapSpawnPoints.Count);
-            
-            // Lấy traps phù hợp với danger level
-            var eligibleTraps = trapDatabase.Where(t => 
-                t.minDangerLevel <= room.dangerLevel).ToList();
-            
-            if (eligibleTraps.Count == 0) return 0;
-            
-            // Shuffle spawn points
-            List<Transform> availablePoints = new List<Transform>(room.trapSpawnPoints);
-            DungeonUtils.Shuffle(availablePoints);
-            
-            Dictionary<TrapData, int> spawnedCount = new Dictionary<TrapData, int>();
-            List<Vector3> spawnedPositions = new List<Vector3>();
-            
-            foreach (var spawnPoint in availablePoints)
-            {
-                if (trapsSpawned >= maxTraps) break;
-                
-                // Validate spawn point
-                if (!DungeonUtils.ValidateSpawnPoint(spawnPoint, room.doors, 2f))
-                    continue;
-                
-                // Chọn trap ngẫu nhiên
-                TrapData trapData = eligibleTraps[Random.Range(0, eligibleTraps.Count)];
-                
-                // Kiểm tra max per room
-                int currentCount = spawnedCount.GetValueOrDefault(trapData, 0);
-                if (currentCount >= trapData.maxPerRoom)
-                    continue;
-                
-                // Kiểm tra probability
-                if (Random.value > trapData.spawnProbability)
-                    continue;
-                
-                // Kiểm tra khoảng cách với traps khác
-                if (!DungeonUtils.HasEnoughSpaceForTrap(spawnPoint.position, 
-                    trapData.occupiedArea.magnitude / 2f, spawnedPositions, 1f))
-                    continue;
-                
-                // Spawn trap
-                GameObject trap = Instantiate(trapData.trapPrefab, spawnPoint.position, 
-                    spawnPoint.rotation, room.roomInstance.transform);
-                trap.name = $"Trap_{trapData.name}";
-                
-                spawnedPositions.Add(spawnPoint.position);
-                spawnedCount[trapData] = currentCount + 1;
-                trapsSpawned++;
-            }
-            
-            return trapsSpawned;
+            if (verboseLogging)
+                Debug.Log($"Instantiated {allRooms.Count} rooms (only START room active)");
         }
         
         #endregion
         
         #region Utilities
         
-        /// <summary>
+        
         /// Lấy RoomData của loại chỉ định
-        /// </summary>
+        
         private RoomData GetRoomDataOfType(RoomType roomType)
         {
             var rooms = roomDatabase.Where(r => r.roomType == roomType).ToList();

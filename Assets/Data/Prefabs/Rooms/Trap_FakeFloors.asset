@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbc10e0a81446264c8bf7a8c0dbbc1b2, type: 3}
   m_Name: Trap_FakeFloors
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.TrapData
-  trapPrefab: {fileID: 0}
-  dangerScore: 3
+  trapPrefab: {fileID: 7454614855934046614, guid: 372d74d3428dd7240a053ad3c22dd199, type: 3}
+  dangerScore: 5
   minDangerLevel: 0
   spawnProbability: 1
   spawnLogic: 0
-  maxPerRoom: 2
+  maxPerRoom: 3
   minDistanceFromDoor: 2
   canBlockMainPath: 0
   occupiedArea: {x: 1, y: 1}

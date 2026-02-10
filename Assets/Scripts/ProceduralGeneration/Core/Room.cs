@@ -14,13 +14,14 @@ namespace ProceduralGeneration.Core
         public Vector2Int gridPosition;
         public GameObject roomInstance;
         
+        // Override size (để không modify ScriptableObject)
+        public Vector2Int actualSize;
+        
+        // World scale for proper positioning
+        public float worldScale = 1f;
+        
         // Kết nối
         public Dictionary<DoorDirection, Room> connectedRooms;
-        public List<DoorInstance> doors;
-        
-        // Spawn points
-        public List<Transform> trapSpawnPoints;
-        public List<Transform> enemySpawnPoints;
         
         // Meta info
         public int distanceFromStart;
@@ -30,14 +31,12 @@ namespace ProceduralGeneration.Core
         /// <summary>
         /// Constructor
         /// </summary>
-        public Room(RoomData data, Vector2Int position)
+        public Room(RoomData data, Vector2Int position, Vector2Int? overrideSize = null)
         {
             roomData = data;
             gridPosition = position;
+            actualSize = overrideSize ?? data.size; // Sử dụng override hoặc default
             connectedRooms = new Dictionary<DoorDirection, Room>();
-            doors = new List<DoorInstance>();
-            trapSpawnPoints = new List<Transform>();
-            enemySpawnPoints = new List<Transform>();
             distanceFromStart = 0;
             dangerLevel = 0;
             isMainPath = false;
@@ -58,9 +57,9 @@ namespace ProceduralGeneration.Core
         {
             List<Vector2Int> cells = new List<Vector2Int>();
             
-            for (int x = 0; x < roomData.size.x; x++)
+            for (int x = 0; x < actualSize.x; x++)
             {
-                for (int y = 0; y < roomData.size.y; y++)
+                for (int y = 0; y < actualSize.y; y++)
                 {
                     cells.Add(gridPosition + new Vector2Int(x, y));
                 }
@@ -119,84 +118,63 @@ namespace ProceduralGeneration.Core
         /// <summary>
         /// Instantiate phòng trong scene
         /// </summary>
-        public void InstantiateRoom(Transform parent)
+        public void InstantiateRoom(Transform parent, float worldScale = 1f)
         {
+            this.worldScale = worldScale; // Lưu lại worldScale
+            
             // Tạo empty room container thay vì instantiate prefab
-            Vector3 worldPosition = new Vector3(gridPosition.x * 10f, gridPosition.y * 10f, 0);
+            // gridPosition ĐÃ là grid cells, nhân với worldScale cho world units
+            Vector3 worldPosition = new Vector3(gridPosition.x * worldScale, gridPosition.y * worldScale, 0);
             roomInstance = new GameObject($"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}");
             roomInstance.transform.SetParent(parent);
             roomInstance.transform.position = worldPosition;
             
-            // Generate visuals (Tilemaps)
-            GenerateVisuals();
-            
-            // Comment out prefab-based features - user sẽ vẽ manual
-            // FindSpawnPoints();
-            // SetupDoors();
+            // Add RoomVisualGenerator component (nhưng chưa generate - đợi configure tiles)
+            var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
+            if (visualGen == null)
+            {
+                visualGen = roomInstance.AddComponent<Components.RoomVisualGenerator>();
+            }
         }
         
         /// <summary>
-        /// Generate visuals cho room
+        /// Generate visuals cho room (gọi SAU khi đã configure tiles)
         /// </summary>
-        private void GenerateVisuals()
+        public void GenerateVisuals()
         {
             if (roomInstance == null) return;
             
             var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
             if (visualGen == null)
             {
-                visualGen = roomInstance.AddComponent<Components.RoomVisualGenerator>();
+                Debug.LogError("RoomVisualGenerator not found!");
+                return;
             }
             
-            visualGen.GenerateVisuals(roomData);
+            // Set currentRoom reference (for DoorTrigger)
+            visualGen.SetCurrentRoom(this);
+            
+            // Truyền connectedRooms để chỉ tạo door markers cho các hướng có room kế bên
+            visualGen.GenerateVisuals(roomData, connectedRooms);
         }
         
         /// <summary>
-        /// Tìm các spawn points trong prefab
+        /// Configure visual generator với tile settings từ DungeonManager
         /// </summary>
-        private void FindSpawnPoints()
+        public void ConfigureVisualGenerator(bool autoFill, UnityEngine.Tilemaps.TileBase[] floors,
+            UnityEngine.Tilemaps.TileBase center, UnityEngine.Tilemaps.TileBase topL, UnityEngine.Tilemaps.TileBase topR,
+            UnityEngine.Tilemaps.TileBase botL, UnityEngine.Tilemaps.TileBase botR,
+            UnityEngine.Tilemaps.TileBase top, UnityEngine.Tilemaps.TileBase bottom,
+            UnityEngine.Tilemaps.TileBase left, UnityEngine.Tilemaps.TileBase right,
+            GameObject door, Data.TrapData[] traps)
         {
             if (roomInstance == null) return;
             
-            // Tìm trap spawn points
-            Transform trapParent = roomInstance.transform.Find("TrapSpawnPoints");
-            if (trapParent != null)
+            var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
+            if (visualGen != null)
             {
-                foreach (Transform child in trapParent)
-                {
-                    trapSpawnPoints.Add(child);
-                }
-            }
-            
-            // Tìm enemy spawn points
-            Transform enemyParent = roomInstance.transform.Find("EnemySpawnPoints");
-            if (enemyParent != null)
-            {
-                foreach (Transform child in enemyParent)
-                {
-                    enemySpawnPoints.Add(child);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Setup door instances
-        /// </summary>
-        private void SetupDoors()
-        {
-            if (roomInstance == null) return;
-            
-            foreach (var anchor in roomData.doorAnchors)
-            {
-                DoorInstance doorInstance = new DoorInstance
-                {
-                    direction = anchor.direction,
-                    anchorData = anchor,
-                    isOpen = false,
-                    connectedRoom = null
-                };
-                
-                doors.Add(doorInstance);
+                visualGen.ConfigureTiles(autoFill, floors, center, topL, topR, botL, botR,
+                    top, bottom, left, right, door, traps);
             }
         }
         
@@ -209,43 +187,6 @@ namespace ProceduralGeneration.Core
             {
                 GameObject.Destroy(roomInstance);
             }
-        }
-    }
-
-    /// <summary>
-    /// Instance của một cửa trong phòng
-    /// </summary>
-    public class DoorInstance
-    {
-        public DoorDirection direction;
-        public DoorAnchor anchorData;
-        public bool isOpen;
-        public Room connectedRoom;
-        public GameObject spawnedDoor;
-        public GameObject spawnedWall;
-        
-        /// <summary>
-        /// Mở cửa (enable door, disable wall)
-        /// </summary>
-        public void OpenDoor()
-        {
-            isOpen = true;
-            if (anchorData.doorObject != null)
-                anchorData.doorObject.SetActive(true);
-            if (anchorData.wallObject != null)
-                anchorData.wallObject.SetActive(false);
-        }
-        
-        /// <summary>
-        /// Đóng cửa (disable door, enable wall)
-        /// </summary>
-        public void CloseDoor()
-        {
-            isOpen = false;
-            if (anchorData.doorObject != null)
-                anchorData.doorObject.SetActive(false);
-            if (anchorData.wallObject != null)
-                anchorData.wallObject.SetActive(true);
         }
     }
 }

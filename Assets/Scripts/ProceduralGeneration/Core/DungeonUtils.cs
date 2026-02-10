@@ -68,10 +68,19 @@ namespace ProceduralGeneration.Core
         public static bool CanPlaceRoomAt(Vector2Int position, RoomData roomData, 
             Dictionary<Vector2Int, Room> occupiedCells)
         {
+            return CanPlaceRoomAt(position, roomData.size, occupiedCells);
+        }
+        
+        /// <summary>
+        /// Kiểm tra xem một phòng với size cho trước có thể đặt tại vị trí này không
+        /// </summary>
+        public static bool CanPlaceRoomAt(Vector2Int position, Vector2Int size, 
+            Dictionary<Vector2Int, Room> occupiedCells)
+        {
             // Kiểm tra tất cả các ô mà phòng này sẽ chiếm dụng
-            for (int x = 0; x < roomData.size.x; x++)
+            for (int x = 0; x < size.x; x++)
             {
-                for (int y = 0; y < roomData.size.y; y++)
+                for (int y = 0; y < size.y; y++)
                 {
                     Vector2Int cellPos = position + new Vector2Int(x, y);
                     if (occupiedCells.ContainsKey(cellPos))
@@ -226,82 +235,6 @@ namespace ProceduralGeneration.Core
                 if (Vector3.Distance(position, trap) < minDistance + radius)
                 {
                     return false;
-                }
-            }
-            
-            return true;
-        }
-        
-        /// <summary>
-        /// Lấy spawn position dựa trên logic
-        /// </summary>
-        public static Transform GetBestSpawnPoint(List<Transform> spawnPoints, TrapSpawnLogic logic,
-            Room room, List<DoorInstance> doors)
-        {
-            if (spawnPoints == null || spawnPoints.Count == 0) return null;
-            
-            switch (logic)
-            {
-                case TrapSpawnLogic.Random:
-                    return spawnPoints[Random.Range(0, spawnPoints.Count)];
-                    
-                case TrapSpawnLogic.RoomCenter:
-                    return GetClosestToPosition(spawnPoints, room.roomInstance.transform.position);
-                    
-                case TrapSpawnLogic.NearEntrance:
-                case TrapSpawnLogic.NearExit:
-                    if (doors != null && doors.Count > 0)
-                    {
-                        var door = doors[0];
-                        Vector3 doorPos = room.roomInstance.transform.position + door.anchorData.localPosition;
-                        return GetClosestToPosition(spawnPoints, doorPos);
-                    }
-                    return spawnPoints[Random.Range(0, spawnPoints.Count)];
-                    
-                default:
-                    return spawnPoints[Random.Range(0, spawnPoints.Count)];
-            }
-        }
-        
-        /// <summary>
-        /// Lấy spawn point gần nhất với vị trí
-        /// </summary>
-        private static Transform GetClosestToPosition(List<Transform> points, Vector3 targetPosition)
-        {
-            Transform closest = points[0];
-            float minDistance = Vector3.Distance(points[0].position, targetPosition);
-            
-            for (int i = 1; i < points.Count; i++)
-            {
-                float distance = Vector3.Distance(points[i].position, targetPosition);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    closest = points[i];
-                }
-            }
-            
-            return closest;
-        }
-        
-        /// <summary>
-        /// Validate spawn point không chặn đường đi
-        /// </summary>
-        public static bool ValidateSpawnPoint(Transform spawnPoint, List<DoorInstance> doors, float minDistance)
-        {
-            if (spawnPoint == null || doors == null) return false;
-            
-            foreach (var door in doors)
-            {
-                if (door.isOpen && door.anchorData.doorObject != null)
-                {
-                    float distance = Vector3.Distance(spawnPoint.position, 
-                        door.anchorData.doorObject.transform.position);
-                    
-                    if (distance < minDistance)
-                    {
-                        return false;
-                    }
                 }
             }
             
