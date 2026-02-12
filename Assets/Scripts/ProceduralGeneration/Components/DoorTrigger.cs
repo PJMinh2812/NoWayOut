@@ -28,7 +28,7 @@ namespace ProceduralGeneration.Components
         [SerializeField] private bool autoOpenClose = true;
         
         [Tooltip("Khoảng cách phát hiện player để auto open")]
-        [SerializeField] private float detectionRange = 2f;
+        [SerializeField] private float detectionRange = 4f;
         
         [Header("State")]
         [Tooltip("Door hiện tại có mở không?")]
@@ -52,7 +52,7 @@ namespace ProceduralGeneration.Components
         
         [Header("Animation & Audio")]
         [Tooltip("Animator cho animation mở/đóng cửa")]
-        [SerializeField] private Animator doorAnimator;
+        public Animator doorAnimator;
         
         [Tooltip("Sound khi mở cửa")]
         [SerializeField] private AudioClip openSound;
@@ -76,6 +76,14 @@ namespace ProceduralGeneration.Components
             // Get sprite renderer để đổi màu
             spriteRenderer = GetComponent<SpriteRenderer>();
             
+            // Tự động tìm Animator nếu chưa gán (tìm cả trong children)
+            if (doorAnimator == null)
+            {
+                doorAnimator = GetComponent<Animator>();
+                if (doorAnimator == null)
+                    doorAnimator = GetComponentInChildren<Animator>();
+            }
+            
             // Setup audio source
             audioSource = GetComponent<AudioSource>();
             if (audioSource == null)
@@ -91,8 +99,74 @@ namespace ProceduralGeneration.Components
             if (playerObj != null)
                 player = playerObj.transform;
             
+            // Tự động tìm Room từ DungeonManager nếu null (map generate trước Play Mode)
+            if (currentRoom == null || targetRoom == null)
+            {
+                TryFindRoomsFromDungeonManager();
+            }
+            
             // Set collider state dựa vào isOpen
             UpdateColliderState();
+        }
+        
+        /// <summary>
+        /// Tìm currentRoom và targetRoom từ DungeonManager khi map generate trước Play Mode
+        /// </summary>
+        private void TryFindRoomsFromDungeonManager()
+        {
+            // Tìm DungeonManager
+            var dungeonManager = FindObjectOfType<ProceduralGeneration.Core.DungeonManager>();
+            if (dungeonManager == null)
+            {
+                Debug.LogWarning($"[DoorTrigger] Cannot find DungeonManager to lookup rooms");
+                return;
+            }
+            
+            // Tìm Room GameObject - thử parent và grandparent
+            // Hierarchy: Room_Start -> Doors -> Door_Top
+            Transform roomTransform = transform.parent; // "Doors"
+            
+            if (roomTransform != null && roomTransform.name == "Doors")
+            {
+                // Đi lên thêm 1 level để tìm Room GameObject
+                roomTransform = roomTransform.parent; // "Room_Start"
+            }
+            
+            if (roomTransform == null)
+            {
+                Debug.LogWarning($"[DoorTrigger] Door {gameObject.name} has no room parent GameObject");
+                return;
+            }
+            
+            Debug.Log($"[DoorTrigger] Looking for room in GameObject: {roomTransform.name}");
+            
+            // Tìm currentRoom từ room GameObject
+            if (currentRoom == null)
+            {
+                currentRoom = dungeonManager.GetRoomByGameObject(roomTransform.gameObject);
+                if (currentRoom != null)
+                {
+                    Debug.Log($"[DoorTrigger] Found currentRoom: {currentRoom.roomData.roomType}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[DoorTrigger] Cannot find Room for GameObject: {roomTransform.name}");
+                }
+            }
+            
+            // Tìm targetRoom từ connectedRooms
+            if (currentRoom != null && targetRoom == null)
+            {
+                if (currentRoom.connectedRooms != null && currentRoom.connectedRooms.ContainsKey(doorDirection))
+                {
+                    targetRoom = currentRoom.connectedRooms[doorDirection];
+                    Debug.Log($"[DoorTrigger] Found targetRoom: {targetRoom?.roomData?.roomType} via {doorDirection} door");
+                }
+                else
+                {
+                    Debug.LogWarning($"[DoorTrigger] No connected room in direction {doorDirection} for {currentRoom.roomData.roomType}");
+                }
+            }
         }
         
         void Update()
@@ -115,12 +189,17 @@ namespace ProceduralGeneration.Components
         
         void OnTriggerEnter2D(Collider2D other)
         {
+            Debug.Log($"[DoorTrigger] OnTriggerEnter2D: {other.name}, tag={other.tag}");
+            
             // Check nếu là player
             if (other.CompareTag("Player"))
             {
+                Debug.Log($"[DoorTrigger] Player detected! isOpen={isOpen}, isLocked={isLocked}");
+                
                 // Chỉ trigger transition nếu door MỞ và KHÔNG KHÓA
                 if (isOpen && !isLocked)
                 {
+                    Debug.Log($"[DoorTrigger] Triggering transition from {currentRoom?.roomData?.roomType} to {targetRoom?.roomData?.roomType}");
                     TriggerRoomTransition(other.gameObject);
                 }
                 else if (isLocked)
@@ -303,7 +382,16 @@ namespace ProceduralGeneration.Components
         {
             if (doorAnimator != null)
             {
-                doorAnimator.SetTrigger(triggerName);
+                // Dùng Bool parameter "isOpen" giống Door.cs cũ
+                // Thay vì dùng Trigger để tương thích với animation có sẵn
+                if (triggerName == "Open")
+                {
+                    doorAnimator.SetBool("isOpen", true);
+                }
+                else if (triggerName == "Close")
+                {
+                    doorAnimator.SetBool("isOpen", false);
+                }
             }
         }
         

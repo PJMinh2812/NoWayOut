@@ -322,6 +322,14 @@ namespace ProceduralGeneration.Components
             TilemapRenderer renderer = tilemapObj.AddComponent<TilemapRenderer>();
             renderer.sortingOrder = 0;
             
+            // Add collision for walls
+            TilemapCollider2D tilemapCollider = tilemapObj.AddComponent<TilemapCollider2D>();
+            Rigidbody2D rb = tilemapObj.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Static; // Walls don't move
+            
+            CompositeCollider2D compositeCollider = tilemapObj.AddComponent<CompositeCollider2D>();
+            tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge; // Optimize collision with CompositeCollider2D
+            
             int tilesX = currentRoom.actualSize.x * (int)tileSize;
             int tilesY = currentRoom.actualSize.y * (int)tileSize;
             
@@ -448,6 +456,16 @@ namespace ProceduralGeneration.Components
                 if (doorTrigger == null)
                     doorTrigger = doorObj.AddComponent<DoorTrigger>();
                 
+                // Ensure BoxCollider2D exists for trigger detection
+                var boxCollider = doorObj.GetComponent<BoxCollider2D>();
+                if (boxCollider == null)
+                {
+                    boxCollider = doorObj.AddComponent<BoxCollider2D>();
+                    boxCollider.size = new Vector2(2f, 2f); // Door trigger area
+                    Debug.Log($"[RoomVisualGenerator] Auto-added BoxCollider2D to door {door.direction}");
+                }
+                boxCollider.isTrigger = true; // CRITICAL: Must be trigger
+                
                 // Configure DoorTrigger
                 doorTrigger.doorDirection = door.direction;
                 doorTrigger.currentRoom = currentRoom;
@@ -456,6 +474,7 @@ namespace ProceduralGeneration.Components
                 if (connectedRooms != null && connectedRooms.ContainsKey(door.direction))
                 {
                     doorTrigger.targetRoom = connectedRooms[door.direction];
+                    Debug.Log($"[RoomVisualGenerator] Door {door.direction}: {currentRoom.roomData.roomType} -> {connectedRooms[door.direction].roomData.roomType}");
                 }
                 else
                 {

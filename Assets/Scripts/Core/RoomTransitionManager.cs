@@ -50,13 +50,63 @@ namespace Core
             if (player == null)
             {
                 player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    Debug.Log($"[RoomTransitionManager] Found player: {player.name}");
+                }
+                else
+                {
+                    Debug.LogError("[RoomTransitionManager] Player NOT found! Make sure player has 'Player' tag");
+                }
             }
             
-            // TODO: Auto-create fade panel if null
+            // Auto-create fade panel if null
             if (fadePanel == null)
             {
-                Debug.LogWarning("[RoomTransitionManager] Fade panel not assigned! Transitions will be instant.");
+                fadePanel = CreateFadePanel();
+                Debug.Log("[RoomTransitionManager] Auto-created fade panel");
             }
+        }
+        
+        /// <summary>
+        /// Tạo fade panel UI với CanvasGroup
+        /// </summary>
+        private CanvasGroup CreateFadePanel()
+        {
+            // Tìm hoặc tạo Canvas
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas == null)
+            {
+                GameObject canvasObj = new GameObject("TransitionCanvas");
+                canvas = canvasObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 999; // Top layer
+                
+                canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
+                canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            }
+            
+            // Tạo fade panel
+            GameObject panelObj = new GameObject("FadePanel");
+            panelObj.transform.SetParent(canvas.transform, false);
+            
+            // Full screen RectTransform
+            RectTransform rect = panelObj.AddComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            
+            // Black image
+            UnityEngine.UI.Image image = panelObj.AddComponent<UnityEngine.UI.Image>();
+            image.color = fadeColor;
+            
+            // CanvasGroup for fade
+            CanvasGroup canvasGroup = panelObj.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0; // Start invisible
+            canvasGroup.blocksRaycasts = false;
+            
+            return canvasGroup;
         }
         
         /// <summary>
@@ -64,6 +114,8 @@ namespace Core
         /// </summary>
         public void TransitionToRoom(Room fromRoom, Room toRoom, DoorDirection doorDirection, GameObject player)
         {
+            Debug.Log($"[RoomTransitionManager] TransitionToRoom called: {fromRoom?.roomData?.roomType} -> {toRoom?.roomData?.roomType}");
+            
             if (isTransitioning)
             {
                 Debug.LogWarning("[RoomTransitionManager] Already transitioning! Ignoring.");
@@ -76,6 +128,7 @@ namespace Core
                 return;
             }
             
+            Debug.Log("[RoomTransitionManager] Starting transition coroutine...");
             StartCoroutine(TransitionCoroutine(fromRoom, toRoom, doorDirection, player));
         }
         
@@ -117,37 +170,53 @@ namespace Core
         /// </summary>
         private Vector3 CalculatePlayerSpawnPosition(Room room, DoorDirection enteredFrom)
         {
-            // Lấy center của room
-            Vector3 roomCenter = room.roomInstance.transform.position;
-            int roomTilesX = room.roomData.size.x * 1; // tileSize = 1
-            int roomTilesY = room.roomData.size.y * 1;
+            // Lấy bottom-left corner của room
+            Vector3 roomOrigin = room.roomInstance.transform.position;
             
-            Vector3 centerOffset = new Vector3(roomTilesX / 2f, roomTilesY / 2f, 0);
-            Vector3 spawnPos = roomCenter + centerOffset;
+            // SỬ DỤNG actualSize (runtime size) thay vì roomData.size (ScriptableObject default)
+            int roomTilesX = room.actualSize.x;
+            int roomTilesY = room.actualSize.y;
             
-            // Offset player về phía đối diện với cửa vào
-            float offsetDistance = 3f; // 3 tiles từ edge
+            // Tính center thực của room
+            Vector3 roomCenter = roomOrigin + new Vector3(roomTilesX / 2f, roomTilesY / 2f, 0);
+            
+            // Tính vị trí cửa (ở giữa edge), sau đó spawn 1 tile vào trong từ cửa
+            Vector3 doorPos = roomCenter; // Bắt đầu từ center
+            Vector3 spawnPos;
             
             switch (enteredFrom)
             {
                 case DoorDirection.Top:
-                    // Vào từ trên → spawn phía dưới
-                    spawnPos.y = roomCenter.y + offsetDistance;
+                    // Player đi qua cửa TOP của phòng cũ → spawn ở BOTTOM của phòng mới
+                    // Spawn 1 tile bên trong từ bottom edge
+                    spawnPos = roomCenter;
+                    spawnPos.y = roomOrigin.y + 1f; // 1 tile lên từ bottom edge
                     break;
                 case DoorDirection.Bottom:
-                    // Vào từ dưới → spawn phía trên
-                    spawnPos.y = roomCenter.y + roomTilesY - offsetDistance;
+                    // Player đi qua cửa BOTTOM của phòng cũ → spawn ở TOP của phòng mới
+                    // Spawn 1 tile bên trong từ top edge
+                    spawnPos = roomCenter;
+                    spawnPos.y = roomOrigin.y + roomTilesY - 2f; // 1 tile xuống từ top edge
                     break;
                 case DoorDirection.Left:
-                    // Vào từ trái → spawn phía phải
-                    spawnPos.x = roomCenter.x + offsetDistance;
+                    // Player đi qua cửa LEFT của phòng cũ → spawn ở RIGHT của phòng mới
+                    // Spawn 1 tile bên trong từ right edge
+                    spawnPos = roomCenter;
+                    spawnPos.x = roomOrigin.x + roomTilesX - 2f; // 1 tile sang trái từ right edge
                     break;
                 case DoorDirection.Right:
-                    // Vào từ phải → spawn phía trái
-                    spawnPos.x = roomCenter.x + roomTilesX - offsetDistance;
+                    // Player đi qua cửa RIGHT của phòng cũ → spawn ở LEFT của phòng mới
+                    // Spawn 1 tile bên trong từ left edge
+                    spawnPos = roomCenter;
+                    spawnPos.x = roomOrigin.x + 1f; // 1 tile sang phải từ left edge
+                    break;
+                default:
+                    // Fallback: spawn ở center
+                    spawnPos = roomCenter;
                     break;
             }
             
+            Debug.Log($"[RoomTransition] Spawn calculated: Room origin={roomOrigin}, size=({roomTilesX},{roomTilesY}), enteredFrom={enteredFrom}, spawn={spawnPos}");
             return spawnPos;
         }
         

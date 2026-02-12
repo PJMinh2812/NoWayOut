@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProceduralGeneration.Data;
+using Core;
 
 namespace ProceduralGeneration.Core
 {
@@ -136,6 +137,9 @@ namespace ProceduralGeneration.Core
             // Instantiate rooms
             InstantiateAllRooms();
             
+            // Ensure RoomTransitionManager exists
+            EnsureTransitionManager();
+            
             // Connect doors (tracking only - visuals handled by RoomVisualGenerator)
             // ConnectDoors(); // DEPRECATED: Door visuals now auto-generated
             
@@ -191,6 +195,25 @@ namespace ProceduralGeneration.Core
         public int GetCurrentSeed()
         {
             return currentSeed;
+        }
+        
+        /// <summary>
+        /// Tìm Room object từ GameObject instance (dùng khi DoorTrigger cần lookup room)
+        /// </summary>
+        public Room GetRoomByGameObject(GameObject roomGameObject)
+        {
+            if (allRooms == null || roomGameObject == null)
+                return null;
+            
+            return allRooms.Find(r => r.roomInstance == roomGameObject);
+        }
+        
+        /// <summary>
+        /// Lấy tất cả rooms (dùng cho debug hoặc door trigger lookup)
+        /// </summary>
+        public List<Room> GetAllRooms()
+        {
+            return allRooms;
         }
         
         #endregion
@@ -627,6 +650,20 @@ namespace ProceduralGeneration.Core
             if (rooms.Count == 0) return null;
             
             return rooms[Random.Range(0, rooms.Count)];
+        }
+        
+        
+        /// Đảm bảo RoomTransitionManager tồn tại trong scene
+        
+        private void EnsureTransitionManager()
+        {
+            var existing = FindFirstObjectByType<RoomTransitionManager>();
+            if (existing == null)
+            {
+                GameObject managerObj = new GameObject("RoomTransitionManager");
+                managerObj.AddComponent<RoomTransitionManager>();
+                Debug.Log("[DungeonManager] Auto-created RoomTransitionManager");
+            }
         }
         
         #endregion

@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2708241675529543049}
   - component: {fileID: 8960624553829695423}
-  - component: {fileID: 7056586349962832580}
   - component: {fileID: 8381576308922423948}
-  - component: {fileID: 5108910062206115120}
+  - component: {fileID: -8449041952460286602}
+  - component: {fileID: -6277832595946358676}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -94,7 +94,29 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!61 &7056586349962832580
+--- !u!95 &8381576308922423948
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7294783713783457589}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 499735088bf2966498fae746b1a7bf2b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!61 &-8449041952460286602
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -124,7 +146,7 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -140,29 +162,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!95 &8381576308922423948
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7294783713783457589}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 499735088bf2966498fae746b1a7bf2b, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!114 &5108910062206115120
+--- !u!114 &-6277832595946358676
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -171,10 +171,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 7294783713783457589}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 02a43e3b2507ca74e9da8a93a73c1cd9, type: 3}
+  m_Script: {fileID: 11500000, guid: a284bc3c37613aa4aa60f37ba071453f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Door
-  isLocked: 0
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Components.DoorTrigger
+  doorDirection: 0
+  autoOpenClose: 1
   detectionRange: 2
-  player: {fileID: 0}
-  doorCollider: {fileID: 0}
+  isOpen: 0
+  isLocked: 0
+  closedVisual: {fileID: 0}
+  openVisual: {fileID: 0}
+  unlockedColor: {r: 0, g: 1, b: 0, a: 1}
+  lockedColor: {r: 1, g: 0, b: 0, a: 1}
+  doorAnimator: {fileID: 0}
+  openSound: {fileID: 0}
+  closeSound: {fileID: 0}
+  lockedSound: {fileID: 0}
