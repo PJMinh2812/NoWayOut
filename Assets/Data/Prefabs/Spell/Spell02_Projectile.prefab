@@ -82,7 +82,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 1606663979
-  m_SortingLayer: 1
+  m_SortingLayer: 0
   m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: 1042588975676728657, guid: 596638e114f21ad4099217b0b8cae714, type: 3}
@@ -174,7 +174,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
