@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NWO
 {
@@ -6,39 +6,39 @@ namespace NWO
     public class PlayerStamina : MonoBehaviour
     {
         [Header("Stamina Settings")]
-        [Tooltip("Stamina tối đa")]
+        [Tooltip("Stamina tá»‘i Ä‘a")]
         [SerializeField] private float maxStamina = 100f;
         
-        [Tooltip("Stamina ban đầu khi bắt đầu game")]
+        [Tooltip("Stamina ban Ä‘áº§u khi báº¯t Ä‘áº§u game")]
         [SerializeField] private float startingStamina = 100f;
         
-        [Tooltip("Tốc độ hồi stamina (mỗi giây)")]
+        [Tooltip("Tá»‘c Ä‘á»™ há»“i stamina (má»—i giÃ¢y)")]
         [SerializeField] private float regenPerSecond = 10f;
         
-        [Tooltip("Delay trước khi bắt đầu hồi stamina sau khi dùng (giây)")]
+        [Tooltip("Delay trÆ°á»›c khi báº¯t Ä‘áº§u há»“i stamina sau khi dÃ¹ng (giÃ¢y)")]
         [SerializeField] private float regenDelay = 1f;
 
         [Header("Action Costs")]
-        [Tooltip("Stamina tiêu tốn khi Roll/Dash")]
+        [Tooltip("Stamina tiÃªu tá»‘n khi Roll/Dash")]
         [SerializeField] private float rollCost = 15f;
         
-        [Tooltip("Stamina tiêu tốn Spell 01")]
+        [Tooltip("Stamina tiÃªu tá»‘n Spell 01")]
         [SerializeField] private float spell01Cost = 10f;
         
-        [Tooltip("Stamina tiêu tốn Spell 02")]
+        [Tooltip("Stamina tiÃªu tá»‘n Spell 02")]
         [SerializeField] private float spell02Cost = 20f;
         
-        [Tooltip("Stamina tiêu tốn Spell 03")]
+        [Tooltip("Stamina tiÃªu tá»‘n Spell 03")]
         [SerializeField] private float spell03Cost = 30f;
 
         [Header("Visual Feedback")]
-        [Tooltip("Màu stamina bar khi đầy")]
-        [SerializeField] private Color fullStaminaColor = new Color(0.3f, 0.8f, 1f); // Xanh dương
+        [Tooltip("MÃ u stamina bar khi Ä‘áº§y")]
+        [SerializeField] private Color fullStaminaColor = new Color(0.3f, 0.8f, 1f); // Xanh dÆ°Æ¡ng
         
-        [Tooltip("Màu stamina bar khi thấp")]
+        [Tooltip("MÃ u stamina bar khi tháº¥p")]
         [SerializeField] private Color lowStaminaColor = new Color(1f, 0.5f, 0f); // Cam
         
-        [Tooltip("Ngưỡng stamina thấp (%)")]
+        [Tooltip("NgÆ°á»¡ng stamina tháº¥p (%)")]
         [SerializeField] private float lowStaminaThreshold = 30f;
 
 
@@ -76,7 +76,7 @@ namespace NWO
             if (!CanRoll()) return false;
             
             ConsumeStamina(rollCost);
-            Debug.Log($"[Stamina] Roll consumed {rollCost} stamina. Remaining: {CurrentStamina:F0}/{maxStamina}");
+
             return true;
         }
 
@@ -93,12 +93,12 @@ namespace NWO
             
             if (CurrentStamina < cost)
             {
-                Debug.Log($"[Stamina] Not enough stamina for Spell {spellNumber}! Need {cost}, have {CurrentStamina:F0}");
+
                 return false;
             }
             
             ConsumeStamina(cost);
-            Debug.Log($"[Stamina] Spell {spellNumber} consumed {cost} stamina. Remaining: {CurrentStamina:F0}/{maxStamina}");
+
             return true;
         }
 
@@ -124,7 +124,7 @@ namespace NWO
 
         private void UpdateRegeneration()
         {
-            // Nếu đang delay, chờ
+            // Náº¿u Ä‘ang delay, chá»
             if (_regenDelayTimer > 0f)
             {
                 _regenDelayTimer -= Time.deltaTime;
@@ -135,7 +135,7 @@ namespace NWO
                 return;
             }
 
-            // Hồi stamina
+            // Há»“i stamina
             if (_isRegenerating && CurrentStamina < maxStamina)
             {
                 CurrentStamina = Mathf.Min(maxStamina, CurrentStamina + regenPerSecond * Time.deltaTime);
@@ -146,7 +146,7 @@ namespace NWO
         {
             float before = CurrentStamina;
             CurrentStamina = Mathf.Min(maxStamina, CurrentStamina + amount);
-            Debug.Log($"[Stamina] Added {amount} stamina ({before:F0} → {CurrentStamina:F0})");
+            Debug.Log($"[Stamina] Added {amount} stamina ({before:F0} â†’ {CurrentStamina:F0})");
         }
 
         public void RestoreToFull()
@@ -154,7 +154,7 @@ namespace NWO
             CurrentStamina = maxStamina;
             _regenDelayTimer = 0f;
             _isRegenerating = true;
-            Debug.Log("[Stamina] Restored to full!");
+
         }
         public Color GetStaminaBarColor()
         {
@@ -163,21 +163,21 @@ namespace NWO
                 return lowStaminaColor;
             }
             
-            // Lerp giữa low và full
+            // Lerp giá»¯a low vÃ  full
             float t = (StaminaPercent - lowStaminaThreshold / 100f) / (1f - lowStaminaThreshold / 100f);
             return Color.Lerp(lowStaminaColor, fullStaminaColor, t);
         }
 
         //private void OnGUI()
         //{
-        //    // Debug display (tắt nếu không cần)
+        //    // Debug display (táº¯t náº¿u khÃ´ng cáº§n)
         //    if (!Application.isEditor) return;
 
         //    GUIStyle style = new GUIStyle(GUI.skin.label);
         //    style.fontSize = 10;
         //    style.normal.textColor = Color.white;
 
-        //    // Stamina info ở góc dưới trái
+        //    // Stamina info á»Ÿ gÃ³c dÆ°á»›i trÃ¡i
         //    GUI.Label(new Rect(10, Screen.height - 40, 200, 20), 
         //        $"Stamina: {CurrentStamina:F0}/{maxStamina}", style);
             

@@ -1,10 +1,11 @@
 using UnityEngine;
+using ProceduralGeneration.Components;
 
 public class BossManager : MonoBehaviour
 {
     [Header("Boss Settings")]
     [SerializeField] private GameObject boss;
-    [SerializeField] private Door[] doorsToLock; // Các cửa cần khóa
+    [SerializeField] private DoorTrigger[] doorsToLock; // Các cửa cần khóa (updated to DoorTrigger)
     
     [Header("Trigger")]
     [SerializeField] private BoxCollider2D bossTrigger;
@@ -30,7 +31,7 @@ public class BossManager : MonoBehaviour
         bossFightStarted = true;
         
         // Khóa tất cả các cửa
-        foreach (Door door in doorsToLock)
+        foreach (DoorTrigger door in doorsToLock)
         {
             if (door != null)
                 door.LockDoor();
@@ -46,7 +47,7 @@ public class BossManager : MonoBehaviour
     public void OnBossDefeated()
     {
         // Mở khóa cửa khi boss chết
-        foreach (Door door in doorsToLock)
+        foreach (DoorTrigger door in doorsToLock)
         {
             if (door != null)
                 door.UnlockDoor();

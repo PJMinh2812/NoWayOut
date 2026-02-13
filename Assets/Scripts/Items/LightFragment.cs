@@ -1,8 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using NWO;
 
 /// <summary>
-/// Mảnh Sáng - Item người chơi cần thu thập để mở rộng tầm nhìn
+/// Máº£nh SÃ¡ng - Item ngÆ°á»i chÆ¡i cáº§n thu tháº­p Ä‘á»ƒ má»Ÿ rá»™ng táº§m nhÃ¬n
+/// Sá»­ dá»¥ng URP Light2D cho hiá»‡u á»©ng Ã¡nh sÃ¡ng 2D thá»±c sá»±
 /// </summary>
 public class LightFragment : MonoBehaviour
 {
@@ -19,17 +21,59 @@ public class LightFragment : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioClip collectSound;
     
-    [Header("Light Settings")]
-    // Standard Light (không cần URP)
-    [SerializeField] private Light itemLight;
-    // URP Light2D - chỉ dùng nếu project có URP:
-    // [SerializeField] private UnityEngine.Rendering.Universal.Light2D itemLight;
+    [Header("Light Settings (URP 2D)")]
+    [SerializeField] private Light2D itemLight;
     [SerializeField] private float lightPulseSpeed = 2f;
     [SerializeField] private float lightMinIntensity = 0.5f;
     [SerializeField] private float lightMaxIntensity = 1.2f;
+    [SerializeField] private float lightRadius = 3f;
+    [SerializeField] private Color lightColor = new Color(1f, 0.95f, 0.6f); // VÃ ng áº¥m
     
     private Vector3 startPosition;
     private bool isCollected = false;
+    
+    private void Awake()
+    {
+        // Auto-add CircleCollider2D náº¿u chÆ°a cÃ³
+        var col = GetComponent<Collider2D>();
+        if (col == null)
+        {
+            var circle = gameObject.AddComponent<CircleCollider2D>();
+            circle.radius = 0.8f;
+            circle.isTrigger = true;
+        }
+        else
+        {
+            col.isTrigger = true;
+        }
+        
+        // Auto-add Light2D náº¿u chÆ°a cÃ³
+        if (itemLight == null)
+        {
+            itemLight = GetComponentInChildren<Light2D>();
+            if (itemLight == null)
+            {
+                var lightObj = new GameObject("FragmentLight");
+                lightObj.transform.SetParent(transform);
+                lightObj.transform.localPosition = Vector3.zero;
+                itemLight = lightObj.AddComponent<Light2D>();
+                itemLight.lightType = Light2D.LightType.Point;
+                itemLight.pointLightOuterRadius = lightRadius;
+                itemLight.pointLightInnerRadius = lightRadius * 0.3f;
+                itemLight.intensity = lightMaxIntensity;
+                itemLight.color = lightColor;
+            }
+        }
+        
+        // Auto-add SpriteRenderer náº¿u chÆ°a cÃ³
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr == null)
+        {
+            sr = gameObject.AddComponent<SpriteRenderer>();
+            sr.color = lightColor;
+            sr.sortingOrder = 5;
+        }
+    }
     
     private void Start()
     {
@@ -40,14 +84,14 @@ public class LightFragment : MonoBehaviour
     {
         if (isCollected) return;
         
-        // Xoay liên tục
+        // Xoay liÃªn tá»¥c
         transform.Rotate(Vector3.forward * rotationSpeed * Time.deltaTime);
         
-        // Bay lên xuống
+        // Bay lÃªn xuá»‘ng
         float newY = startPosition.y + Mathf.Sin(Time.time * floatSpeed) * floatAmplitude;
         transform.position = new Vector3(transform.position.x, newY, transform.position.z);
         
-        // Nhấp nháy ánh sáng
+        // Nháº¥p nhÃ¡y Ã¡nh sÃ¡ng (URP Light2D)
         if (itemLight != null)
         {
             float intensity = Mathf.Lerp(lightMinIntensity, lightMaxIntensity, 
@@ -70,58 +114,59 @@ public class LightFragment : MonoBehaviour
     {
         isCollected = true;
         
-        // Thông báo cho GameManager
+        // ThÃ´ng bÃ¡o cho GameManager
         if (GameManager.Instance != null)
         {
             GameManager.Instance.CollectLightFragment(fragmentID);
         }
         
-        // Hiệu ứng particle
+        // Hiá»‡u á»©ng particle
         if (collectEffect != null)
         {
             Instantiate(collectEffect, transform.position, Quaternion.identity);
         }
         
-        // Âm thanh
+        // Ã‚m thanh
         if (collectSound != null)
         {
             AudioSource.PlayClipAtPoint(collectSound, transform.position);
         }
         
-        // Hiệu ứng UI (optional)
+        // Hiá»‡u á»©ng UI (optional)
         ShowCollectNotification();
         
-        // Mở rộng tầm nhìn của player
+        // Má»Ÿ rá»™ng táº§m nhÃ¬n cá»§a player
         ExpandPlayerVision(player);
         
-        // Destroy với animation
+        // Destroy vá»›i animation
         StartCoroutine(CollectAnimation());
     }
     
     private void ExpandPlayerVision(GameObject player)
     {
-        // Tìm Light component của player (Standard Light)
-        var playerLight = player.GetComponentInChildren<Light>();
-        if (playerLight != null)
+        // DungeonLightingManager xá»­ lÃ½ viá»‡c má»Ÿ rá»™ng Ã¡nh sÃ¡ng (vá»›i animation)
+        // NÃ³ Ä‘Ã£ Ä‘Äƒng kÃ½ event OnLightFragmentCollected tá»« GameManager
+        // NÃªn chá»‰ cáº§n log á»Ÿ Ä‘Ã¢y
+        if (NWO.DungeonLightingManager.Instance != null)
         {
-            // Tăng range của ánh sáng
-            playerLight.range += 2f;
-            playerLight.intensity += 0.2f;
+
         }
-        
-        // URP Light2D - chỉ dùng nếu project có URP:
-        // var playerLight = player.GetComponentInChildren<UnityEngine.Rendering.Universal.Light2D>();
-        // if (playerLight != null)
-        // {
-        //     playerLight.pointLightOuterRadius += 2f;
-        //     playerLight.intensity += 0.2f;
-        // }
+        else
+        {
+            // Fallback: tá»± tÄƒng náº¿u khÃ´ng cÃ³ manager
+            var playerLight = player.GetComponentInChildren<Light2D>();
+            if (playerLight != null)
+            {
+                playerLight.pointLightOuterRadius += 1f;
+
+            }
+        }
     }
     
     private void ShowCollectNotification()
     {
-        // TODO: Hiển thị UI thông báo "Light Fragment Collected!"
-        Debug.Log($"{fragmentName} #{fragmentID} collected!");
+        // TODO: Hiá»ƒn thá»‹ UI thÃ´ng bÃ¡o "Light Fragment Collected!"
+
     }
     
     private System.Collections.IEnumerator CollectAnimation()
@@ -137,7 +182,7 @@ public class LightFragment : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             
-            // Scale lên và fade out
+            // Scale lÃªn vÃ  fade out
             transform.localScale = Vector3.Lerp(startScale, startScale * 1.5f, t);
             transform.position = Vector3.Lerp(transform.position, targetPos, t);
             

@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace NWO
 {
-    // Bắn projectile theo hướng chuột, tạo và quản lý muzzle position
+    // Báº¯n projectile theo hÆ°á»›ng chuá»™t, táº¡o vÃ  quáº£n lÃ½ muzzle position
     public sealed class PlayerShooter2D : MonoBehaviour
     {
         [SerializeField] private PlayerController2D controller;
@@ -87,7 +87,7 @@ namespace NWO
             float angleRad = controller.AimAngleDeg * Mathf.Deg2Rad;
             var dir = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
 
-            Debug.Log($"[PlayerShooter2D] Angle: {controller.AimAngleDeg}°, Dir: {dir}, Muzzle: {muzzle.position}");
+
             
             var proj = Instantiate(projToFire, muzzle.position, Quaternion.identity);
             proj.Fire(dir);

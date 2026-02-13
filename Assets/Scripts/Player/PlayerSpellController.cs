@@ -122,7 +122,7 @@ namespace NWO
         if (_isCasting)
         {
             _isCasting = false;
-            Debug.Log("[Spell] Casting cancelled!");
+
         }
 
         if (spellNumber == 0)
@@ -131,7 +131,7 @@ namespace NWO
         }
         else
         {
-            Debug.Log($"[Spell] Switched to Spell {spellNumber}");
+
         }
     }
 
@@ -148,7 +148,7 @@ namespace NWO
 
             if (_currentSpell == 0)
             {
-                Debug.Log("[Spell] No spell selected! Press 1, 2, or 3 to select a spell.");
+
                 return;
             }
             bool canCast = _currentSpell switch
@@ -176,11 +176,11 @@ namespace NWO
                 
                 if (onCooldown)
                 {
-                    Debug.Log($"[Spell] Spell {_currentSpell} on cooldown!");
+
                 }
                 else if (_stamina != null && !_stamina.CanCastSpell(_currentSpell))
                 {
-                    Debug.Log($"[Spell] Not enough stamina for Spell {_currentSpell}!");
+
                 }
             }
         }
@@ -201,15 +201,15 @@ namespace NWO
             {
                 case 1:
                     _spell01CooldownRemaining = spell01Cooldown;
-                    Debug.Log($"[Spell] Cast Spell 01 - Damage: {spell01Damage}");
+
                     break;
                 case 2:
                     _spell02CooldownRemaining = spell02Cooldown;
-                    Debug.Log($"[Spell] Cast Spell 02 - Damage: {spell02Damage}");
+
                     break;
                 case 3:
                     _spell03CooldownRemaining = spell03Cooldown;
-                    Debug.Log($"[Spell] Cast Spell 03 - Damage: {spell03Damage}");
+
                     break;
             }
 
@@ -222,7 +222,7 @@ namespace NWO
         {
             _isCasting = false;
             _castingTime = 0f;
-            Debug.Log("[Spell] Cast complete!");
+
         }
 
 
@@ -280,7 +280,7 @@ namespace NWO
                 }
             }
 
-            Debug.Log($"[Spell] Spawned projectile for Spell {_currentSpell}");
+
         }
 
         /// <summary>
@@ -300,7 +300,7 @@ namespace NWO
             {
                 _currentSpell = _spellBeforeDamage;
                 _animator.SetInteger("SpellType", _spellBeforeDamage);
-                Debug.Log($"[Spell] Restored spell state to Spell {_spellBeforeDamage}");
+
             }
         }
 

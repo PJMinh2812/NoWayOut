@@ -1,11 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 namespace NWO
 {
     /// <summary>
-    /// Bản C# rút gọn từ global.Enemy: di chuyển đuổi theo Player và gây damage + knockback khi va chạm.
-    /// Pathfinding chi tiết sẽ port sau; tạm thời là chase trực tiếp.
+    /// Báº£n C# rÃºt gá»n tá»« global.Enemy: di chuyá»ƒn Ä‘uá»•i theo Player vÃ  gÃ¢y damage + knockback khi va cháº¡m.
+    /// Pathfinding chi tiáº¿t sáº½ port sau; táº¡m thá»i lÃ  chase trá»±c tiáº¿p.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class Enemy2D : MonoBehaviour

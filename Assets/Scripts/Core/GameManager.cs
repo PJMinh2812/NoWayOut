@@ -23,6 +23,12 @@ namespace NWO
         public bool IsGameOver => isGameOver;
         public int LightFragmentsCollected => lightFragmentsCollected;
         public int TotalLightFragments => totalLightFragments;
+        
+        // === EVENTS ===
+        /// <summary>Event khi nhặt Light Fragment (current, total)</summary>
+        public event System.Action<int, int> OnLightFragmentCollected;
+        /// <summary>Event khi nhặt đủ tất cả Light Fragments</summary>
+        public event System.Action OnAllLightFragmentsCollected;
 
         private void Awake()
         {
@@ -37,6 +43,30 @@ namespace NWO
             if (gameOverUI != null)
             {
                 gameOverUI.SetActive(false);
+            }
+            
+            // Auto-create LightFragmentUI nếu chưa có
+            if (FindFirstObjectByType<LightFragmentUI>() == null)
+            {
+                var uiObj = new GameObject("LightFragmentUI");
+                uiObj.AddComponent<LightFragmentUI>();
+                Debug.Log("[GameManager] Auto-created LightFragmentUI");
+            }
+            
+            // Auto-create FlashOfTruthUI nếu chưa có
+            if (FindFirstObjectByType<FlashOfTruthUI>() == null)
+            {
+                var flashUIObj = new GameObject("FlashOfTruthUI");
+                flashUIObj.AddComponent<FlashOfTruthUI>();
+                Debug.Log("[GameManager] Auto-created FlashOfTruthUI");
+            }
+            
+            // Auto-create DungeonLightingManager nếu chưa có
+            if (FindFirstObjectByType<DungeonLightingManager>() == null)
+            {
+                var lightingObj = new GameObject("DungeonLightingManager");
+                lightingObj.AddComponent<DungeonLightingManager>();
+                Debug.Log("[GameManager] Auto-created DungeonLightingManager");
             }
         }
 
@@ -81,6 +111,9 @@ namespace NWO
             lightFragmentsCollected++;
             Debug.Log($"[GameManager] Light Fragment #{fragmentID} collected! Total: {lightFragmentsCollected}/{totalLightFragments}");
             
+            // Fire event
+            OnLightFragmentCollected?.Invoke(lightFragmentsCollected, totalLightFragments);
+            
             // Kiểm tra đã thu thập đủ chưa
             if (lightFragmentsCollected >= totalLightFragments)
             {
@@ -95,11 +128,8 @@ namespace NWO
         {
             Debug.Log("[GameManager] All Light Fragments collected! Unlocking Flash of Truth skill...");
             
-            // TODO: Mở khóa skill Flash of Truth
-            // Có thể trigger event hoặc enable skill trong PlayerController
-            
-            // TODO: Hiển thị thông báo UI
-            // ShowNotification("Flash of Truth Unlocked!");
+            // Fire event
+            OnAllLightFragmentsCollected?.Invoke();
         }
 
 
