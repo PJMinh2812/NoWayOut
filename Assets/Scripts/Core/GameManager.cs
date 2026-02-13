@@ -68,6 +68,22 @@ namespace NWO
                 lightingObj.AddComponent<DungeonLightingManager>();
                 Debug.Log("[GameManager] Auto-created DungeonLightingManager");
             }
+            
+            // Auto-create MinimapManager nếu chưa có
+            if (FindFirstObjectByType<UI.MinimapManager>() == null)
+            {
+                var minimapObj = new GameObject("MinimapManager");
+                minimapObj.AddComponent<UI.MinimapManager>();
+                Debug.Log("[GameManager] Auto-created MinimapManager");
+            }
+            
+            // Auto-create LightingHotbarUI nếu chưa có
+            if (FindFirstObjectByType<UI.LightingHotbarUI>() == null)
+            {
+                var hotbarObj = new GameObject("LightingHotbarUI");
+                hotbarObj.AddComponent<UI.LightingHotbarUI>();
+                Debug.Log("[GameManager] Auto-created LightingHotbarUI");
+            }
         }
 
 

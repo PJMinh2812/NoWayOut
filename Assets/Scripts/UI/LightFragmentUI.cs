@@ -15,7 +15,7 @@ namespace NWO
         [SerializeField] private Image fragmentIcon;
         
         [Header("Settings")]
-        [SerializeField] private Color normalColor = new Color(1f, 0.95f, 0.6f);
+        [SerializeField] private Color normalColor = new Color(0.85f, 0.9f, 1f);
         [SerializeField] private Color completeColor = new Color(0.5f, 1f, 0.5f);
         [SerializeField] private float pulseSpeed = 2f;
         
@@ -163,11 +163,20 @@ namespace NWO
         /// </summary>
         private void CreateFragmentUI()
         {
-            // TÃ¬m hoáº·c táº¡o Canvas
+            // Tìm Canvas có sẵn trong scene (ưu tiên GameCanvas)
             Canvas canvas = GetComponentInParent<Canvas>();
             if (canvas == null)
             {
-                canvas = FindFirstObjectByType<Canvas>();
+                // Tìm GameCanvas hoặc bất kỳ Overlay canvas nào
+                var allCanvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+                foreach (var c in allCanvases)
+                {
+                    if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                    {
+                        canvas = c;
+                        break;
+                    }
+                }
             }
             if (canvas == null)
             {
@@ -175,7 +184,9 @@ namespace NWO
                 canvas = canvasObj.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvas.sortingOrder = 100;
-                canvasObj.AddComponent<CanvasScaler>();
+                var scaler = canvasObj.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920, 1080);
                 canvasObj.AddComponent<GraphicRaycaster>();
             }
             

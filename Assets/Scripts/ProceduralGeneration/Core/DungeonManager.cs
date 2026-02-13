@@ -235,6 +235,35 @@ namespace ProceduralGeneration.Core
         }
         
         /// <summary>
+        /// Lấy room tại vị trí world position (cho minimap tracking)
+        /// </summary>
+        public Room GetRoomAtWorldPosition(Vector3 worldPosition)
+        {
+            if (allRooms == null) return null;
+            
+            foreach (var room in allRooms)
+            {
+                if (room.roomInstance == null) continue;
+                
+                // Use the room's actual world transform position
+                Vector3 roomWorldPos = room.roomInstance.transform.position;
+                Vector3 roomSize = new Vector3(room.actualSize.x * worldScale, room.actualSize.y * worldScale, 1f);
+                
+                Bounds bounds = new Bounds(
+                    roomWorldPos + roomSize * 0.5f,
+                    roomSize
+                );
+                
+                if (bounds.Contains(worldPosition))
+                {
+                    return room;
+                }
+            }
+            
+            return null;
+        }
+        
+        /// <summary>
         /// Rebuild Room list từ các room GameObjects có sẵn trong scene (khi enter Play Mode)
         /// </summary>
         public void RebuildRoomListFromScene()
