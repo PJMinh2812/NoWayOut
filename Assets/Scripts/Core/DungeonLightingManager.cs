@@ -69,6 +69,12 @@ namespace NWO
             {
                 GameManager.Instance.OnLightFragmentCollected += OnFragmentCollected;
             }
+            
+            // Ensure player has FlashOfTruth component
+            if (playerObj != null && playerObj.GetComponent<FlashOfTruth>() == null)
+            {
+                playerObj.AddComponent<FlashOfTruth>();
+            }
         }
         
         private void OnDestroy()

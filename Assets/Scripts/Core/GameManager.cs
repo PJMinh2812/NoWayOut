@@ -53,6 +53,14 @@ namespace NWO
                 Debug.Log("[GameManager] Auto-created LightFragmentUI");
             }
             
+            // Auto-create FlashOfTruthUI nếu chưa có
+            if (FindFirstObjectByType<FlashOfTruthUI>() == null)
+            {
+                var flashUIObj = new GameObject("FlashOfTruthUI");
+                flashUIObj.AddComponent<FlashOfTruthUI>();
+                Debug.Log("[GameManager] Auto-created FlashOfTruthUI");
+            }
+            
             // Auto-create DungeonLightingManager nếu chưa có
             if (FindFirstObjectByType<DungeonLightingManager>() == null)
             {
