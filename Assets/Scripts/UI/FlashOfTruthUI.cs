@@ -102,28 +102,39 @@ namespace NWO
         
         private void CreateFlashUI()
         {
-            // Find or create Canvas
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            // Find existing ScreenSpaceOverlay canvas
+            Canvas canvas = null;
+            var allCanvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+            foreach (var c in allCanvases)
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    canvas = c;
+                    break;
+                }
+            }
             if (canvas == null)
             {
                 var canvasObj = new GameObject("UICanvas");
                 canvas = canvasObj.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvas.sortingOrder = 100;
-                canvasObj.AddComponent<CanvasScaler>();
+                var scaler = canvasObj.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920, 1080);
                 canvasObj.AddComponent<GraphicRaycaster>();
             }
             
-            // Container (bottom-center)
+            // Container (bottom-left, avoid SpellHotbar overlap at bottom-center)
             var container = new GameObject("FlashOfTruthUI");
             container.transform.SetParent(canvas.transform, false);
             
             var containerRect = container.AddComponent<RectTransform>();
-            containerRect.anchorMin = new Vector2(0.5f, 0f);
-            containerRect.anchorMax = new Vector2(0.5f, 0f);
-            containerRect.pivot = new Vector2(0.5f, 0f);
-            containerRect.anchoredPosition = new Vector2(0f, 80f);
-            containerRect.sizeDelta = new Vector2(120f, 120f);
+            containerRect.anchorMin = new Vector2(0f, 0f);
+            containerRect.anchorMax = new Vector2(0f, 0f);
+            containerRect.pivot = new Vector2(0f, 0f);
+            containerRect.anchoredPosition = new Vector2(20f, 20f);
+            containerRect.sizeDelta = new Vector2(80f, 80f);
             
             canvasGroup = container.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0.3f;
