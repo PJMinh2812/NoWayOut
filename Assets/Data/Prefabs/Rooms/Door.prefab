@@ -181,7 +181,7 @@ MonoBehaviour:
   isLocked: 0
   closedVisual: {fileID: 0}
   openVisual: {fileID: 0}
-  unlockedColor: {r: 0, g: 1, b: 0, a: 1}
+  unlockedColor: {r: 0.21960786, g: 0.21960786, b: 0.21960786, a: 0}
   lockedColor: {r: 1, g: 0, b: 0, a: 1}
   doorAnimator: {fileID: 0}
   openSound: {fileID: 0}

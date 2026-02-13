@@ -1,23 +1,23 @@
-using UnityEngine;
+﻿using UnityEngine;
 using NWO;
 
 /// <summary>
-/// Gạch rơi giả - Trông giống sàn thường nhưng sẽ biến mất khi người chơi bước vào
-/// Sử dụng cho: Phòng Start - cái bẫy đầu tiên ngay sau tấm biển cảnh báo
+/// Gáº¡ch rÆ¡i giáº£ - TrÃ´ng giá»‘ng sÃ n thÆ°á»ng nhÆ°ng sáº½ biáº¿n máº¥t khi ngÆ°á»i chÆ¡i bÆ°á»›c vÃ o
+/// Sá»­ dá»¥ng cho: PhÃ²ng Start - cÃ¡i báº«y Ä‘áº§u tiÃªn ngay sau táº¥m biá»ƒn cáº£nh bÃ¡o
 /// </summary>
 public class FakeFloor : MonoBehaviour
 {
     [Header("Fake Floor Settings")]
-    [Tooltip("Thời gian delay trước khi gạch rơi (giây)")]
+    [Tooltip("Thá»i gian delay trÆ°á»›c khi gáº¡ch rÆ¡i (giÃ¢y)")]
     [SerializeField] private float fallDelay = 0.1f;
     
-    [Tooltip("Thời gian gạch tự hồi phục (0 = không hồi phục)")]
+    [Tooltip("Thá»i gian gáº¡ch tá»± há»“i phá»¥c (0 = khÃ´ng há»“i phá»¥c)")]
     [SerializeField] private float respawnTime = 5f;
     
-    [Tooltip("Có phát hiệu ứng cảnh báo không?")]
+    [Tooltip("CÃ³ phÃ¡t hiá»‡u á»©ng cáº£nh bÃ¡o khÃ´ng?")]
     [SerializeField] private bool showWarning = true;
     
-    [Tooltip("Màu nhấp nháy cảnh báo")]
+    [Tooltip("MÃ u nháº¥p nhÃ¡y cáº£nh bÃ¡o")]
     [SerializeField] private Color warningColor = new Color(1f, 0.8f, 0.8f, 1f);
     
     [Header("Audio")]
@@ -25,13 +25,13 @@ public class FakeFloor : MonoBehaviour
     [SerializeField] private AudioClip fallSound;
     
     [Header("Damage Settings")]
-    [Tooltip("Gây sát thương cho player khi rơi? (0 = không gây damage)")]
+    [Tooltip("GÃ¢y sÃ¡t thÆ°Æ¡ng cho player khi rÆ¡i? (0 = khÃ´ng gÃ¢y damage)")]
     [SerializeField] private int damage = 0;
     
-    [Tooltip("Giết player ngay lập tức?")]
+    [Tooltip("Giáº¿t player ngay láº­p tá»©c?")]
     [SerializeField] private bool instantKill = false;
     
-    [Tooltip("Respawn point khi player chết (nếu instant kill)")]
+    [Tooltip("Respawn point khi player cháº¿t (náº¿u instant kill)")]
     [SerializeField] private Transform respawnPoint;
     
     private SpriteRenderer spriteRenderer;
@@ -39,7 +39,7 @@ public class FakeFloor : MonoBehaviour
     private Color originalColor;
     private bool isTriggered = false;
     private bool isFalling = false;
-    private GameObject fallingPlayer; // Lưu player đang rơi
+    private GameObject fallingPlayer; // LÆ°u player Ä‘ang rÆ¡i
     
     private void Awake()
     {
@@ -50,7 +50,7 @@ public class FakeFloor : MonoBehaviour
         {
             originalColor = spriteRenderer.color;
             
-            // Làm màu nhạt hơn một chút để người chơi cẩn thận có thể nhận ra
+            // LÃ m mÃ u nháº¡t hÆ¡n má»™t chÃºt Ä‘á»ƒ ngÆ°á»i chÆ¡i cáº©n tháº­n cÃ³ thá»ƒ nháº­n ra
             if (showWarning)
             {
                 spriteRenderer.color = new Color(
@@ -65,14 +65,14 @@ public class FakeFloor : MonoBehaviour
     
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log($"FakeFloor: OnTriggerEnter2D - Object: {collision.gameObject.name}, Tag: {collision.tag}");
+
         
         if (isTriggered || isFalling) return;
         
-        // Chỉ kích hoạt khi player bước vào
+        // Chá»‰ kÃ­ch hoáº¡t khi player bÆ°á»›c vÃ o
         if (collision.CompareTag("Player"))
         {
-            Debug.Log("FakeFloor: Player detected! Triggering fall...");
+
             fallingPlayer = collision.gameObject;
             TriggerFall();
         }
@@ -91,10 +91,10 @@ public class FakeFloor : MonoBehaviour
     
     private void TriggerFall()
     {
-        Debug.Log("FakeFloor: TriggerFall() called!");
+
         isTriggered = true;
         
-        // Phát âm thanh nứt
+        // PhÃ¡t Ã¢m thanh ná»©t
         if (crackSound != null)
         {
             AudioSource.PlayClipAtPoint(crackSound, transform.position);
@@ -102,12 +102,12 @@ public class FakeFloor : MonoBehaviour
         
         if (showWarning && spriteRenderer != null)
         {
-            Debug.Log("FakeFloor: Starting warning flash...");
+
             StartCoroutine(WarningFlash());
         }
         else
         {
-            Debug.Log($"FakeFloor: Invoking Fall() with delay {fallDelay}s");
+
             Invoke(nameof(Fall), fallDelay);
         }
     }
@@ -129,36 +129,36 @@ public class FakeFloor : MonoBehaviour
     
     private void Fall()
     {
-        Debug.Log("FakeFloor: Fall() - Starting fall sequence!");
+
         isFalling = true;
         
-        // Phát âm thanh rơi
+        // PhÃ¡t Ã¢m thanh rÆ¡i
         if (fallSound != null)
         {
             AudioSource.PlayClipAtPoint(fallSound, transform.position);
         }
         
-        // Tắt collider để người chơi rơi xuyên qua
+        // Táº¯t collider Ä‘á»ƒ ngÆ°á»i chÆ¡i rÆ¡i xuyÃªn qua
         if (floorCollider != null)
         {
-            Debug.Log("FakeFloor: Disabling collider...");
+
             floorCollider.enabled = false;
         }
         
-        // Làm sprite biến mất dần
+        // LÃ m sprite biáº¿n máº¥t dáº§n
         if (spriteRenderer != null)
         {
-            Debug.Log("FakeFloor: Starting fade out...");
+
             StartCoroutine(FadeOut());
         }
         
-        // Gây damage hoặc kill player
+        // GÃ¢y damage hoáº·c kill player
         DamagePlayer();
         
-        // Hồi phục gạch sau một thời gian
+        // Há»“i phá»¥c gáº¡ch sau má»™t thá»i gian
         if (respawnTime > 0)
         {
-            Debug.Log($"FakeFloor: Floor will respawn in {respawnTime}s");
+
             Invoke(nameof(Respawn), respawnTime);
         }
     }
@@ -171,23 +171,23 @@ public class FakeFloor : MonoBehaviour
         if (playerHealth != null)
         {
             Rigidbody2D playerRb = fallingPlayer.GetComponent<Rigidbody2D>();
-            Vector2 knockbackForce = Vector2.down * 5f; // Đẩy xuống
+            Vector2 knockbackForce = Vector2.down * 5f; // Äáº©y xuá»‘ng
             
             if (instantKill)
             {
-                Debug.Log("FakeFloor: Instant killing player!");
+
                 playerHealth.TakeDamage(999, knockbackForce, playerRb);
                 
                 // Respawn player sau 1.5s
                 if (respawnPoint != null)
                 {
-                    Debug.Log("FakeFloor: Player will respawn in 1.5s...");
+
                     Invoke(nameof(RespawnPlayer), 1.5f);
                 }
             }
             else if (damage > 0)
             {
-                Debug.Log($"FakeFloor: Damaging player for {damage} HP");
+
                 playerHealth.TakeDamage(damage, knockbackForce, playerRb);
             }
         }
@@ -197,13 +197,13 @@ public class FakeFloor : MonoBehaviour
     {
         if (fallingPlayer != null && respawnPoint != null)
         {
-            Debug.Log($"FakeFloor: Respawning player at {respawnPoint.position}");
+
             fallingPlayer.transform.position = respawnPoint.position;
             
             PlayerHealth2D playerHealth = fallingPlayer.GetComponent<PlayerHealth2D>();
             if (playerHealth != null)
             {
-                playerHealth.ResetHealth(); // Reset về full HP
+                playerHealth.ResetHealth(); // Reset vá» full HP
             }
         }
     }
@@ -243,7 +243,7 @@ public class FakeFloor : MonoBehaviour
         }
     }
     
-    // Để debug trong editor
+    // Äá»ƒ debug trong editor
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0.5f, 0.5f, 0.5f);

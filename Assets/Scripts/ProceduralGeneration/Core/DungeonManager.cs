@@ -2,7 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProceduralGeneration.Data;
+using ProceduralGeneration.Components;
 using Core;
+using NWO;
 
 namespace ProceduralGeneration.Core
 {
@@ -152,6 +154,10 @@ namespace ProceduralGeneration.Core
             
             isGenerated = true;
             
+            // Light Fragments được đặt tay trong scene (tutorial map)
+            // Không auto-spawn nữa - dùng menu: GameObject > No Way Out > Light Fragment
+            // SpawnLightFragments();
+            
             Debug.Log($"<color=green>Dungeon generated successfully!</color> Seed: {currentSeed}, Rooms: {allRooms.Count}");
         }
         
@@ -160,23 +166,33 @@ namespace ProceduralGeneration.Core
         
         public void ClearDungeon()
         {
-            if (dungeonContainer != null)
+            // Re-find dungeonContainer nếu reference bị mất (sau Play→Stop)
+            if (dungeonContainer == null)
             {
-                // Destroy tất cả children
-                for (int i = dungeonContainer.childCount - 1; i >= 0; i--)
+                dungeonContainer = transform.Find("DungeonContainer");
+                if (dungeonContainer == null)
                 {
-                    DestroyImmediate(dungeonContainer.GetChild(i).gameObject);
+                    GameObject containerObj = GameObject.Find("DungeonContainer");
+                    if (containerObj != null)
+                        dungeonContainer = containerObj.transform;
                 }
             }
             
-            // Clear data
-            if (allRooms != null)
+            if (dungeonContainer != null)
             {
-                foreach (var room in allRooms)
+                // Destroy tất cả children (dùng DestroyImmediate cho Editor mode)
+                for (int i = dungeonContainer.childCount - 1; i >= 0; i--)
                 {
-                    room.Cleanup();
+                    var child = dungeonContainer.GetChild(i).gameObject;
+                    if (Application.isPlaying)
+                        Destroy(child);
+                    else
+                        DestroyImmediate(child);
                 }
             }
+            
+            // Clear data - KHÔNG gọi Cleanup vì children đã bị destroy ở trên
+            // Room.Cleanup() sẽ lỗi nếu roomInstance đã bị destroy
             
             occupiedCells?.Clear();
             allRooms?.Clear();
@@ -185,19 +201,21 @@ namespace ProceduralGeneration.Core
             goalRoom = null;
             isGenerated = false;
             
-            if (verboseLogging)
-                Debug.Log("Dungeon cleared");
+            Debug.Log("[DungeonManager] Dungeon cleared");
         }
         
         
+        /// <summary>
         /// Lấy seed hiện tại
-        
+        /// </summary>
         public int GetCurrentSeed()
         {
             return currentSeed;
         }
         
         /// <summary>
+        /// Tìm Room object từ GameObject instance (dùng khi DoorTrigger cần lookup room)
+        /// </summary>
         /// Tìm Room object từ GameObject instance (dùng khi DoorTrigger cần lookup room)
         /// </summary>
         public Room GetRoomByGameObject(GameObject roomGameObject)
@@ -214,6 +232,263 @@ namespace ProceduralGeneration.Core
         public List<Room> GetAllRooms()
         {
             return allRooms;
+        }
+        
+        /// <summary>
+        /// Rebuild Room list từ các room GameObjects có sẵn trong scene (khi enter Play Mode)
+        /// </summary>
+        public void RebuildRoomListFromScene()
+        {
+            if (allRooms == null)
+                allRooms = new List<Room>();
+            else
+                allRooms.Clear();
+            
+            if (dungeonContainer == null)
+            {
+                Debug.LogWarning("[DungeonManager] No DungeonContainer found, cannot rebuild room list");
+                return;
+            }
+            
+            // Tìm tất cả room GameObjects trong DungeonContainer
+            // Room GameObjects có format: Room_<type>_<x>_<y> (ví dụ: Room_Start_0_0)
+            for (int i = 0; i < dungeonContainer.childCount; i++)
+            {
+                Transform roomTransform = dungeonContainer.GetChild(i);
+                GameObject roomObj = roomTransform.gameObject;
+                
+                // Check xem có phải là room GameObject không (bắt đầu với "Room_")
+                if (!roomObj.name.StartsWith("Room_"))
+                    continue;
+                
+                // Parse thông tin từ tên GameObject: Room_<type>_<x>_<y>
+                string[] parts = roomObj.name.Split('_');
+                if (parts.Length < 4)
+                    continue;
+                
+                string roomType = parts[1];
+                if (!int.TryParse(parts[2], out int gridX))
+                    continue;
+                if (!int.TryParse(parts[3], out int gridY))
+                    continue;
+                
+                // Tìm RoomData tương ứng trong database
+                RoomData roomData = roomDatabase.Find(r => r.roomType.ToString() == roomType);
+                if (roomData == null)
+                {
+                    Debug.LogWarning($"[DungeonManager] Cannot find RoomData for type: {roomType}");
+                    continue;
+                }
+                
+                // Tạo Room object với constructor
+                Room room = new Room(roomData, new Vector2Int(gridX, gridY));
+                room.roomInstance = roomObj;
+                
+                allRooms.Add(room);
+            }
+            
+            // Rebuild connected rooms từ door prefabs
+            RebuildRoomConnectionsFromDoors();
+            
+            // Setup room visibility: chỉ show Start room, ẩn tất cả rooms khác
+            Room rebuiltStartRoom = null;
+            foreach (var room in allRooms)
+            {
+                if (room.roomData != null && room.roomData.roomType == RoomType.Start)
+                {
+                    rebuiltStartRoom = room;
+                    break;
+                }
+            }
+            
+            // Nếu không tìm thấy Start room, dùng room đầu tiên
+            if (rebuiltStartRoom == null && allRooms.Count > 0)
+                rebuiltStartRoom = allRooms[0];
+            
+            foreach (var room in allRooms)
+            {
+                if (room.roomInstance != null)
+                {
+                    bool isStart = (room == rebuiltStartRoom);
+                    room.roomInstance.SetActive(isStart);
+                }
+            }
+            
+            // Set camera background = đen
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.backgroundColor = Color.black;
+                mainCam.clearFlags = CameraClearFlags.SolidColor;
+            }
+            
+            // Auto-create GameManager nếu chưa có
+            if (NWO.GameManager.Instance == null && FindFirstObjectByType<NWO.GameManager>() == null)
+            {
+                var gmObj = new GameObject("GameManager");
+                gmObj.AddComponent<NWO.GameManager>();
+                Debug.Log("[DungeonManager] Auto-created GameManager");
+            }
+            
+            // Auto-create DungeonLightingManager nếu chưa có
+            if (NWO.DungeonLightingManager.Instance == null && FindFirstObjectByType<NWO.DungeonLightingManager>() == null)
+            {
+                var lightObj = new GameObject("DungeonLightingManager");
+                lightObj.AddComponent<NWO.DungeonLightingManager>();
+                Debug.Log("[DungeonManager] Auto-created DungeonLightingManager");
+            }
+            
+            Debug.Log($"[DungeonManager] Rebuilt {allRooms.Count} rooms from scene");
+        }
+        
+        /// <summary>
+        /// Rebuild room connections bằng cách match doors theo distance và opposite direction
+        /// </summary>
+        private void RebuildRoomConnectionsFromDoors()
+        {
+            // Thu thập tất cả doors từ tất cả rooms
+            var allDoors = new List<(Room room, DoorTrigger door, DoorDirection direction, Vector3 position)>();
+            
+            foreach (var room in allRooms)
+            {
+                Transform doorsContainer = room.roomInstance.transform.Find("Visuals/Doors");
+                if (doorsContainer == null)
+                    doorsContainer = room.roomInstance.transform.Find("Doors");
+                
+                if (doorsContainer == null)
+                    continue;
+                
+                for (int i = 0; i < doorsContainer.childCount; i++)
+                {
+                    Transform doorTransform = doorsContainer.GetChild(i);
+                    var doorTrigger = doorTransform.GetComponent<DoorTrigger>();
+                    
+                    if (doorTrigger != null)
+                    {
+                        allDoors.Add((room, doorTrigger, doorTrigger.doorDirection, doorTransform.position));
+                    }
+                }
+            }
+            
+            // Match mỗi door với door đối diện gần nhất
+            foreach (var (room, door, direction, position) in allDoors)
+            {
+                DoorDirection oppositeDir = GetOppositeDirection(direction);
+                
+                // Tìm door gần nhất với opposite direction và nằm đúng hướng
+                Room bestTarget = null;
+                float bestDistance = float.MaxValue;
+                
+                foreach (var (otherRoom, otherDoor, otherDir, otherPos) in allDoors)
+                {
+                    // Skip same room
+                    if (otherRoom == room)
+                        continue;
+                    
+                    // Chỉ match với opposite direction
+                    if (otherDir != oppositeDir)
+                        continue;
+                    
+                    // Check nếu door kia nằm đúng hướng
+                    if (!IsInCorrectDirection(position, otherPos, direction))
+                        continue;
+                    
+                    float distance = Vector3.Distance(position, otherPos);
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestTarget = otherRoom;
+                    }
+                }
+                
+                if (bestTarget != null)
+                {
+                    room.connectedRooms[direction] = bestTarget;
+                }
+            }
+        }
+        
+        private DoorDirection GetOppositeDirection(DoorDirection dir)
+        {
+            switch (dir)
+            {
+                case DoorDirection.Top: return DoorDirection.Bottom;
+                case DoorDirection.Bottom: return DoorDirection.Top;
+                case DoorDirection.Left: return DoorDirection.Right;
+                case DoorDirection.Right: return DoorDirection.Left;
+                default: return dir;
+            }
+        }
+        
+        private bool IsInCorrectDirection(Vector3 from, Vector3 to, DoorDirection direction)
+        {
+            Vector3 delta = to - from;
+            switch (direction)
+            {
+                case DoorDirection.Top: return delta.y > 0;
+                case DoorDirection.Bottom: return delta.y < 0;
+                case DoorDirection.Left: return delta.x < 0;
+                case DoorDirection.Right: return delta.x > 0;
+                default: return false;
+            }
+        }
+        
+        private Vector3 GetRayDirectionFromDoorDirection(DoorDirection direction)
+        {
+            switch (direction)
+            {
+                case DoorDirection.Top: return Vector3.up;
+                case DoorDirection.Bottom: return Vector3.down;
+                case DoorDirection.Left: return Vector3.left;
+                case DoorDirection.Right: return Vector3.right;
+                default: return Vector3.zero;
+            }
+        }
+        
+        private Room FindRoomContaining(Transform transform)
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                Room found = allRooms.Find(r => r.roomInstance == current.gameObject);
+                if (found != null)
+                    return found;
+                
+                current = current.parent;
+            }
+            return null;
+        }
+        
+        #endregion
+        
+        #region Unity Lifecycle
+        
+        private void Awake()
+        {
+            // Auto-find DungeonContainer nếu chưa assign trong Inspector
+            if (dungeonContainer == null)
+            {
+                // Try tìm as child của DungeonManager
+                dungeonContainer = transform.Find("DungeonContainer");
+                
+                // Nếu không tìm thấy, tìm trong toàn scene
+                if (dungeonContainer == null)
+                {
+                    GameObject containerObj = GameObject.Find("DungeonContainer");
+                    if (containerObj != null)
+                        dungeonContainer = containerObj.transform;
+                }
+                
+                if (dungeonContainer != null)
+                {
+                }
+            }
+            
+            // Rebuild room list nếu có rooms sẵn trong scene (Editor-generated dungeon)
+            if (dungeonContainer != null && dungeonContainer.childCount > 0)
+            {
+                RebuildRoomListFromScene();
+            }
         }
         
         #endregion
@@ -635,6 +910,30 @@ namespace ProceduralGeneration.Core
             
             if (verboseLogging)
                 Debug.Log($"Instantiated {allRooms.Count} rooms (only START room active)");
+                
+            // Set camera background = đen
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.backgroundColor = Color.black;
+                mainCam.clearFlags = CameraClearFlags.SolidColor;
+            }
+        }
+        
+        #endregion
+        
+        #region Light Fragment Spawning
+        
+        /// <summary>
+        /// Spawn Light Fragments vào dungeon rooms
+        /// </summary>
+        private void SpawnLightFragments()
+        {
+            var spawner = GetComponent<NWO.LightFragmentSpawner>();
+            if (spawner == null)
+                spawner = gameObject.AddComponent<NWO.LightFragmentSpawner>();
+            
+            spawner.SpawnFragmentsInDungeon(this);
         }
         
         #endregion

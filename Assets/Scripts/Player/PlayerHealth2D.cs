@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NWO
 {
     /// <summary>
-    /// Quản lý HP, regeneration và animation damage/death cho Player
+    /// Quáº£n lÃ½ HP, regeneration vÃ  animation damage/death cho Player
     /// </summary>
     public sealed class PlayerHealth2D : MonoBehaviour
     {
@@ -15,14 +15,14 @@ namespace NWO
         [Header("Animation")]
         [SerializeField] private Animator animator;
         
-        [Tooltip("Tên parameter trigger cho animation bị damage")]
+        [Tooltip("TÃªn parameter trigger cho animation bá»‹ damage")]
         [SerializeField] private string hurtTrigger = "Hurt";
         
-        [Tooltip("Tên parameter bool cho trạng thái chết")]
+        [Tooltip("TÃªn parameter bool cho tráº¡ng thÃ¡i cháº¿t")]
         [SerializeField] private string isDeadParameter = "isDead";
         
         [Header("Death Settings")]
-        [Tooltip("Delay trước khi disable controller sau khi chết (để animation death chạy)")]
+        [Tooltip("Delay trÆ°á»›c khi disable controller sau khi cháº¿t (Ä‘á»ƒ animation death cháº¡y)")]
         [SerializeField] private float deathDisableDelay = 0.6f;
 
         public int CurrentHealth { get; private set; }
@@ -32,7 +32,7 @@ namespace NWO
         private float _invincibleTimer;
         private PlayerSpellController _spellController;
         
-        // Animation parameter hashes (tối ưu performance)
+        // Animation parameter hashes (tá»‘i Æ°u performance)
         private int _hurtHash;
         private int _isDeadHash;
 
@@ -40,7 +40,7 @@ namespace NWO
         {
             CurrentHealth = maxHealth;
             
-            // Auto-find animator nếu chưa gán
+            // Auto-find animator náº¿u chÆ°a gÃ¡n
             if (animator == null)
                 animator = GetComponent<Animator>();
             
@@ -81,29 +81,29 @@ namespace NWO
             if (amount <= 0) return;
             if (_invincibleTimer > 0f)
             {
-                Debug.Log("[Player] Still invincible!");
+
                 return;
             }
 
             _invincibleTimer = invincibleDuration;
             CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
 
-            Debug.Log($"[Player] Took {amount} damage! HP: {CurrentHealth}/{maxHealth}");
 
-            // ⭐ TRIGGER ANIMATION DAMAGE (CHỈ khi KHÔNG ở spell state)
-            // Nếu đang ở spell state (1/2/3), giữ nguyên animation, không trigger Hurt
+
+            // â­ TRIGGER ANIMATION DAMAGE (CHá»ˆ khi KHÃ”NG á»Ÿ spell state)
+            // Náº¿u Ä‘ang á»Ÿ spell state (1/2/3), giá»¯ nguyÃªn animation, khÃ´ng trigger Hurt
             bool isInSpellState = _spellController != null && _spellController.CurrentSpell > 0;
             
             if (animator != null && CurrentHealth > 0 && _hurtHash != 0 && !isInSpellState)
             {
                 animator.SetTrigger(_hurtHash);
-                Debug.Log("[PlayerHealth2D] Playing Hurt animation");
+
             }
             else if (isInSpellState)
             {
-                // Đang ở spell state, giữ nguyên spell animation, chỉ hiển thị damage effect
-                Debug.Log($"[PlayerHealth2D] Took damage in Spell {_spellController.CurrentSpell} state - keeping spell animation");
-                // TODO: Thêm damage flash effect ở đây (change sprite color briefly)
+                // Äang á»Ÿ spell state, giá»¯ nguyÃªn spell animation, chá»‰ hiá»ƒn thá»‹ damage effect
+
+                // TODO: ThÃªm damage flash effect á»Ÿ Ä‘Ã¢y (change sprite color briefly)
                 StartCoroutine(DamageFlashEffect());
             }
 
@@ -134,27 +134,27 @@ namespace NWO
             var controller = GetComponent<PlayerController2D>();
             if (controller != null) controller.enabled = true;
             
-            Debug.Log("[Player] Health reset!");
+
         }
 
         private void Die()
         {
             if (IsDead) return;
             IsDead = true;
-            Debug.Log("[Player] DIED!");
+
             
-            // ⭐ TRIGGER ANIMATION DEATH
+            // â­ TRIGGER ANIMATION DEATH
             if (animator != null)
             {
                 animator.SetBool(_isDeadHash, true);
-                Debug.Log("[PlayerHealth2D] Playing Death animation");
+
             }
             
-            // Disable controller/shooter SAU khi animation death bắt đầu
-            // để animation có thời gian chạy
+            // Disable controller/shooter SAU khi animation death báº¯t Ä‘áº§u
+            // Ä‘á»ƒ animation cÃ³ thá»i gian cháº¡y
             StartCoroutine(DisableControlsAfterDeath());
             
-            // Trigger Game Over sau delay để thấy animation
+            // Trigger Game Over sau delay Ä‘á»ƒ tháº¥y animation
             if (GameManager.Instance != null)
             {
                 StartCoroutine(TriggerGameOverAfterDelay());
@@ -162,7 +162,7 @@ namespace NWO
         }
 
         /// <summary>
-        /// Hiển thị damage flash effect khi bị đánh trong spell state (không trigger Hurt animation)
+        /// Hiá»ƒn thá»‹ damage flash effect khi bá»‹ Ä‘Ã¡nh trong spell state (khÃ´ng trigger Hurt animation)
         /// </summary>
         private System.Collections.IEnumerator DamageFlashEffect()
         {
@@ -171,7 +171,7 @@ namespace NWO
             
             Color originalColor = spriteRenderer.color;
             
-            // Flash đỏ 3 lần nhanh
+            // Flash Ä‘á» 3 láº§n nhanh
             for (int i = 0; i < 3; i++)
             {
                 spriteRenderer.color = Color.red;
@@ -183,7 +183,7 @@ namespace NWO
 
         private System.Collections.IEnumerator DisableControlsAfterDeath()
         {
-            // Chờ animation death chạy
+            // Chá» animation death cháº¡y
             yield return new WaitForSeconds(deathDisableDelay);
             
             var controller = GetComponent<PlayerController2D>();
@@ -192,7 +192,7 @@ namespace NWO
             var shooter = GetComponent<PlayerShooter2D>();
             if (shooter != null) shooter.enabled = false;
             
-            // Dừng velocity để không trượt
+            // Dá»«ng velocity Ä‘á»ƒ khÃ´ng trÆ°á»£t
             var rb = GetComponent<Rigidbody2D>();
             if (rb != null)
             {
@@ -200,12 +200,12 @@ namespace NWO
                 rb.angularVelocity = 0f;
             }
             
-            Debug.Log("[PlayerHealth2D] Controls disabled after death animation");
+
         }
 
         private System.Collections.IEnumerator TriggerGameOverAfterDelay()
         {
-            // Delay để xem animation death
+            // Delay Ä‘á»ƒ xem animation death
             yield return new WaitForSeconds(deathDisableDelay + 0.5f);
             
             if (GameManager.Instance != null)

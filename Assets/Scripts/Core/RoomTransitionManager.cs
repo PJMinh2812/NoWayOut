@@ -64,7 +64,6 @@ namespace Core
             if (fadePanel == null)
             {
                 fadePanel = CreateFadePanel();
-                Debug.Log("[RoomTransitionManager] Auto-created fade panel");
             }
         }
         
@@ -114,11 +113,8 @@ namespace Core
         /// </summary>
         public void TransitionToRoom(Room fromRoom, Room toRoom, DoorDirection doorDirection, GameObject player)
         {
-            Debug.Log($"[RoomTransitionManager] TransitionToRoom called: {fromRoom?.roomData?.roomType} -> {toRoom?.roomData?.roomType}");
-            
             if (isTransitioning)
             {
-                Debug.LogWarning("[RoomTransitionManager] Already transitioning! Ignoring.");
                 return;
             }
             
@@ -128,7 +124,6 @@ namespace Core
                 return;
             }
             
-            Debug.Log("[RoomTransitionManager] Starting transition coroutine...");
             StartCoroutine(TransitionCoroutine(fromRoom, toRoom, doorDirection, player));
         }
         
@@ -143,20 +138,20 @@ namespace Core
             if (fromRoom != null && fromRoom.roomInstance != null)
             {
                 fromRoom.roomInstance.SetActive(false);
-                Debug.Log($"[RoomTransition] Deactivated: {fromRoom.roomData.roomType}");
             }
             
             // 3. ACTIVATE target room
             toRoom.roomInstance.SetActive(true);
             currentActiveRoom = toRoom;
-            Debug.Log($"[RoomTransition] Activated: {toRoom.roomData.roomType}");
+            
+            // 3.5 Convert sprites mới sang Lit material (cho URP 2D lighting)
+            ConvertRoomSpritesToLit(toRoom);
             
             // 4. TELEPORT player
             Vector3 spawnPosition = CalculatePlayerSpawnPosition(toRoom, doorDirection);
             if (player != null)
             {
                 player.transform.position = spawnPosition;
-                Debug.Log($"[RoomTransition] Player teleported to {spawnPosition}");
             }
             
             // 5. FADE IN
@@ -170,53 +165,83 @@ namespace Core
         /// </summary>
         private Vector3 CalculatePlayerSpawnPosition(Room room, DoorDirection enteredFrom)
         {
-            // Lấy bottom-left corner của room
-            Vector3 roomOrigin = room.roomInstance.transform.position;
+            // Lấy ACTUAL world bounds từ Renderer thay vì dùng actualSize (grid size)
+            Vector3 roomOrigin;
+            float roomWidth;
+            float roomHeight;
             
-            // SỬ DỤNG actualSize (runtime size) thay vì roomData.size (ScriptableObject default)
-            int roomTilesX = room.actualSize.x;
-            int roomTilesY = room.actualSize.y;
+            // Tìm bounds thực tế từ children Renderers
+            Renderer[] renderers = room.roomInstance.GetComponentsInChildren<Renderer>();
+            if (renderers.Length > 0)
+            {
+                Bounds combinedBounds = renderers[0].bounds;
+                foreach (var renderer in renderers)
+                {
+                    combinedBounds.Encapsulate(renderer.bounds);
+                }
+                roomOrigin = combinedBounds.min;
+                roomWidth = combinedBounds.size.x;
+                roomHeight = combinedBounds.size.y;
+            }
+            else
+            {
+                // Fallback: dùng transform position và actualSize * assumed tileSize
+                roomOrigin = room.roomInstance.transform.position;
+                float tileSize = 11f; // Default tile size
+                roomWidth = room.actualSize.x * tileSize;
+                roomHeight = room.actualSize.y * tileSize;
+            }
             
-            // Tính center thực của room
-            Vector3 roomCenter = roomOrigin + new Vector3(roomTilesX / 2f, roomTilesY / 2f, 0);
+            // Spawn ngay cạnh cửa đối diện (center x hoặc y, offset từ wall)
+            // Wall thickness = 1 tile, spawn buffer = 1.5 tile từ wall
+            float spawnOffset = 2.5f;
             
-            // Tính vị trí cửa (ở giữa edge), sau đó spawn 1 tile vào trong từ cửa
-            Vector3 doorPos = roomCenter; // Bắt đầu từ center
             Vector3 spawnPos;
             
             switch (enteredFrom)
             {
                 case DoorDirection.Top:
-                    // Player đi qua cửa TOP của phòng cũ → spawn ở BOTTOM của phòng mới
-                    // Spawn 1 tile bên trong từ bottom edge
-                    spawnPos = roomCenter;
-                    spawnPos.y = roomOrigin.y + 1f; // 1 tile lên từ bottom edge
+                    // Đi vào từ cửa TOP của phòng cũ → spawn ở cửa BOTTOM của phòng mới
+                    // Vị trí: center X, gần bottom
+                    spawnPos = new Vector3(
+                        roomOrigin.x + roomWidth / 2f,   // Center X
+                        roomOrigin.y + spawnOffset,       // Gần bottom wall
+                        0
+                    );
                     break;
                 case DoorDirection.Bottom:
-                    // Player đi qua cửa BOTTOM của phòng cũ → spawn ở TOP của phòng mới
-                    // Spawn 1 tile bên trong từ top edge
-                    spawnPos = roomCenter;
-                    spawnPos.y = roomOrigin.y + roomTilesY - 2f; // 1 tile xuống từ top edge
+                    // Đi vào từ cửa BOTTOM của phòng cũ → spawn ở cửa TOP của phòng mới
+                    // Vị trí: center X, gần top
+                    spawnPos = new Vector3(
+                        roomOrigin.x + roomWidth / 2f,   // Center X
+                        roomOrigin.y + roomHeight - spawnOffset, // Gần top wall
+                        0
+                    );
                     break;
                 case DoorDirection.Left:
-                    // Player đi qua cửa LEFT của phòng cũ → spawn ở RIGHT của phòng mới
-                    // Spawn 1 tile bên trong từ right edge
-                    spawnPos = roomCenter;
-                    spawnPos.x = roomOrigin.x + roomTilesX - 2f; // 1 tile sang trái từ right edge
+                    // Đi vào từ cửa LEFT của phòng cũ → spawn ở cửa RIGHT của phòng mới
+                    // Vị trí: gần right, center Y
+                    spawnPos = new Vector3(
+                        roomOrigin.x + roomWidth - spawnOffset, // Gần right wall
+                        roomOrigin.y + roomHeight / 2f,         // Center Y
+                        0
+                    );
                     break;
                 case DoorDirection.Right:
-                    // Player đi qua cửa RIGHT của phòng cũ → spawn ở LEFT của phòng mới
-                    // Spawn 1 tile bên trong từ left edge
-                    spawnPos = roomCenter;
-                    spawnPos.x = roomOrigin.x + 1f; // 1 tile sang phải từ left edge
+                    // Đi vào từ cửa RIGHT của phòng cũ → spawn ở cửa LEFT của phòng mới
+                    // Vị trí: gần left, center Y
+                    spawnPos = new Vector3(
+                        roomOrigin.x + spawnOffset,      // Gần left wall
+                        roomOrigin.y + roomHeight / 2f,  // Center Y
+                        0
+                    );
                     break;
                 default:
                     // Fallback: spawn ở center
-                    spawnPos = roomCenter;
+                    spawnPos = roomOrigin + new Vector3(roomWidth / 2f, roomHeight / 2f, 0);
                     break;
             }
             
-            Debug.Log($"[RoomTransition] Spawn calculated: Room origin={roomOrigin}, size=({roomTilesX},{roomTilesY}), enteredFrom={enteredFrom}, spawn={spawnPos}");
             return spawnPos;
         }
         
@@ -266,6 +291,34 @@ namespace Core
         public Room GetCurrentRoom()
         {
             return currentActiveRoom;
+        }
+        
+        /// <summary>
+        /// Convert tất cả SpriteRenderer + TilemapRenderer trong room sang Sprite-Lit-Default
+        /// Cần để URP 2D Light ảnh hưởng lên sprites
+        /// </summary>
+        private void ConvertRoomSpritesToLit(Room room)
+        {
+            if (room?.roomInstance == null) return;
+            
+            Shader litShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default");
+            if (litShader == null) return;
+            
+            Material litMat = new Material(litShader);
+            
+            var spriteRenderers = room.roomInstance.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var sr in spriteRenderers)
+            {
+                if (sr.sharedMaterial == null || !sr.sharedMaterial.name.Contains("Lit"))
+                    sr.sharedMaterial = litMat;
+            }
+            
+            var tilemapRenderers = room.roomInstance.GetComponentsInChildren<UnityEngine.Tilemaps.TilemapRenderer>(true);
+            foreach (var tr in tilemapRenderers)
+            {
+                if (tr.sharedMaterial == null || !tr.sharedMaterial.name.Contains("Lit"))
+                    tr.sharedMaterial = litMat;
+            }
         }
     }
 }

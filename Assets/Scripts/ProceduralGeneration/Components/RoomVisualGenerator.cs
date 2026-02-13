@@ -98,8 +98,6 @@ namespace ProceduralGeneration.Components
                 }
             }
             
-            Debug.Log($"[RoomVisualGenerator] Generating visuals for room: {roomData.name} - Active doors: {activeDirections.Count}");
-            
             // Tạo container
             GameObject visualContainer = new GameObject("Visuals");
             visualContainer.transform.SetParent(transform);
@@ -108,28 +106,22 @@ namespace ProceduralGeneration.Components
             // worldScale đã được apply trong Room.InstantiateRoom, không cần scale lại
             
             // Tạo Floor Tilemap
-            Debug.Log($"[RoomVisualGenerator] autoFillTiles={autoFillTiles}, floorTiles={floorTiles?.Length ?? 0}");
             if (autoFillTiles && floorTiles != null && floorTiles.Length > 0)
             {
-                Debug.Log($"[RoomVisualGenerator] Creating AUTO-FILLED floor");
                 CreateAutoFilledFloor(visualContainer.transform);
             }
             else
             {
-                Debug.Log($"[RoomVisualGenerator] Creating PLACEHOLDER floor");
                 CreateEmptyTilemap(visualContainer.transform, "Floor", -10);
             }
             
             // Tạo Walls Tilemap
-            Debug.Log($"[RoomVisualGenerator] wallCenter={wallCenter != null}");
             if (autoFillTiles && wallCenter != null)
             {
-                Debug.Log($"[RoomVisualGenerator] Creating AUTO-FILLED walls");
                 CreateAutoFilledWalls(visualContainer.transform);
             }
             else
             {
-                Debug.Log($"[RoomVisualGenerator] Creating PLACEHOLDER walls");
                 CreateEmptyTilemap(visualContainer.transform, "Walls", 0);
             }
             
@@ -142,8 +134,6 @@ namespace ProceduralGeneration.Components
             {
                 GenerateDoorMarkers(visualContainer.transform);
             }
-            
-            Debug.Log($"[RoomVisualGenerator] Visuals generated successfully!");
         }
         
         
@@ -192,8 +182,6 @@ namespace ProceduralGeneration.Components
                     tilemap.SetTile(tilePos, placeholderTile);
                 }
             }
-            
-            Debug.Log($"[RoomVisualGenerator] Created {name} Tilemap with {tilesX}×{tilesY} cells (total: {tilesX * tilesY} tiles)");
         }
         
         
@@ -222,7 +210,6 @@ namespace ProceduralGeneration.Components
                 // Chỉ tạo door marker nếu hướng này có room kế bên
                 if (activeDirections != null && !activeDirections.Contains(door.direction))
                 {
-                    Debug.Log($"[RoomVisualGenerator] Skipping door marker for {door.direction} - no connected room");
                     continue;
                 }
                 GameObject doorMarker = new GameObject($"DoorMarker_{door.direction}");
@@ -258,7 +245,7 @@ namespace ProceduralGeneration.Components
                 
                 SpriteRenderer sr = doorMarker.AddComponent<SpriteRenderer>();
                 sr.sprite = squareSprite;
-                sr.color = doorColor;
+                sr.color = doorColor; // Cửa hiển thị bình thường, hệ thống ánh sáng quyết định tầm nhìn
                 sr.sortingLayerName = "Default";
                 sr.sortingOrder = 10;
             }
@@ -297,10 +284,8 @@ namespace ProceduralGeneration.Components
                     tilemap.SetTile(new Vector3Int(x, y, 0), randomTile);
                 }
             }
-            
-            Debug.Log($"[RoomVisualGenerator] Auto-filled Floor with {tilesX * tilesY} tiles");
         }
-        
+
         /// <summary>
         /// Tạo walls với proper corners và edges
         /// </summary>
@@ -333,37 +318,45 @@ namespace ProceduralGeneration.Components
             int tilesX = currentRoom.actualSize.x * (int)tileSize;
             int tilesY = currentRoom.actualSize.y * (int)tileSize;
             
-            // Tính door tile positions (chính xác) - door lùi vào 1 tile từ edge
+            // Tính door tile positions - xóa CHỈ 1 tile tại vị trí door (cả edge lẫn inner layer)
             var doorTilePositions = new System.Collections.Generic.HashSet<Vector2Int>();
+            
             foreach (var door in roomData.doorAnchors)
             {
                 if (activeDirections != null && !activeDirections.Contains(door.direction))
                     continue;
-                    
-                int doorTileX = 0;
-                int doorTileY = 0;
                 
                 switch (door.direction)
                 {
                     case DoorDirection.Top:
-                        doorTileX = tilesX / 2 + (int)(door.localPosition.x / tileSize);
-                        doorTileY = tilesY - 2; // 1 tile from top edge
+                    {
+                        int cx = tilesX / 2 + (int)(door.localPosition.x);
+                        doorTilePositions.Add(new Vector2Int(cx, tilesY - 1)); // Edge tile
+                        doorTilePositions.Add(new Vector2Int(cx, tilesY - 2)); // Inner tile
                         break;
+                    }
                     case DoorDirection.Bottom:
-                        doorTileX = tilesX / 2 + (int)(door.localPosition.x / tileSize);
-                        doorTileY = 1; // 1 tile from bottom edge
+                    {
+                        int cx = tilesX / 2 + (int)(door.localPosition.x);
+                        doorTilePositions.Add(new Vector2Int(cx, 0));  // Edge tile
+                        doorTilePositions.Add(new Vector2Int(cx, 1));  // Inner tile
                         break;
+                    }
                     case DoorDirection.Left:
-                        doorTileX = 1; // 1 tile from left edge
-                        doorTileY = tilesY / 2 + (int)(door.localPosition.y / tileSize);
+                    {
+                        int cy = tilesY / 2 + (int)(door.localPosition.y);
+                        doorTilePositions.Add(new Vector2Int(0, cy));  // Edge tile
+                        doorTilePositions.Add(new Vector2Int(1, cy));  // Inner tile
                         break;
+                    }
                     case DoorDirection.Right:
-                        doorTileX = tilesX - 2; // 1 tile from right edge
-                        doorTileY = tilesY / 2 + (int)(door.localPosition.y / tileSize);
+                    {
+                        int cy = tilesY / 2 + (int)(door.localPosition.y);
+                        doorTilePositions.Add(new Vector2Int(tilesX - 1, cy)); // Edge tile
+                        doorTilePositions.Add(new Vector2Int(tilesX - 2, cy)); // Inner tile
                         break;
+                    }
                 }
-                
-                doorTilePositions.Add(new Vector2Int(doorTileX, doorTileY));
             }
             
             // Fill walls với proper tiles dựa vào vị trí
@@ -390,12 +383,10 @@ namespace ProceduralGeneration.Components
                     }
                 }
             }
-            
-            Debug.Log($"[RoomVisualGenerator] Auto-filled Walls (all edges except doors)");
         }
-        
+
         /// <summary>
-        /// Chọn wall tile phù hợp dựa vào vị trí
+        /// Chọn wall tilephù hợp dựa vào vị trí
         /// </summary>
         private TileBase GetWallTileForPosition(int x, int y, int maxX, int maxY)
         {
@@ -462,9 +453,18 @@ namespace ProceduralGeneration.Components
                 {
                     boxCollider = doorObj.AddComponent<BoxCollider2D>();
                     boxCollider.size = new Vector2(2f, 2f); // Door trigger area
-                    Debug.Log($"[RoomVisualGenerator] Auto-added BoxCollider2D to door {door.direction}");
                 }
-                boxCollider.isTrigger = true; // CRITICAL: Must be trigger
+                // KHÔNG set isTrigger ở đây - DoorTrigger.Awake() sẽ quyết định
+                // Door bắt đầu ĐÓNG (solid wall) → chỉ thành trigger khi mở
+                boxCollider.isTrigger = false;
+                
+                // Thêm Rigidbody2D static để collider chặn player khi đóng
+                var doorRb = doorObj.GetComponent<Rigidbody2D>();
+                if (doorRb == null)
+                {
+                    doorRb = doorObj.AddComponent<Rigidbody2D>();
+                    doorRb.bodyType = RigidbodyType2D.Static;
+                }
                 
                 // Configure DoorTrigger
                 doorTrigger.doorDirection = door.direction;
@@ -474,7 +474,6 @@ namespace ProceduralGeneration.Components
                 if (connectedRooms != null && connectedRooms.ContainsKey(door.direction))
                 {
                     doorTrigger.targetRoom = connectedRooms[door.direction];
-                    Debug.Log($"[RoomVisualGenerator] Door {door.direction}: {currentRoom.roomData.roomType} -> {connectedRooms[door.direction].roomData.roomType}");
                 }
                 else
                 {
@@ -484,27 +483,31 @@ namespace ProceduralGeneration.Components
                 doorObj.transform.localPosition = doorPos;
                 doorObj.transform.localRotation = doorRot;
             }
-            
-            Debug.Log($"[RoomVisualGenerator] Created {doorContainer.transform.childCount} door prefabs");
         }
         
         /// <summary>
-        /// Tính position cho door
+        /// Tính position cho door - door nằm ngay trên center của wall tile
         /// </summary>
         private Vector3 GetDoorPosition(DoorAnchor door, float roomWidth, float roomHeight)
         {
-            float doorInset = tileSize; // Doors lùi vào trong 1 tile từ wall edge
+            // Door nằm ngay trên wall edge (center của wall tile đầu tiên/cuối)
+            // tileSize/2 để đặt vào center của wall tile
+            float wallCenterOffset = tileSize / 2f;
             
             switch (door.direction)
             {
                 case DoorDirection.Top:
-                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, roomHeight - doorInset, 0);
+                    // Top wall: y = roomHeight - tileSize/2 (center của top wall tile row)
+                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, roomHeight - wallCenterOffset, 0);
                 case DoorDirection.Bottom:
-                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, doorInset, 0);
+                    // Bottom wall: y = tileSize/2 (center của bottom wall tile row)
+                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, wallCenterOffset, 0);
                 case DoorDirection.Left:
-                    return new Vector3(doorInset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
+                    // Left wall: x = tileSize/2 (center của left wall tile column)
+                    return new Vector3(wallCenterOffset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
                 case DoorDirection.Right:
-                    return new Vector3(roomWidth - doorInset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
+                    // Right wall: x = roomWidth - tileSize/2 (center của right wall tile column)
+                    return new Vector3(roomWidth - wallCenterOffset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
                 default:
                     return Vector3.zero;
             }
@@ -512,18 +515,23 @@ namespace ProceduralGeneration.Components
         
         /// <summary>
         /// Tính rotation cho door
+        /// Top/Bottom: sprite giữ nguyên vertical
+        /// Left/Right: rotate 90 degrees để horizontal
         /// </summary>
         private Quaternion GetDoorRotation(DoorDirection direction)
         {
             switch (direction)
             {
-                case DoorDirection.Bottom:
-                    return Quaternion.Euler(0, 0, 180); // Flip 180 degrees
-                case DoorDirection.Left:
-                case DoorDirection.Right:
                 case DoorDirection.Top:
+                    return Quaternion.identity; // Vertical, mở lên trên
+                case DoorDirection.Bottom:
+                    return Quaternion.identity; // Vertical, giữ nguyên (không flip)
+                case DoorDirection.Left:
+                    return Quaternion.Euler(0, 0, 90); // Rotate 90 để horizontal
+                case DoorDirection.Right:
+                    return Quaternion.Euler(0, 0, -90); // Rotate -90 để horizontal  
                 default:
-                    return Quaternion.identity; // Keep vertical orientation
+                    return Quaternion.identity;
             }
         }
         

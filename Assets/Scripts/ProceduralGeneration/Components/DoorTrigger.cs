@@ -5,11 +5,11 @@ using Core;
 
 namespace ProceduralGeneration.Components
 {
-    /// <summary>
+    
     /// Door controller để teleport giữa các phòng.
     /// Tự động mở/đóng khi player lại gần, hỗ trợ lock/unlock cho boss fights.
     /// Merged từ Door.cs và DoorController.cs
-    /// </summary>
+    
     [RequireComponent(typeof(BoxCollider2D))]
     public class DoorTrigger : MonoBehaviour
     {
@@ -45,7 +45,7 @@ namespace ProceduralGeneration.Components
         [SerializeField] private GameObject openVisual;
         
         [Tooltip("Màu khi door mở")]
-        [SerializeField] private Color unlockedColor = Color.green;
+        [SerializeField] private Color unlockedColor = Color.white;
         
         [Tooltip("Màu khi door khóa")]
         [SerializeField] private Color lockedColor = Color.red;
@@ -89,7 +89,16 @@ namespace ProceduralGeneration.Components
             if (audioSource == null)
                 audioSource = gameObject.AddComponent<AudioSource>();
             
+            // Đảm bảo có Rigidbody2D static để collider hoạt động chặn player
+            var rb = GetComponent<Rigidbody2D>();
+            if (rb == null)
+            {
+                rb = gameObject.AddComponent<Rigidbody2D>();
+                rb.bodyType = RigidbodyType2D.Static;
+            }
+            
             UpdateVisualFeedback();
+            UpdateColliderState(); // CRITICAL: Set collider state ngay từ đầu
         }
         
         void Start()
@@ -109,49 +118,42 @@ namespace ProceduralGeneration.Components
             UpdateColliderState();
         }
         
-        /// <summary>
+        
         /// Tìm currentRoom và targetRoom từ DungeonManager khi map generate trước Play Mode
-        /// </summary>
+        
         private void TryFindRoomsFromDungeonManager()
         {
             // Tìm DungeonManager
-            var dungeonManager = FindObjectOfType<ProceduralGeneration.Core.DungeonManager>();
+            var dungeonManager = FindFirstObjectByType<ProceduralGeneration.Core.DungeonManager>();
             if (dungeonManager == null)
             {
                 Debug.LogWarning($"[DoorTrigger] Cannot find DungeonManager to lookup rooms");
                 return;
             }
             
-            // Tìm Room GameObject - thử parent và grandparent
-            // Hierarchy: Room_Start -> Doors -> Door_Top
-            Transform roomTransform = transform.parent; // "Doors"
+            var allRooms = dungeonManager.GetAllRooms();
             
-            if (roomTransform != null && roomTransform.name == "Doors")
+            // Đi lên hierarchy cho đến khi tìm thấy Room GameObject
+            Transform current = transform.parent;
+            ProceduralGeneration.Core.Room foundRoom = null;
+            
+            while (current != null && foundRoom == null)
             {
-                // Đi lên thêm 1 level để tìm Room GameObject
-                roomTransform = roomTransform.parent; // "Room_Start"
+                foundRoom = dungeonManager.GetRoomByGameObject(current.gameObject);
+                if (foundRoom != null) break;
+                current = current.parent;
             }
             
-            if (roomTransform == null)
+            if (foundRoom == null)
             {
-                Debug.LogWarning($"[DoorTrigger] Door {gameObject.name} has no room parent GameObject");
+                Debug.LogWarning($"[DoorTrigger] Cannot find Room in hierarchy of {gameObject.name}");
                 return;
             }
             
-            Debug.Log($"[DoorTrigger] Looking for room in GameObject: {roomTransform.name}");
-            
-            // Tìm currentRoom từ room GameObject
+            // Tìm currentRoom
             if (currentRoom == null)
             {
-                currentRoom = dungeonManager.GetRoomByGameObject(roomTransform.gameObject);
-                if (currentRoom != null)
-                {
-                    Debug.Log($"[DoorTrigger] Found currentRoom: {currentRoom.roomData.roomType}");
-                }
-                else
-                {
-                    Debug.LogWarning($"[DoorTrigger] Cannot find Room for GameObject: {roomTransform.name}");
-                }
+                currentRoom = foundRoom;
             }
             
             // Tìm targetRoom từ connectedRooms
@@ -160,7 +162,6 @@ namespace ProceduralGeneration.Components
                 if (currentRoom.connectedRooms != null && currentRoom.connectedRooms.ContainsKey(doorDirection))
                 {
                     targetRoom = currentRoom.connectedRooms[doorDirection];
-                    Debug.Log($"[DoorTrigger] Found targetRoom: {targetRoom?.roomData?.roomType} via {doorDirection} door");
                 }
                 else
                 {
@@ -189,17 +190,12 @@ namespace ProceduralGeneration.Components
         
         void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log($"[DoorTrigger] OnTriggerEnter2D: {other.name}, tag={other.tag}");
-            
             // Check nếu là player
             if (other.CompareTag("Player"))
             {
-                Debug.Log($"[DoorTrigger] Player detected! isOpen={isOpen}, isLocked={isLocked}");
-                
                 // Chỉ trigger transition nếu door MỞ và KHÔNG KHÓA
                 if (isOpen && !isLocked)
                 {
-                    Debug.Log($"[DoorTrigger] Triggering transition from {currentRoom?.roomData?.roomType} to {targetRoom?.roomData?.roomType}");
                     TriggerRoomTransition(other.gameObject);
                 }
                 else if (isLocked)
@@ -217,16 +213,12 @@ namespace ProceduralGeneration.Components
         
         void OnCollisionEnter2D(Collision2D collision)
         {
-            // Debug: Player đâm vào door khi đóng
-            if (collision.gameObject.CompareTag("Player"))
-            {
-                Debug.Log($"[DoorTrigger] Player collided with closed door! Locked: {isLocked}");
-            }
+            // Player collided with closed door - no action needed
         }
         
-        /// <summary>
+        
         /// Trigger room transition khi player đi qua door
-        /// </summary>
+        
         private void TriggerRoomTransition(GameObject player)
         {
             if (targetRoom == null)
@@ -240,8 +232,6 @@ namespace ProceduralGeneration.Components
                 Debug.LogError($"[DoorTrigger] Target room instance not instantiated!");
                 return;
             }
-            
-            Debug.Log($"[DoorTrigger] Transitioning from {currentRoom.roomData.roomType} to {targetRoom.roomData.roomType}");
             
             // Tìm RoomTransitionManager và trigger transition
             var transitionManager = FindFirstObjectByType<RoomTransitionManager>();
@@ -257,15 +247,14 @@ namespace ProceduralGeneration.Components
         
         #region Open/Close Methods
         
-        /// <summary>
+        
         /// Mở cửa
-        /// </summary>
+        
         public void OpenDoor()
         {
             if (isLocked)
             {
                 PlaySound(lockedSound);
-                Debug.Log("[DoorTrigger] Cannot open - Door is locked!");
                 return;
             }
             
@@ -276,9 +265,9 @@ namespace ProceduralGeneration.Components
             PlaySound(openSound);
         }
         
-        /// <summary>
+        
         /// Đóng cửa
-        /// </summary>
+        
         public void CloseDoor()
         {
             isOpen = false;
@@ -288,9 +277,9 @@ namespace ProceduralGeneration.Components
             PlaySound(closeSound);
         }
         
-        /// <summary>
+        
         /// Toggle cửa
-        /// </summary>
+        
         public void ToggleDoor()
         {
             if (isOpen)
@@ -303,30 +292,28 @@ namespace ProceduralGeneration.Components
         
         #region Lock/Unlock Methods
         
-        /// <summary>
+        
         /// Khóa door (dùng cho boss fights)
-        /// </summary>
+        
         public void LockDoor()
         {
             isLocked = true;
             CloseDoor(); // Đóng cửa khi khóa
             UpdateVisualFeedback();
-            Debug.Log($"[DoorTrigger] Door LOCKED");
         }
         
-        /// <summary>
+        
         /// Mở khóa door (sau khi clear room)
-        /// </summary>
+        
         public void UnlockDoor()
         {
             isLocked = false;
             UpdateVisualFeedback();
-            Debug.Log($"[DoorTrigger] Door UNLOCKED");
         }
         
-        /// <summary>
+        
         /// Check door có bị khóa không
-        /// </summary>
+        
         public bool IsLocked()
         {
             return isLocked;
@@ -334,16 +321,14 @@ namespace ProceduralGeneration.Components
         
         #endregion
         
-        /// <summary>
-        /// Cập nhật visual feedback (đổi màu door + visuals)
-        /// </summary>
+        
+        /// Cập nhật visual feedback — không dùng màu nhận diện, ánh sáng quyết định tầm nhìn
+        
         private void UpdateVisualFeedback()
         {
-            // Update sprite color
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.color = isLocked ? lockedColor : unlockedColor;
-            }
+            // Mọi trạng thái đều giữ nguyên màu gốc — không highlight
+            // Player phải dùng ánh sáng để phát hiện cửa
+            SetDoorColor(Color.white);
             
             // Update visual GameObjects
             if (closedVisual != null)
@@ -354,8 +339,21 @@ namespace ProceduralGeneration.Components
         }
         
         /// <summary>
-        /// Cập nhật collider state (trigger khi mở, solid khi đóng)
+        /// Set màu/alpha cho tất cả SpriteRenderer của door
         /// </summary>
+        private void SetDoorColor(Color color)
+        {
+            if (spriteRenderer != null)
+                spriteRenderer.color = color;
+            
+            var childRenderers = GetComponentsInChildren<SpriteRenderer>();
+            foreach (var sr in childRenderers)
+                sr.color = color;
+        }
+        
+        
+        /// Cập nhật collider state (trigger khi mở, solid khi đóng)
+        
         private void UpdateColliderState()
         {
             if (doorCollider != null)
@@ -375,9 +373,9 @@ namespace ProceduralGeneration.Components
             }
         }
         
-        /// <summary>
+        
         /// Play animation
-        /// </summary>
+        
         private void PlayAnimation(string triggerName)
         {
             if (doorAnimator != null)
@@ -395,9 +393,9 @@ namespace ProceduralGeneration.Components
             }
         }
         
-        /// <summary>
+        
         /// Play sound
-        /// </summary>
+        
         private void PlaySound(AudioClip clip)
         {
             if (audioSource != null && clip != null)
