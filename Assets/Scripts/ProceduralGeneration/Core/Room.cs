@@ -28,6 +28,12 @@ namespace ProceduralGeneration.Core
         public int dangerLevel;
         public bool isMainPath;
         
+        // Accessor properties for minimap
+        public int GridX => gridPosition.x;
+        public int GridY => gridPosition.y;
+        public bool IsStartRoom => distanceFromStart == 0;
+        public bool IsBossRoom => roomData != null && roomData.roomType == RoomType.Boss;
+        
         /// <summary>
         /// Constructor
         /// </summary>
