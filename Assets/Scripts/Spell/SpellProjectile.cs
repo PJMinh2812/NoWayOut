@@ -14,14 +14,20 @@ namespace NWO
         [SerializeField] private int damage = 10;
         [SerializeField] private float knockbackForce = 3f;
 
+        [Header("Collision")]
+        [Tooltip("Các layer sẽ bị ignore khi va chạm")]
+        [SerializeField] private LayerMask ignoreLayerMask;
+        [Tooltip("Destroy khi chạm bất kỳ object nào (trừ Player và ignore layers)")]
+        [SerializeField] private bool destroyOnAnyHit = true;
+
         [Header("Effects")]
         [SerializeField] private GameObject hitEffectPrefab;
-        [SerializeField] private bool destroyOnHit = true;
 
         private Rigidbody2D _rb;
         private Animator _animator;
         private Vector2 _direction;
         private float _timeAlive;
+        private bool _isDestroyed = false;
 
         private void Awake()
         {
@@ -49,6 +55,14 @@ namespace NWO
             }
         }
 
+        /// <summary>
+        /// Set damage từ bên ngoài (PlayerSpellController)
+        /// </summary>
+        public void SetDamage(int newDamage)
+        {
+            damage = newDamage;
+        }
+
         private void Update()
         {
             _timeAlive += Time.deltaTime;
@@ -61,28 +75,82 @@ namespace NWO
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (_isDestroyed) return;
+
             // Bỏ qua Player
             if (other.CompareTag("Player"))
             {
                 return;
             }
 
+            // Bỏ qua các layer được chỉ định
+            if (ignoreLayerMask != 0 && ((1 << other.gameObject.layer) & ignoreLayerMask) != 0)
+            {
+                return;
+            }
+
+            // Bỏ qua các projectile khác
+            if (other.GetComponent<SpellProjectile>() != null)
+            {
+                return;
+            }
+
+            // Chỉ gây damage cho Enemy - KHÔNG phá map/tilemap/wall
             if (other.TryGetComponent<Enemy2D>(out var enemy))
             {
                 var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
                 enemy.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit enemy {other.name}! Damage: {damage}");
+            }
+            else if (other.TryGetComponent<RatMiniBoss>(out var boss))
+            {
+                var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
+                boss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit boss {other.name}! Damage: {damage}");
+            }
+            // Tilemap, Wall, Ground - chỉ destroy spell, KHÔNG gây damage
 
-                Debug.Log($"[SpellProjectile] Hit enemy! Damage: {damage}");
+            // Destroy khi chạm bất kỳ vật thể nào
+            if (destroyOnAnyHit)
+            {
+                SpawnHitEffect();
+                DestroyProjectile();
+            }
+        }
 
-                if (destroyOnHit)
-                {
-                    SpawnHitEffect();
-                    DestroyProjectile();
-                }
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (_isDestroyed) return;
+
+            // Bỏ qua Player
+            if (collision.collider.CompareTag("Player"))
+            {
                 return;
             }
 
-            if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
+            // Bỏ qua các layer được chỉ định
+            if (ignoreLayerMask != 0 && ((1 << collision.gameObject.layer) & ignoreLayerMask) != 0)
+            {
+                return;
+            }
+
+            // Chỉ gây damage cho Enemy - KHÔNG phá map/tilemap/wall
+            if (collision.collider.TryGetComponent<Enemy2D>(out var enemy))
+            {
+                var hitDir = (Vector2)collision.transform.position - (Vector2)transform.position;
+                enemy.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit enemy {collision.collider.name}! Damage: {damage}");
+            }
+            else if (collision.collider.TryGetComponent<RatMiniBoss>(out var boss))
+            {
+                var hitDir = (Vector2)collision.transform.position - (Vector2)transform.position;
+                boss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit boss {collision.collider.name}! Damage: {damage}");
+            }
+            // Tilemap, Wall, Ground - chỉ destroy spell, KHÔNG gây damage
+
+            // Destroy khi collision
+            if (destroyOnAnyHit)
             {
                 SpawnHitEffect();
                 DestroyProjectile();
@@ -99,6 +167,14 @@ namespace NWO
 
         private void DestroyProjectile()
         {
+            if (_isDestroyed) return;
+            _isDestroyed = true;
+            
+            // Tắt collider và velocity ngay lập tức
+            var col = GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+            _rb.linearVelocity = Vector2.zero;
+            
             Destroy(gameObject);
         }
     }

@@ -31,6 +31,7 @@ namespace NWO
 
         private float _invincibleTimer;
         private PlayerSpellController _spellController;
+        private PlayerStatusEffects _statusEffects;
         
         // Animation parameter hashes (tá»‘i Æ°u performance)
         private int _hurtHash;
@@ -46,6 +47,9 @@ namespace NWO
             
             // Get spell controller reference
             _spellController = GetComponent<PlayerSpellController>();
+            
+            // Get status effects reference
+            _statusEffects = GetComponent<PlayerStatusEffects>();
             
             // Cache animation parameter hashes
             if (animator != null)
@@ -83,6 +87,25 @@ namespace NWO
             {
 
                 return;
+            }
+            
+            // Kiểm tra status effects
+            if (_statusEffects != null)
+            {
+                // Nếu có Shield, tiêu thụ shield thay vì nhận damage
+                if (_statusEffects.ConsumeShield())
+                {
+                    Debug.Log("[PlayerHealth2D] Damage blocked by Shield!");
+                    _invincibleTimer = invincibleDuration; // Vẫn cho i-frame
+                    return;
+                }
+                
+                // Nếu có Invincibility từ status effect
+                if (_statusEffects.IsInvincible)
+                {
+                    Debug.Log("[PlayerHealth2D] Damage blocked by Invincibility!");
+                    return;
+                }
             }
 
             _invincibleTimer = invincibleDuration;

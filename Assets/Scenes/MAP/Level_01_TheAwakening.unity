@@ -1206,17 +1206,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7504974215113887618, guid: 40272bed66895fc4995c07796dd4af37, type: 3}
   m_PrefabInstance: {fileID: 465278587}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &349679305 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5108910062206115120, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
-  m_PrefabInstance: {fileID: 5301074659966431630}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 02a43e3b2507ca74e9da8a93a73c1cd9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Door
 --- !u!1001 &405222310
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1238,12 +1227,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 13.11
+      value: 14.75
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.92
+      value: 1.22
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1284,14 +1277,17 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1296187675758871721, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1262753659}
   m_SourcePrefab: {fileID: 100100000, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
 --- !u!114 &405222311 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1136003576512758893, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
   m_PrefabInstance: {fileID: 405222310}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1255241638}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ff1a35ab1a383fb4ab97824844110e2f, type: 3}
@@ -8205,11 +8201,49 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1225711669}
   m_CullTransparentMesh: 1
+--- !u!1 &1255241638 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1296187675758871721, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
+  m_PrefabInstance: {fileID: 405222310}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1262753658 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
   m_PrefabInstance: {fileID: 405222310}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1262753659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1255241638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f374c37d9b9756947862abe0a93c4a6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.PlayerMeleeController
+  baseDamage: 8
+  attackRange: 1.2
+  attackRadius: 0.6
+  knockbackForce: 4
+  maxComboHits: 3
+  comboWindow: 0.8
+  attackDuration: 0.35
+  comboResetDelay: 1.5
+  combo1Multiplier: 1
+  combo2Multiplier: 1.2
+  combo3Multiplier: 1.5
+  staminaCostPerAttack: 10
+  attackPoint: {fileID: 0}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  showDebugGizmos: 1
+  swingSounds: []
+  hitSound: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
+  hitEffectDuration: 0.5
 --- !u!1001 &1288963164
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17438,7 +17472,7 @@ GameObject:
   - component: {fileID: 1863580406}
   - component: {fileID: 1863580408}
   - component: {fileID: 1863580407}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: BossManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -17474,7 +17508,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossManager
   boss: {fileID: 1688425605}
   doorsToLock:
-  - {fileID: 349679305}
+  - {fileID: 0}
   bossTrigger: {fileID: 0}
 --- !u!61 &1863580408
 BoxCollider2D:

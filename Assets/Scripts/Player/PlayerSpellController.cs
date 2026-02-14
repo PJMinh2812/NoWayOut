@@ -32,6 +32,7 @@ namespace NWO
         private Animator _animator;
         private PlayerController2D _controller;
         private PlayerStamina _stamina;
+        private PlayerStatusEffects _statusEffects;
 
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
@@ -51,6 +52,7 @@ namespace NWO
             _animator = GetComponent<Animator>();
             _controller = GetComponent<PlayerController2D>();
             _stamina = GetComponent<PlayerStamina>();
+            _statusEffects = GetComponent<PlayerStatusEffects>();
         }
 
         private void Start()
@@ -80,8 +82,17 @@ namespace NWO
 
             HandleSpellSwitch();
 
+            // Kiểm tra status effects trước khi cho phép cast
+            bool canCastByStatus = _statusEffects == null || !_statusEffects.CannotCast;
+            
             if (_controller != null && (_controller.IsRolling || _isCasting))
                 return;
+                
+            if (!canCastByStatus)
+            {
+                // Debug.Log("[Spell] Cannot cast - Silenced/Stunned/Frozen!");
+                return;
+            }
 
             HandleSpellCast();
         }

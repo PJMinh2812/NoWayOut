@@ -33,6 +33,7 @@ namespace NWO
 
         private Rigidbody2D _rb;
         private PlayerStamina _stamina;
+        private PlayerStatusEffects _statusEffects;
         private float _cooldownRemaining;
         private float _rollingTimeRemaining;
         private Vector2 _rollVelocity;
@@ -41,6 +42,7 @@ namespace NWO
         {
             _rb = GetComponent<Rigidbody2D>();
             _stamina = GetComponent<PlayerStamina>();
+            _statusEffects = GetComponent<PlayerStatusEffects>();
             if (worldCamera == null) worldCamera = Camera.main;
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
         }
@@ -53,9 +55,12 @@ namespace NWO
             if (_cooldownRemaining > 0f) _cooldownRemaining -= Time.deltaTime;
             if (_rollingTimeRemaining > 0f) _rollingTimeRemaining -= Time.deltaTime;
 
-            if (!IsRolling && _cooldownRemaining <= 0f && GetRollPressed())
+            // Kiểm tra status effects trước khi cho phép roll
+            bool canRollByStatus = _statusEffects == null || !_statusEffects.CannotRoll;
+            
+            if (!IsRolling && _cooldownRemaining <= 0f && canRollByStatus && GetRollPressed())
             {
-                var input = GetMoveInput();
+                var input = GetMoveInputWithEffects();
                 if (input.sqrMagnitude > 0.0001f)
                 {
                     // Kiểm tra stamina trước khi roll
@@ -73,7 +78,17 @@ namespace NWO
 
         private void FixedUpdate()
         {
-            _rb.linearDamping = linearDrag;
+            // Áp dụng slippery effect nếu có
+            float effectiveDrag = linearDrag;
+            if (_statusEffects != null)
+            {
+                float slipperyDrag = _statusEffects.GetSlipperyDrag();
+                if (slipperyDrag >= 0f)
+                {
+                    effectiveDrag = slipperyDrag;
+                }
+            }
+            _rb.linearDamping = effectiveDrag;
 
             if (IsRolling)
             {
@@ -81,15 +96,26 @@ namespace NWO
                 return;
             }
 
-            var input = GetMoveInput();
+            // Kiểm tra nếu không thể di chuyển (frozen/stunned)
+            if (_statusEffects != null && _statusEffects.CannotMove)
+            {
+                _rb.linearVelocity = Vector2.zero;
+                return;
+            }
+
+            var input = GetMoveInputWithEffects();
             if (input.sqrMagnitude > 1f) input.Normalize();
 
-            _rb.AddForce(input * moveAcceleration, ForceMode2D.Force);
+            // Áp dụng speed multiplier từ status effects
+            float speedMultiplier = _statusEffects != null ? _statusEffects.MoveSpeedMultiplier : 1f;
+            
+            _rb.AddForce(input * moveAcceleration * speedMultiplier, ForceMode2D.Force);
 
             var v = _rb.linearVelocity;
-            if (v.magnitude > maxMoveSpeed)
+            float effectiveMaxSpeed = maxMoveSpeed * speedMultiplier;
+            if (v.magnitude > effectiveMaxSpeed)
             {
-                _rb.linearVelocity = v.normalized * maxMoveSpeed;
+                _rb.linearVelocity = v.normalized * effectiveMaxSpeed;
             }
         }
 
@@ -171,6 +197,22 @@ namespace NWO
             if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
 
             return new Vector2(x, y);
+        }
+
+        /// <summary>
+        /// Lấy input với status effects đã áp dụng (confusion, etc.)
+        /// </summary>
+        private Vector2 GetMoveInputWithEffects()
+        {
+            var input = GetMoveInput();
+            
+            // Áp dụng confusion (đảo ngược điều khiển)
+            if (_statusEffects != null)
+            {
+                input = _statusEffects.ApplyConfusion(input);
+            }
+            
+            return input;
         }
 
         private static bool GetRollPressed()

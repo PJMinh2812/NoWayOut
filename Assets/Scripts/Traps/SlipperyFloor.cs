@@ -17,6 +17,14 @@ public class SlipperyFloor : MonoBehaviour
     [Tooltip("Có thể hãm phanh bằng thùng/tường không?")]
     [SerializeField] private bool canBreakSlide = true;
     
+    [Header("Status Effect Mode")]
+    [Tooltip("Sử dụng PlayerStatusEffects thay vì PlayerSlideController")]
+    [SerializeField] private bool useStatusEffectSystem = true;
+    
+    [Tooltip("Cường độ trượt (0-1, ảnh hưởng drag)")]
+    [Range(0f, 1f)]
+    [SerializeField] private float slipperyIntensity = 0.8f;
+    
     [Header("Visual")]
     [SerializeField] private Color iceColor = new Color(0.7f, 0.9f, 1f, 0.8f);
     [SerializeField] private bool showIceEffect = true;
@@ -55,6 +63,29 @@ public class SlipperyFloor : MonoBehaviour
     
     private void StartSliding(GameObject player)
     {
+        // Phát âm thanh trượt
+        if (slideSound != null)
+        {
+            AudioSource.PlayClipAtPoint(slideSound, transform.position);
+        }
+
+        // === NEW: Use Status Effect System ===
+        if (useStatusEffectSystem)
+        {
+            var statusEffects = player.GetComponent<PlayerStatusEffects>();
+            if (statusEffects != null)
+            {
+                statusEffects.ApplyEffect(StatusEffectType.Slippery, slideDuration, slipperyIntensity, this);
+                Debug.Log($"[SlipperyFloor] Applied Slippery effect for {slideDuration}s");
+                return;
+            }
+            else
+            {
+                Debug.LogWarning("[SlipperyFloor] PlayerStatusEffects not found, falling back to legacy system");
+            }
+        }
+
+        // === LEGACY: Use PlayerSlideController ===
         PlayerSlideController slideController = player.GetComponent<PlayerSlideController>();
         
         if (slideController == null)
@@ -86,12 +117,6 @@ public class SlipperyFloor : MonoBehaviour
                     slideDirection = Vector2.right;
                 }
             }
-        }
-        
-        // Phát âm thanh trượt
-        if (slideSound != null)
-        {
-            AudioSource.PlayClipAtPoint(slideSound, transform.position);
         }
         
         // Bắt đầu trượt

@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 1136003576512758893}
   - component: {fileID: 5547065384358357140}
   - component: {fileID: 4931834133791403852}
+  - component: {fileID: 6476469387257487498}
+  - component: {fileID: 1612200437112792985}
   m_Layer: 0
   m_Name: Dage
   m_TagString: Player
@@ -87,7 +89,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_MaskInteraction: 0
   m_Sprite: {fileID: -4953641391553741328, guid: b4715913fbd20cb439ef0bf185015988, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -298,3 +300,61 @@ MonoBehaviour:
   fullStaminaColor: {r: 0.3, g: 0.8, b: 1, a: 1}
   lowStaminaColor: {r: 1, g: 0.5, b: 0, a: 1}
   lowStaminaThreshold: 30
+--- !u!114 &6476469387257487498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1296187675758871721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f06ca0e84ae6b4d9344a7b67a580b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.PlayerStatusEffects
+  allowStacking: 0
+  refreshDurationOnReapply: 1
+  playerSprite: {fileID: 0}
+  slowColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+  confusionColor: {r: 1, g: 0.5, b: 1, a: 1}
+  freezeColor: {r: 0.3, g: 0.6, b: 1, a: 1}
+  burnColor: {r: 1, g: 0.4, b: 0.2, a: 1}
+  poisonColor: {r: 0.5, g: 1, b: 0.3, a: 1}
+  speedBoostColor: {r: 1, g: 1, b: 0.5, a: 1}
+  shieldColor: {r: 0.8, g: 0.8, b: 1, a: 1}
+  debuffApplySound: {fileID: 0}
+  buffApplySound: {fileID: 0}
+  effectExpireSound: {fileID: 0}
+--- !u!114 &1612200437112792985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1296187675758871721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f374c37d9b9756947862abe0a93c4a6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.PlayerMeleeController
+  baseDamage: 8
+  attackRange: 1.2
+  attackRadius: 0.6
+  knockbackForce: 4
+  maxComboHits: 3
+  comboWindow: 0.8
+  attackDuration: 0.35
+  comboResetDelay: 1.5
+  combo1Multiplier: 1
+  combo2Multiplier: 1.2
+  combo3Multiplier: 1.5
+  staminaCostPerAttack: 10
+  attackPoint: {fileID: 0}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  showDebugGizmos: 1
+  swingSounds: []
+  hitSound: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
+  hitEffectDuration: 0.5
