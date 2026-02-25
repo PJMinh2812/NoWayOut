@@ -142,10 +142,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: -7443756053782179069, guid: 379806a69aafe3f4db9eec2d314dac03, type: 3}
-  m_Type: 0
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
+  m_FillMethod: 0
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
@@ -266,7 +266,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18d1605e74bdea248b2d01e5e217e8a7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.UI.HealthBarUI
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.UI.HealthBarUI
   fillImage: {fileID: 4720083927129562998}
   backgroundImage: {fileID: 8905669050827691482}
   healthText: {fileID: 0}
@@ -282,11 +282,11 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7355916300128518898}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02b4d834947c0264386127470f743f44, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.UI.EnemyHealthBarController
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.UI.EnemyHealthBarController
   healthBarUI: {fileID: 2205586639188029955}
   targetEnemy: {fileID: 0}
   offset: {x: 0, y: 1, z: 0}

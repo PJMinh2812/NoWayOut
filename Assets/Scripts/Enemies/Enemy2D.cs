@@ -178,6 +178,9 @@ namespace NWO
 
             _rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
 
+            // Notify health bar immediately on damage (don't wait for next LateUpdate poll)
+            _healthBarController?.OnHealthChanged(_currentHealth, maxHealth);
+
             if (_currentHealth <= 0)
             {
                 Die();
@@ -188,7 +191,10 @@ namespace NWO
         {
             if (_isDead) return;
             _isDead = true;
-            
+
+            // Hide health bar immediately when enemy dies
+            _healthBarController?.OnEnemyDied();
+
             // Play death animation - use Trigger to avoid re-triggering from Any State
             if (animator != null)
             {
