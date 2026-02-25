@@ -67,12 +67,13 @@ namespace NWO
                 return;
             }
 
+            // Check for Enemy2D
             if (other.TryGetComponent<Enemy2D>(out var enemy))
             {
                 var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
                 enemy.TakeDamage(damage, hitDir.normalized, knockbackForce);
 
-                Debug.Log($"[SpellProjectile] Hit enemy! Damage: {damage}");
+                Debug.Log($"[SpellProjectile] Hit Enemy2D! Damage: {damage}");
 
                 if (destroyOnHit)
                 {
@@ -82,6 +83,23 @@ namespace NWO
                 return;
             }
 
+            // Check for RatMiniBoss (giống Projectile2D)
+            if (other.TryGetComponent<RatMiniBoss>(out var boss))
+            {
+                var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
+                boss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+
+                Debug.Log($"[SpellProjectile] Hit RatMiniBoss! Damage: {damage}");
+
+                if (destroyOnHit)
+                {
+                    SpawnHitEffect();
+                    DestroyProjectile();
+                }
+                return;
+            }
+
+            // Destroy on Wall collision
             if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
             {
                 SpawnHitEffect();
