@@ -17,12 +17,10 @@ namespace NWO
         [SerializeField] private int spell02Damage = 20;
         [SerializeField] private int spell03Damage = 35;
 
-        [Header("Spell Range")]
-        #pragma warning disable CS0414
+        [Header("Spell Range (phạm vi bay của từng spell)")]
         [SerializeField] private float spell01Range = 5f;
         [SerializeField] private float spell02Range = 7f;
         [SerializeField] private float spell03Range = 10f;
-        #pragma warning restore CS0414
 
         [Header("Spell Prefabs (Optional)")]
         [SerializeField] private GameObject spell01Projectile;
@@ -33,6 +31,7 @@ namespace NWO
         private PlayerController2D _controller;
         private PlayerStamina _stamina;
         private PlayerStatusEffects _statusEffects;
+        private PlayerMeleeController _meleeController;
 
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
@@ -53,6 +52,7 @@ namespace NWO
             _controller = GetComponent<PlayerController2D>();
             _stamina = GetComponent<PlayerStamina>();
             _statusEffects = GetComponent<PlayerStatusEffects>();
+            _meleeController = GetComponent<PlayerMeleeController>();
         }
 
         private void Start()
@@ -86,6 +86,10 @@ namespace NWO
             bool canCastByStatus = _statusEffects == null || !_statusEffects.CannotCast;
             
             if (_controller != null && (_controller.IsRolling || _isCasting))
+                return;
+            
+            // Không cast spell khi đang tấn công melee
+            if (_meleeController != null && _meleeController.IsAttacking)
                 return;
                 
             if (!canCastByStatus)
@@ -277,10 +281,21 @@ namespace NWO
             {
                 Physics2D.IgnoreCollision(projectileCollider, playerCollider);
             }
+            // Lấy range theo loại spell hiện tại
+            float spellRange = _currentSpell switch
+            {
+                1 => spell01Range,
+                2 => spell02Range,
+                3 => spell03Range,
+                _ => 5f
+            };
+
             var proj = projectile.GetComponent<SpellProjectile>();
             if (proj != null)
             {
+                proj.SetMaxRange(spellRange);
                 proj.Fire(aimDirection);
+                Debug.Log($"[Spell] Fired spell {_currentSpell} with range {spellRange} units");
             }
             else
             {

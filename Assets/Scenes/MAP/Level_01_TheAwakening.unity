@@ -1274,20 +1274,18 @@ PrefabInstance:
       propertyPath: m_Constraints
       value: 4
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1612200437112792985, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1296187675758871721, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1262753659}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
 --- !u!114 &405222311 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1136003576512758893, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
   m_PrefabInstance: {fileID: 405222310}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1255241638}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ff1a35ab1a383fb4ab97824844110e2f, type: 3}
@@ -8201,49 +8199,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1225711669}
   m_CullTransparentMesh: 1
---- !u!1 &1255241638 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1296187675758871721, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
-  m_PrefabInstance: {fileID: 405222310}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1262753658 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
   m_PrefabInstance: {fileID: 405222310}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1262753659
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1255241638}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f374c37d9b9756947862abe0a93c4a6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NWO.PlayerMeleeController
-  baseDamage: 8
-  attackRange: 1.2
-  attackRadius: 0.6
-  knockbackForce: 4
-  maxComboHits: 3
-  comboWindow: 0.8
-  attackDuration: 0.35
-  comboResetDelay: 1.5
-  combo1Multiplier: 1
-  combo2Multiplier: 1.2
-  combo3Multiplier: 1.5
-  staminaCostPerAttack: 10
-  attackPoint: {fileID: 0}
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  showDebugGizmos: 1
-  swingSounds: []
-  hitSound: {fileID: 0}
-  hitEffectPrefab: {fileID: 0}
-  hitEffectDuration: 0.5
 --- !u!1001 &1288963164
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10378,6 +10338,7 @@ GameObject:
   - component: {fileID: 1652458190}
   - component: {fileID: 1652458189}
   - component: {fileID: 1652458192}
+  - component: {fileID: 1652458193}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -10474,6 +10435,50 @@ MonoBehaviour:
   target: {fileID: 1262753658}
   smoothTime: 0.1
   offset: {x: 0, y: 0, z: -10}
+--- !u!114 &1652458193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1652458188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &1674257880
 GameObject:
   m_ObjectHideFlags: 0

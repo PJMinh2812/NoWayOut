@@ -132,6 +132,10 @@ namespace NWO
             var mouse = Mouse.current;
             if (mouse == null) return;
             
+            // Không tấn công melee khi đang ở spell mode (SpellType > 0)
+            // Tránh conflict input với PlayerSpellController
+            if (_spellController != null && _spellController.CurrentSpell > 0) return;
+            
             // Click trái để tấn công
             if (mouse.leftButton.wasPressedThisFrame)
             {
@@ -216,6 +220,14 @@ namespace NWO
             _isAttacking = false;
             _attackTimer = 0f;
             
+            // ★ CRITICAL FIX: Reset animator IsAttacking parameter
+            // Without this, the animator stays stuck in MeleeAttack state forever
+            // because OnMeleeAnimationEnd() requires Animation Events which are not configured
+            if (_animator != null)
+            {
+                _animator.SetBool("IsAttacking", false);
+            }
+            
             // Kiểm tra xem có combo đã queue không
             if (_attackQueued && _currentCombo < maxComboHits)
             {
@@ -252,6 +264,13 @@ namespace NWO
             {
                 _currentCombo = 0;
                 _comboTimer = 0f;
+                
+                // Safety: ensure animator IsAttacking is reset
+                if (_animator != null)
+                {
+                    _animator.SetBool("IsAttacking", false);
+                }
+                
                 OnComboReset?.Invoke();
                 Debug.Log("[Melee] Combo reset!");
             }

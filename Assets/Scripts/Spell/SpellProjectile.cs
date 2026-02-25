@@ -2,13 +2,20 @@
 
 namespace NWO
 {
-    // Projectile bay, gây damage, tự hủy sau thời gian hoặc va chạm
+    // Projectile bay, gây damage, tự hủy khi đạt phạm vi tối đa hoặc va chạm
+    // - Va chạm vật thể/quái: hủy ngay lập tức
+    // - Bay trong không gian: fade-out tan biến khi đạt max range
     [RequireComponent(typeof(Rigidbody2D), typeof(Animator), typeof(Collider2D))]
     public class SpellProjectile : MonoBehaviour
     {
         [Header("Movement")]
         [SerializeField] private float speed = 8f;
-        [SerializeField] private float lifetime = 3f;
+
+        [Header("Range (phạm vi bay)")]
+        [Tooltip("Khoảng cách tối đa spell có thể bay (units). Được set từ PlayerSpellController theo loại spell.")]
+        [SerializeField] private float maxRange = 5f;
+        [Tooltip("Phần trăm range cuối cùng bắt đầu fade-out (0.0 - 1.0)")]
+        [SerializeField] private float fadeStartPercent = 0.8f;
 
         [Header("Damage")]
         [SerializeField] private int damage = 10;
@@ -25,23 +32,35 @@ namespace NWO
 
         private Rigidbody2D _rb;
         private Animator _animator;
+        private SpriteRenderer _spriteRenderer;
         private Vector2 _direction;
-        private float _timeAlive;
+        private Vector3 _spawnPosition;
+        private float _distanceTraveled;
         private bool _isDestroyed = false;
+        private bool _isFading = false;
+        private float _fadeProgress = 0f;
+        private Color _originalColor;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _animator = GetComponent<Animator>();
+            _spriteRenderer = GetComponent<SpriteRenderer>();
 
             _rb.bodyType = RigidbodyType2D.Dynamic;
             _rb.gravityScale = 0f;
             _rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+            if (_spriteRenderer != null)
+            {
+                _originalColor = _spriteRenderer.color;
+            }
         }
 
         public void Fire(Vector2 direction)
         {
             _direction = direction.normalized;
+            _spawnPosition = transform.position;
             _rb.linearVelocity = _direction * speed;
 
             // Xoay và flip sprite theo hướng bay
@@ -63,14 +82,72 @@ namespace NWO
             damage = newDamage;
         }
 
+        /// <summary>
+        /// Set phạm vi bay tối đa từ bên ngoài (PlayerSpellController truyền range theo loại spell)
+        /// </summary>
+        public void SetMaxRange(float range)
+        {
+            maxRange = range;
+        }
+
         private void Update()
         {
-            _timeAlive += Time.deltaTime;
+            if (_isDestroyed) return;
 
-            if (_timeAlive >= lifetime)
+            // Tính khoảng cách đã bay từ điểm spawn
+            _distanceTraveled = Vector3.Distance(_spawnPosition, transform.position);
+
+            // Tính fade dựa trên khoảng cách
+            float fadeStartDistance = maxRange * fadeStartPercent;
+            float fadeDistance = maxRange - fadeStartDistance; // khoảng cách fade
+
+            if (!_isFading && _distanceTraveled >= fadeStartDistance)
+            {
+                StartFadeOut();
+            }
+
+            // Xử lý fade-out (tan biến dần) dựa trên khoảng cách
+            if (_isFading)
+            {
+                _fadeProgress = Mathf.Clamp01((_distanceTraveled - fadeStartDistance) / fadeDistance);
+
+                if (_spriteRenderer != null)
+                {
+                    Color c = _originalColor;
+                    c.a = Mathf.Lerp(1f, 0f, _fadeProgress);
+                    _spriteRenderer.color = c;
+                }
+
+                // Giảm tốc dần khi đang tan biến
+                if (_rb != null)
+                {
+                    _rb.linearVelocity = _direction * speed * (1f - _fadeProgress * 0.7f);
+                }
+
+                // Scale nhỏ dần
+                float scaleMultiplier = Mathf.Lerp(1f, 0.3f, _fadeProgress);
+                transform.localScale = Vector3.one * scaleMultiplier;
+            }
+
+            // Hủy khi đạt phạm vi tối đa
+            if (_distanceTraveled >= maxRange)
             {
                 DestroyProjectile();
             }
+        }
+
+        /// <summary>
+        /// Bắt đầu hiệu ứng tan biến (fade-out) khi sắp đạt max range
+        /// </summary>
+        private void StartFadeOut()
+        {
+            _isFading = true;
+
+            // Tắt collider để không gây damage trong lúc tan biến
+            var col = GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+
+            Debug.Log($"[SpellProjectile] Starting fade-out at distance {_distanceTraveled:F1}/{maxRange} units");
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -173,7 +250,15 @@ namespace NWO
             // Tắt collider và velocity ngay lập tức
             var col = GetComponent<Collider2D>();
             if (col != null) col.enabled = false;
-            _rb.linearVelocity = Vector2.zero;
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+
+            // Reset sprite về transparent hoàn toàn trước khi destroy
+            if (_spriteRenderer != null)
+            {
+                Color c = _spriteRenderer.color;
+                c.a = 0f;
+                _spriteRenderer.color = c;
+            }
             
             Destroy(gameObject);
         }
