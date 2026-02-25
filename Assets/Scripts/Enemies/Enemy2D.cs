@@ -39,6 +39,8 @@ namespace NWO
 
         // Sprite flip for facing direction
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [Tooltip("Enable if the sprite originally faces LEFT instead of right")]
+        [SerializeField] private bool facingLeftByDefault = false;
 
         [Header("Combat")]
         [Tooltip("Distance within which enemy will attempt to attack")]
@@ -125,7 +127,8 @@ namespace NWO
                 // Flip sprite to face player during attack
                 if (spriteRenderer != null)
                 {
-                    spriteRenderer.flipX = (_player.transform.position.x - transform.position.x) < 0f;
+                    bool faceLeft = (_player.transform.position.x - transform.position.x) < 0f;
+                    spriteRenderer.flipX = facingLeftByDefault ? !faceLeft : faceLeft;
                 }
                 return;
             }
@@ -157,11 +160,13 @@ namespace NWO
                 float vx = _rb.linearVelocity.x;
                 if (Mathf.Abs(vx) > 0.05f)
                 {
-                    spriteRenderer.flipX = vx < 0f; // flip when moving left
+                    bool faceLeft = vx < 0f;
+                    spriteRenderer.flipX = facingLeftByDefault ? !faceLeft : faceLeft;
                 }
                 else if (_player != null)
                 {
-                    spriteRenderer.flipX = (_player.transform.position.x - transform.position.x) < 0f;
+                    bool faceLeft = (_player.transform.position.x - transform.position.x) < 0f;
+                    spriteRenderer.flipX = facingLeftByDefault ? !faceLeft : faceLeft;
                 }
             }
         }
