@@ -1,0 +1,704 @@
+# 🗺️ PHẦN 1: Procedural Dungeon Generation — Review Chi Tiết Code
+
+---
+
+## 1. Cấu trúc file & namespace
+
+```
+ProceduralGeneration/
+├── Core/
+│   ├── DungeonManager.cs    (1046 dòng) — Bộ não chính
+│   ├── Room.cs              (199 dòng)  — Data model phòng
+│   └── DungeonUtils.cs      (245 dòng)  — Utility tĩnh
+├── Components/
+│   ├── RoomVisualGenerator.cs (588 dòng)  — Vẽ Tilemap
+│   └── DoorTrigger.cs        (448 dòng)  — Controller cửa
+└── Data/
+    ├── RoomData.cs           (85 dòng)   — ScriptableObject template
+    └── TrapData.cs
+```
+
+Namespace: `ProceduralGeneration.Core`, `ProceduralGeneration.Components`, `ProceduralGeneration.Data`
+
+---
+
+## 2. Data Layer — RoomData.cs & Enums
+
+### RoomData — ScriptableObject
+
+```csharp
+[CreateAssetMenu(fileName = "New Room", menuName = "Procedural Generation/Room Data")]
+public class RoomData : ScriptableObject
+{
+    public GameObject roomPrefab;         // Prefab (không dùng trong auto-gen mode)
+    public RoomType roomType;             // Start, Archetype1, MidBoss, Boss, Goal...
+    public Vector2Int size = Vector2Int.one; // Kích thước trên grid
+    public List<DoorAnchor> doorAnchors;  // Config các cửa
+    public int maxTrapSpawnPoints = 3;
+    public float enemySpawnRate = 0.5f;
+}
+```
+
+> [!IMPORTANT]
+> [RoomData](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Data/RoomData.cs#9-39) là **ScriptableObject** — tạo trong Unity Editor qua menu "Procedural Generation/Room Data". Mỗi loại phòng có 1 asset riêng. Code **KHÔNG modify** ScriptableObject khi chạy, mà dùng `actualSize` override trong [Room](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/Room.cs#37-50).
+
+### DoorAnchor — Config vị trí cửa
+
+```csharp
+[System.Serializable]
+public class DoorAnchor
+{
+    public DoorDirection direction;   // Top, Bottom, Left, Right
+    public Vector3 localPosition;     // Offset từ center (ví dụ: cửa lệch sang phải)
+    public GameObject doorObject;     // GameObject cửa (cho prefab mode)
+    public GameObject wallObject;     // Tường thay thế nếu không có phòng kề
+}
+```
+
+### Enums
+
+```csharp
+public enum RoomType {
+    Start, Archetype1, Archetype2, MidBoss, Boss, Goal, Treasure, Secret
+}
+
+public enum DoorDirection {
+    Top, Bottom, Left, Right
+}
+```
+
+**Câu hỏi**: *Tại sao dùng `[System.Serializable]` cho [DoorAnchor](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Data/RoomData.cs#58-73)?*
+→ Vì [DoorAnchor](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Data/RoomData.cs#58-73) không phải MonoBehaviour hay ScriptableObject, nó là plain class. `[Serializable]` cho phép Unity serialize nó bên trong [RoomData](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Data/RoomData.cs#9-39) để hiện trong Inspector.
+
+---
+
+## 3. DungeonUtils.cs — Utility tĩnh
+
+### Fisher-Yates Shuffle
+
+```csharp
+public static void Shuffle<T>(List<T> list)
+{
+    for (int i = list.Count - 1; i > 0; i--)
+    {
+        int j = Random.Range(0, i + 1);  // Random [0, i]
+        T temp = list[i];
+        list[i] = list[j];
+        list[j] = temp;
+    }
+}
+```
+
+**Câu hỏi**: *Thuật toán Fisher-Yates có đặc điểm gì?*
+→ **O(n)** thời gian, **in-place** (không tạo list mới), mỗi hoán vị có xác suất bằng nhau. Dùng để random hóa thứ tự thử hướng khi đặt phòng.
+
+### CanPlaceRoomAt — Check overlap
+
+```csharp
+public static bool CanPlaceRoomAt(Vector2Int position, Vector2Int size,
+    Dictionary<Vector2Int, Room> occupiedCells)
+{
+    // Duyệt TẤT CẢ ô mà phòng mới sẽ chiếm
+    for (int x = 0; x < size.x; x++)
+        for (int y = 0; y < size.y; y++)
+        {
+            Vector2Int cellPos = position + new Vector2Int(x, y);
+            if (occupiedCells.ContainsKey(cellPos))
+                return false;  // Ô đã bị chiếm → KHÔNG đặt được
+        }
+    return true;
+}
+```
+
+**Câu hỏi**: *Tại sao dùng `Dictionary<Vector2Int, Room>` thay vì 2D array?*
+→ Dictionary cho phép dungeon mở rộng vô hạn theo mọi hướng (cả tọa độ âm), không cần biết trước kích thước tối đa. Lookup `ContainsKey` là **O(1)**.
+
+### A* Pathfinding
+
+```csharp
+public static List<Room> FindPath(Room start, Room end, List<Room> allRooms)
+{
+    // Heuristic: Manhattan distance giữa gridPosition
+    // Graph: room.connectedRooms (chỉ đi qua cửa đã kết nối)
+    // Cost: mỗi bước = 1
+}
+```
+
+**Câu hỏi**: *Tại sao dùng Manhattan distance làm heuristic?*
+→ Vì rooms nằm trên grid ô vuông, chỉ di chuyển được 4 hướng (Top/Bottom/Left/Right). Manhattan = |Δx| + |Δy| là heuristic **admissible** cho grid movement.
+
+---
+
+## 4. Room.cs — Data Model
+
+### Constructor
+
+```csharp
+public Room(RoomData data, Vector2Int position, Vector2Int? overrideSize = null)
+{
+    roomData = data;
+    gridPosition = position;
+    actualSize = overrideSize ?? data.size;  // Dùng override hoặc default
+    connectedRooms = new Dictionary<DoorDirection, Room>();
+    distanceFromStart = 0;
+    dangerLevel = 0;
+    isMainPath = false;
+}
+```
+
+**Câu hỏi**: *`Vector2Int?` là gì? Tại sao dùng `??`?*
+→ `Vector2Int?` là **Nullable<Vector2Int>** — có thể là null. `??` là **null-coalescing operator**: nếu left side null → dùng right side. Ở đây: nếu không truyền overrideSize → dùng `data.size` mặc định.
+
+### GetOccupiedGridCells
+
+```csharp
+public List<Vector2Int> GetOccupiedGridCells()
+{
+    List<Vector2Int> cells = new List<Vector2Int>();
+    for (int x = 0; x < actualSize.x; x++)
+        for (int y = 0; y < actualSize.y; y++)
+            cells.Add(gridPosition + new Vector2Int(x, y));
+    return cells;
+}
+```
+
+Ví dụ: phòng 15×15 tại (0,0) → chiếm 225 ô từ (0,0) đến (14,14).
+
+### InstantiateRoom — Tạo GameObject
+
+```csharp
+public void InstantiateRoom(Transform parent, float worldScale = 1f)
+{
+    this.worldScale = worldScale;
+    // gridPosition đã là grid cells, NHÂN worldScale cho world units
+    Vector3 worldPosition = new Vector3(
+        gridPosition.x * worldScale,
+        gridPosition.y * worldScale, 0);
+    
+    // Tạo EMPTY GameObject (không dùng prefab)
+    roomInstance = new GameObject($"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}");
+    roomInstance.transform.SetParent(parent);
+    roomInstance.transform.position = worldPosition;
+    
+    // Add RoomVisualGenerator component
+    var visualGen = roomInstance.AddComponent<RoomVisualGenerator>();
+}
+```
+
+**Câu hỏi**: *Tại sao tạo empty GameObject thay vì Instantiate prefab?*
+→ Vì hệ thống auto-gen tạo visual bằng Tilemap runtime. [RoomVisualGenerator](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#10-587) sẽ tự tạo Grid, Tilemap, fill tiles. Prefab chỉ dùng cho mode vẽ tay.
+
+---
+
+## 5. DungeonManager.cs — Logic Chính
+
+### 5.1 Seed System
+
+```csharp
+[Tooltip("Seed cho random generation (0 = random seed)")]
+public int seed = 0;
+public bool useRandomSeed = true;
+
+public void GenerateDungeon()
+{
+    if (useRandomSeed || seed == 0)
+        currentSeed = System.DateTime.Now.Millisecond + Random.Range(0, 10000);
+    else
+        currentSeed = seed;
+    
+    Random.InitState(currentSeed); // SET seed cho toàn bộ Random calls sau đó
+}
+```
+
+**Câu hỏi**: *`Random.InitState` dùng để làm gì?*
+→ Set **deterministic seed** cho `UnityEngine.Random`. Cùng seed → cùng chuỗi `Random.Range()`, `Random.value` → tạo ra dungeon **giống hệt nhau**. Hữu ích cho debug hoặc share map.
+
+**Câu hỏi**: *Tại sao kết hợp `DateTime.Millisecond + Random.Range`?*
+→ `DateTime.Millisecond` có range 0-999, quá nhỏ → dễ trùng seed. Cộng thêm `Random.Range(0, 10000)` tăng entropy. Tuy nhiên `Random.Range` lúc này chưa được seed → dùng seed hệ thống mặc định.
+
+### 5.2 GenerateDungeonFlow — Dungeon Flow
+
+```csharp
+private bool GenerateDungeonFlow()
+{
+    // 1. Start room tại (0,0)
+    CreateStartRoom();
+    
+    // 2. Archetype1 × archetype1RoomCount (mặc định 5)
+    CreateRoomSequence(RoomType.Archetype1, archetype1RoomCount);
+    
+    // 3. MidBoss
+    CreateRoomOfType(RoomType.MidBoss);
+    
+    // 4. Archetype2 × archetype2RoomCount (mặc định 5)
+    CreateRoomSequence(RoomType.Archetype2, archetype2RoomCount);
+    
+    // 5. Boss
+    CreateRoomOfType(RoomType.Boss);
+    
+    // 6. Goal
+    CreateGoalRoom();
+    
+    // 7. Tính danger level
+    CalculateDangerLevels();
+}
+```
+
+### 5.3 TryPlaceRoom — Thuật toán đặt phòng (QUAN TRỌNG)
+
+```csharp
+private Room TryPlaceRoom(RoomData roomData, Room fromRoom)
+{
+    // BƯỚC 1: Lấy hướng chưa kết nối
+    List<DoorDirection> availableDirections = GetAvailableDirections(fromRoom);
+    
+    // BƯỚC 2: Shuffle random
+    DungeonUtils.Shuffle(availableDirections);
+    
+    // BƯỚC 3: Tính kích thước phòng mới (luôn lẻ, clamp range)
+    Vector2Int adjustedSize = CalculateAdjustedRoomSize(roomData);
+    
+    // BƯỚC 4: Thử từng hướng
+    foreach (var direction in availableDirections)
+    {
+        // 4a. Tính offset = kích thước phòng hiện tại
+        Vector2Int offset = DungeonUtils.DirectionToVector(direction);
+        Vector2Int scaledOffset = new Vector2Int(
+            offset.x * fromRoom.actualSize.x,   // VD: Right(1,0) * 15 = (15,0)
+            offset.y * fromRoom.actualSize.y);
+        Vector2Int newPosition = fromRoom.gridPosition + scaledOffset;
+        
+        // 4b. Check overlap
+        if (DungeonUtils.CanPlaceRoomAt(newPosition, adjustedSize, occupiedCells))
+        {
+            // 4c. Check door compatibility
+            DoorDirection requiredDoor = DungeonUtils.GetOppositeDirection(direction);
+            // Phòng mới PHẢI có cửa ở hướng đối diện
+            if (roomData.doorAnchors.Any(a => a.direction == requiredDoor))
+            {
+                // 4d. Tạo Room mới
+                Room newRoom = new Room(roomData, newPosition, adjustedSize);
+                newRoom.distanceFromStart = fromRoom.distanceFromStart + 1;
+                AddRoomToGrid(newRoom);
+                
+                // 4e. Kết nối 2 chiều
+                fromRoom.connectedRooms[direction] = newRoom;      // A → B
+                newRoom.connectedRooms[requiredDoor] = fromRoom;   // B → A
+                
+                return newRoom;
+            }
+        }
+    }
+    
+    // BƯỚC 5: BACKTRACKING — nếu không tìm được
+    for (int i = mainPath.Count - 2; i >= Math.Max(0, mainPath.Count - 10); i--)
+    {
+        Room result = TryPlaceRoom(roomData, mainPath[i]); // Đệ quy!
+        if (result != null) return result;
+    }
+    
+    return null; // Thất bại hoàn toàn
+}
+```
+
+**Câu hỏi**: *Tại sao scaledOffset dùng `fromRoom.actualSize` thay vì `newRoom` size?*
+→ Vì offset phải đúng bằng kích thước phòng **hiện tại** để phòng mới nằm sát cạnh mà không overlap. VD: fromRoom 15×15, direction Right → offset (15,0) → phòng mới bắt đầu ngay sau cạnh phải.
+
+**Câu hỏi**: *Backtracking hoạt động như nào? Có nguy cơ vòng lặp vô hạn không?*
+→ Backtrack thử `mainPath[i]` (i giảm dần từ cuối). Có giới hạn `maxBacktrackAttempts = 10` phòng. Mỗi lần backtrack gọi đệ quy [TryPlaceRoom](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#750-810) — nhưng [GetAvailableDirections](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#814-830) chỉ trả hướng CHƯA kết nối, nên phòng đã backtrack sẽ có ít hướng hơn → giảm khả năng vòng lặp. Tuy nhiên code KHÔNG có guard chống infinite recursion tường minh.
+
+**Câu hỏi**: *[GetAvailableDirections](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#814-830) filter như thế nào?*
+```csharp
+private List<DoorDirection> GetAvailableDirections(Room room)
+{
+    List<DoorDirection> directions = new List<DoorDirection>();
+    foreach (var anchor in room.roomData.doorAnchors)
+    {
+        // Chỉ thêm nếu hướng đó CHƯA có room kết nối
+        if (!room.connectedRooms.ContainsKey(anchor.direction) ||
+            room.connectedRooms[anchor.direction] == null)
+        {
+            directions.Add(anchor.direction);
+        }
+    }
+    return directions;
+}
+```
+→ Chỉ trả hướng mà (1) RoomData có DoorAnchor cho hướng đó, VÀ (2) chưa có connected room.
+
+### 5.4 Branch Rooms
+
+```csharp
+private void TryCreateBranchRoom(RoomType roomType)
+{
+    // Chọn phòng eligible: không phải Start, Boss, MidBoss
+    var eligible = mainPath.Where(r =>
+        r.roomData.roomType != RoomType.Start &&
+        r.roomData.roomType != RoomType.Boss &&
+        r.roomData.roomType != RoomType.MidBoss).ToList();
+    
+    Room branchFrom = eligible[Random.Range(0, eligible.Count)];
+    Room branchRoom = TryPlaceRoom(branchRoomData, branchFrom);
+    if (branchRoom != null)
+        branchRoom.isMainPath = false; // Đánh dấu KHÔNG phải main path
+}
+```
+
+**Câu hỏi**: *Branch room khác main path room thế nào?*
+→ `isMainPath = false`. Không ảnh hưởng đến flow chính. Player có thể bỏ qua. Dùng cho treasure rooms, extra challenges.
+
+### 5.5 CalculateDangerLevels
+
+```csharp
+private void CalculateDangerLevels()
+{
+    int maxDistance = mainPath.Max(r => r.distanceFromStart);
+    foreach (var room in allRooms)
+    {
+        float normalized = (float)room.distanceFromStart / maxDistance; // 0.0 → 1.0
+        room.dangerLevel = Mathf.RoundToInt(dangerCurve.Evaluate(normalized));
+    }
+}
+```
+
+**Câu hỏi**: *`AnimationCurve` dùng ở đây có ý nghĩa gì?*
+→ `dangerCurve` là curve từ Inspector, input [0,1] output [1,10]. Mặc định linear. Có thể thay bằng exponential (tăng chậm đầu, nhanh cuối) hoặc step function. Cho phép designer điều chỉnh difficulty progression KHÔNG cần sửa code.
+
+### 5.6 RebuildRoomListFromScene — Play Mode
+
+```csharp
+public void RebuildRoomListFromScene()
+{
+    // 1. Parse tên: "Room_Start_0_0" → type=Start, gridX=0, gridY=0
+    string[] parts = roomObj.name.Split('_');
+    string roomType = parts[1];
+    int gridX = int.Parse(parts[2]);
+    int gridY = int.Parse(parts[3]);
+    
+    // 2. Tìm RoomData match type
+    RoomData data = roomDatabase.Find(r => r.roomType.ToString() == roomType);
+    
+    // 3. Rebuild connections bằng door matching
+    RebuildRoomConnectionsFromDoors();
+    
+    // 4. Ẩn tất cả, chỉ show Start
+    room.roomInstance.SetActive(room == startRoom);
+}
+```
+
+**Câu hỏi**: *Naming convention `Room_Start_0_0` quan trọng thế nào?*
+→ RẤT quan trọng. [RebuildRoomListFromScene()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#266-372) parse tên để rebuild data. Nếu đổi tên → mất khả năng rebuild → doors không hoạt động → game crash.
+
+### 5.7 RebuildRoomConnectionsFromDoors
+
+```csharp
+private void RebuildRoomConnectionsFromDoors()
+{
+    // Thu thập TẤT CẢ doors + metadata
+    var allDoors = List<(Room, DoorTrigger, DoorDirection, Vector3)>();
+    
+    // Match mỗi door với door ĐỐI DIỆN gần nhất
+    foreach (var (room, door, direction, position) in allDoors)
+    {
+        DoorDirection oppositeDir = GetOppositeDirection(direction);
+        
+        foreach (var other in allDoors)
+        {
+            if (other.room == room) continue;        // Skip cùng phòng
+            if (other.direction != oppositeDir) continue; // Phải đối diện
+            if (!IsInCorrectDirection(position, other.position, direction))
+                continue;                              // Phải đúng hướng
+            
+            // Chọn gần nhất
+            if (distance < bestDistance) bestTarget = other.room;
+        }
+        room.connectedRooms[direction] = bestTarget;
+    }
+}
+```
+
+**Câu hỏi**: *[IsInCorrectDirection](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#452-464) kiểm tra gì?*
+```csharp
+private bool IsInCorrectDirection(Vector3 from, Vector3 to, DoorDirection dir)
+{
+    Vector3 delta = to - from;
+    switch (dir) {
+        case Top:    return delta.y > 0;  // Door đối diện phải ở TRÊN
+        case Bottom: return delta.y < 0;  // Door đối diện phải ở DƯỚI
+        case Left:   return delta.x < 0;  // Đối diện phải ở BÊN TRÁI
+        case Right:  return delta.x > 0;  // Đối diện phải ở BÊN PHẢI
+    }
+}
+```
+→ Tránh match nhầm door cùng hướng nhưng ở phía sai (VD: door Top match với door Bottom ở phòng bên dưới, không phải phòng bên trên).
+
+---
+
+## 6. RoomVisualGenerator.cs — Vẽ Tilemap
+
+### 6.1 Full Pipeline
+
+```csharp
+public void GenerateVisuals(RoomData data, Dictionary<DoorDirection, Room> connections)
+{
+    // Lưu hướng có phòng kề (chỉ tạo door cho hướng này)
+    activeDirections = new HashSet<DoorDirection>(connections.Keys);
+    
+    // 1. Floor Tilemap
+    CreateAutoFilledFloor(container);   // Random tiles cho interior
+    
+    // 2. Walls Tilemap
+    CreateAutoFilledWalls(container);    // Edges + collision + skip door positions
+    
+    // 3. Doors (prefab hoặc markers)
+    GenerateDoorPrefabs(container);     // Instantiate + DoorTrigger component
+}
+```
+
+### 6.2 Floor — Random Tile Fill
+
+```csharp
+private void CreateAutoFilledFloor(Transform parent)
+{
+    // Grid + Tilemap setup
+    Grid grid = gridObj.AddComponent<Grid>();
+    grid.cellSize = new Vector3(1f, 1f, 0); // 1 cell = 1 world unit
+    
+    int tilesX = currentRoom.actualSize.x; // VD: 15
+    int tilesY = currentRoom.actualSize.y; // VD: 15
+    
+    // Fill CHỈ interior (x: 1→13, y: 1→13 cho room 15×15)
+    for (int x = 1; x < tilesX - 1; x++)
+        for (int y = 1; y < tilesY - 1; y++)
+        {
+            TileBase randomTile = floorTiles[Random.Range(0, floorTiles.Length)];
+            tilemap.SetTile(new Vector3Int(x, y, 0), randomTile);
+        }
+}
+```
+
+**Câu hỏi**: *Tại sao bắt đầu từ x=1, y=1 thay vì 0?*
+→ x=0 và y=0 là vị trí tường bao. Sàn chỉ nằm bên trong tường. Tường được vẽ riêng bởi [CreateAutoFilledWalls()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#289-387).
+
+### 6.3 Walls — Edge Tiles + Collision
+
+```csharp
+private void CreateAutoFilledWalls(Transform parent)
+{
+    // COLLISION SETUP:
+    TilemapCollider2D tilemapCollider = tilemapObj.AddComponent<TilemapCollider2D>();
+    Rigidbody2D rb = tilemapObj.AddComponent<Rigidbody2D>();
+    rb.bodyType = RigidbodyType2D.Static;
+    CompositeCollider2D composite = tilemapObj.AddComponent<CompositeCollider2D>();
+    tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge;
+    
+    // DOOR HOLES: Tính vị trí door → skip wall tile đó
+    var doorTilePositions = new HashSet<Vector2Int>();
+    // VD: Door Top ở center → skip (7, 14) và (7, 13)
+    // Mỗi door xóa 2 tile: edge + inner layer
+    
+    // FILL: Chỉ edges
+    for (int x = 0; x < tilesX; x++)
+        for (int y = 0; y < tilesY; y++)
+        {
+            bool isEdge = (x == 0 || x == tilesX-1 || y == 0 || y == tilesY-1);
+            if (!isEdge) continue;
+            if (doorTilePositions.Contains(new Vector2Int(x, y))) continue;
+            
+            TileBase tile = GetWallTileForPosition(x, y, tilesX, tilesY);
+            tilemap.SetTile(pos, tile);
+        }
+}
+```
+
+**Câu hỏi**: *Tại sao dùng `CompositeCollider2D`?*
+→ Mỗi tile có 1 collider riêng → phòng 15×15 có ~56 tile tường = 56 colliders → **quá tốn performance**. `CompositeCollider2D` gộp tất cả thành vài polygon lớn → **O(n) → O(1)** collision check.
+
+**Câu hỏi**: *Tại sao mỗi door xóa 2 tile (edge + inner)?*
+→ Tường dày 1 tile nhưng door cần lối đi rộng hơn. Xóa edge tile (trên tường) + inner tile (ngay bên trong) để tạo lối đi 2 tile rộng, đủ cho player + door prefab.
+
+### 6.4 Wall Tile Selection
+
+```csharp
+private TileBase GetWallTileForPosition(int x, int y, int maxX, int maxY)
+{
+    bool isLeft   = x == 0;
+    bool isRight  = x == maxX - 1;
+    bool isTop    = y == maxY - 1;
+    bool isBottom = y == 0;
+    
+    // 4 CORNERS (ưu tiên kiểm tra trước)
+    if (isTop && isLeft)  return wallTopLeft ?? wallCenter;
+    if (isTop && isRight) return wallTopRight ?? wallCenter;
+    if (isBottom && isLeft)  return wallBottomLeft ?? wallCenter;
+    if (isBottom && isRight) return wallBottomRight ?? wallCenter;
+    
+    // 4 EDGES
+    if (isTop)    return wallTop ?? wallCenter;
+    if (isBottom) return wallBottom ?? wallCenter;
+    if (isLeft)   return wallLeft ?? wallCenter;
+    if (isRight)  return wallRight ?? wallCenter;
+    
+    return wallCenter; // Fallback
+}
+```
+
+**Câu hỏi**: *`??` operator dùng ở đây có ý nghĩa gì?*
+→ Nếu tile asset cụ thể (VD: `wallTopLeft`) chưa được assign → dùng `wallCenter` làm fallback. Tránh null reference.
+
+**Câu hỏi**: *Tại sao corner check trước edge?*
+→ Góc trên-trái vừa `isTop` vừa `isLeft`. Nếu check edge trước → nó match `isTop` → dùng `wallTop` thay vì `wallTopLeft`. Corner phải ưu tiên.
+
+---
+
+## 7. DoorTrigger.cs — Hệ thống Cửa
+
+### 7.1 Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant U as Unity
+    participant DT as DoorTrigger
+    
+    U->>DT: Awake()
+    DT->>DT: GetComponent<BoxCollider2D>()
+    DT->>DT: GetComponent<Animator>() || GetComponentInChildren<Animator>()
+    DT->>DT: UpdateColliderState() → isTrigger=false (đóng)
+    
+    U->>DT: Start()
+    DT->>DT: FindGameObjectWithTag("Player")
+    DT->>DT: TryFindRoomsFromDungeonManager()
+    
+    U->>DT: Update() (mỗi frame)
+    DT->>DT: Check distance player ↔ door
+    alt distance ≤ 4f && !isOpen
+        DT->>DT: OpenDoor()
+    else distance > 4f && isOpen
+        DT->>DT: CloseDoor()
+    end
+```
+
+### 7.2 Collider State Machine
+
+```csharp
+private void UpdateColliderState()
+{
+    if (isOpen)
+    {
+        doorCollider.enabled = true;
+        doorCollider.isTrigger = true;   // ĐI XUYÊN QUA → trigger OnTriggerEnter2D
+    }
+    else
+    {
+        doorCollider.enabled = true;
+        doorCollider.isTrigger = false;  // CHẶN PLAYER → tường cứng
+    }
+}
+```
+
+**Câu hỏi**: *Tại sao không disable collider khi mở thay vì dùng isTrigger?*
+→ Vì cần [OnTriggerEnter2D](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#191-208) để phát hiện player đi qua cửa mở → trigger room transition. Nếu disable collider thì không có event nào fire.
+
+**Câu hỏi**: *Cần Rigidbody2D static để làm gì?*
+→ Trong Unity, `Collider2D` cần ít nhất 1 trong 2 GameObject có `Rigidbody2D` thì [OnTriggerEnter2D](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#191-208)/[OnCollisionEnter2D](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#214-218) mới fire. `Static` Rigidbody2D = không chịu physics nhưng vẫn tham gia collision detection.
+
+### 7.3 Room Transition Flow
+
+```csharp
+void OnTriggerEnter2D(Collider2D other)
+{
+    if (other.CompareTag("Player"))
+    {
+        if (isOpen && !isLocked)
+        {
+            // Tìm RoomTransitionManager singleton
+            var manager = FindFirstObjectByType<RoomTransitionManager>();
+            manager.TransitionToRoom(currentRoom, targetRoom, doorDirection, player);
+        }
+        else if (isLocked)
+        {
+            PlaySound(lockedSound);
+        }
+    }
+}
+```
+
+**Câu hỏi**: *`FindFirstObjectByType` vs `FindObjectOfType` khác nhau gì?*
+→ `FindFirstObjectByType` (Unity 2023+) nhanh hơn vì không yêu cầu sort. `FindObjectOfType` là deprecated. Cả hai đều tìm trong toàn scene → **tốn performance nếu gọi mỗi frame**. Ở đây chỉ gọi khi trigger → OK.
+
+### 7.4 Animation
+
+```csharp
+private void PlayAnimation(string triggerName)
+{
+    if (doorAnimator != null)
+    {
+        if (triggerName == "Open")
+            doorAnimator.SetBool("isOpen", true);   // Bool, KHÔNG phải Trigger
+        else if (triggerName == "Close")
+            doorAnimator.SetBool("isOpen", false);
+    }
+}
+```
+
+**Câu hỏi**: *Tại sao dùng `SetBool` thay vì `SetTrigger`?*
+→ `SetTrigger` fire 1 lần rồi tự reset — phù hợp cho one-shot animation. Door cần **giữ trạng thái** (mở/đóng liên tục) → `SetBool` duy trì state, Animator transition dựa trên condition `isOpen == true/false`.
+
+---
+
+## ❓ Câu Hỏi Review — Phần Dungeon Generation
+
+### Thuật toán & Logic
+
+**Q1**: Giải thích flow sinh dungeon từ đầu đến cuối.
+> Start(0,0) → 5 phòng Arch1 → MidBoss → 5 phòng Arch2 → Boss → Goal. Mỗi phòng đặt kế bên phòng trước, check overlap + door compatibility. Nếu kẹt → backtrack.
+
+**Q2**: Nếu tất cả hướng đều bị chiếm, code xử lý thế nào?
+> Backtracking: quay lại tối đa 10 phòng trước trong `mainPath`, thử [TryPlaceRoom](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#750-810) từ mỗi phòng đó đệ quy. Nếu vẫn thất bại → return null → `Debug.LogError`.
+
+**Q3**: Tại sao occupiedCells dùng Dictionary thay vì 2D array?
+> Dungeon mở rộng không giới hạn theo mọi hướng (cả tọa độ âm). Dictionary hỗ trợ key âm, lookup O(1), không cần biết trước kích thước.
+
+**Q4**: Seed system hoạt động thế nào? Cùng seed cho ra dungeon giống nhau?
+> `Random.InitState(seed)` đảm bảo deterministic. Cùng seed → cùng chuỗi `Random.Range` → cùng shuffle → cùng layout. Hữu ích cho debug/share.
+
+### Tilemap & Visual
+
+**Q5**: Tường có collision không? Dùng component gì?
+> Có: `TilemapCollider2D` + `CompositeCollider2D` + `Rigidbody2D(Static)`. CompositeCollider gộp colliders để tối ưu performance.
+
+**Q6**: Floor tile fill từ (1,1) chứ không phải (0,0). Tại sao?
+> (0,0) là vị trí tường. Floor chỉ nằm bên trong tường (interior). Tường được vẽ riêng.
+
+**Q7**: Khi đặt door trên tường, code xóa bao nhiêu tile?
+> 2 tiles: edge tile (trên tường) + inner tile (ngay bên trong). Tạo lối đi 2 tile rộng.
+
+### Door System
+
+**Q8**: Door đóng và mở khác nhau ở Collider thế nào?
+> Đóng: `isTrigger=false` → solid wall, chặn player. Mở: `isTrigger=true` → player đi xuyên + trigger [OnTriggerEnter2D](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#191-208).
+
+**Q9**: Auto open/close hoạt động thế nào?
+> Mỗi frame Update() check `Vector2.Distance(door, player)`. ≤4f → OpenDoor(). >4f → CloseDoor().
+
+**Q10**: Khi vào Play Mode, DoorTrigger tìm currentRoom/targetRoom bằng cách nào?
+> Đi lên hierarchy (parent → grandparent...) cho đến khi match với `DungeonManager.GetRoomByGameObject()`. targetRoom lấy từ `currentRoom.connectedRooms[doorDirection]`.
+
+**Q11**: Tại sao dùng `SetBool("isOpen")` thay vì `SetTrigger("Open")`?
+> Door cần giữ trạng thái liên tục (mở/đóng). SetBool duy trì state cho Animator condition. SetTrigger chỉ fire 1 lần rồi reset.
+
+### Architecture
+
+**Q12**: Design pattern nào được sử dụng?
+> **ScriptableObject pattern** (RoomData), **Component pattern** (mỗi feature 1 MonoBehaviour), **Dictionary cho spatial lookup** (occupiedCells).
+
+**Q13**: Tại sao tách RoomVisualGenerator thành component riêng?
+> **Single Responsibility**: DungeonManager lo layout, RoomVisualGenerator lo visual. Dễ maintain, dễ swap visual style mà không ảnh hưởng logic.
+
+**Q14**: [RebuildRoomListFromScene()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#266-372) tại sao cần?
+> Dungeon generate trong **Editor mode** (trước Play). Khi Play → data bị mất (Room objects chỉ tồn tại trong code). Rebuild parse tên GameObject → recreate Room objects → rebuild connections.
+**Q13**: Tại sao tách RoomVisualGenerator thành component riêng?
+> **Single Responsibility**: DungeonManager lo layout, RoomVisualGenerator lo visual. Dễ maintain, dễ swap visual style mà không ảnh hưởng logic.
+
+**Q14**: [RebuildRoomListFromScene()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#266-372) tại sao cần?
+> Dungeon generate trong **Editor mode** (trước Play). Khi Play → data bị mất (Room objects chỉ tồn tại trong code). Rebuild parse tên GameObject → recreate Room objects → rebuild connections.
