@@ -4,8 +4,7 @@ using System.Collections;
 namespace NWO
 {
     /// <summary>
-    /// Báº£n C# rÃºt gá»n tá»« global.Enemy: di chuyá»ƒn Ä‘uá»•i theo Player vÃ  gÃ¢y damage + knockback khi va cháº¡m.
-    /// Pathfinding chi tiáº¿t sáº½ port sau; táº¡m thá»i lÃ  chase trá»±c tiáº¿p.
+
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class Enemy2D : MonoBehaviour
@@ -28,7 +27,7 @@ namespace NWO
         private Rigidbody2D _rb;
         private PlayerController2D _player;
         private PlayerHealth2D _playerHealth;
-        private UI.EnemyHealthBarController _healthBarController;
+        private UI.Enemy2DHealthBarController _healthBarController;
 
         [Header("Animation")]
         [SerializeField] private Animator animator;
@@ -71,7 +70,7 @@ namespace NWO
             if (healthBarPrefab != null)
             {
                 var healthBarObj = Instantiate(healthBarPrefab, transform.position, Quaternion.identity);
-                _healthBarController = healthBarObj.GetComponent<UI.EnemyHealthBarController>();
+                _healthBarController = healthBarObj.GetComponent<UI.Enemy2DHealthBarController>();
                 if (_healthBarController != null)
                 {
                     _healthBarController.SetTarget(this);
