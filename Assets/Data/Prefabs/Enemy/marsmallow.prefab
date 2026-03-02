@@ -187,7 +187,7 @@ MonoBehaviour:
   maxMoveSpeed: 3.5
   friction: 8
   aggroRadius: 8
-  healthBarPrefab: {fileID: 0}
+  healthBarPrefab: {fileID: 7355916300128518898, guid: fb5c5160dbff80e4ca00994c55a9dc64, type: 3}
   animator: {fileID: 0}
   attackAnimDuration: 0.25
   deathAnimDuration: 2
