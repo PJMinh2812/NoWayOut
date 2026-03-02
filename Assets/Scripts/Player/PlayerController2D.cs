@@ -350,9 +350,9 @@ namespace NWO
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
 
-            return keyboard.spaceKey.wasPressedThisFrame
-                   || keyboard.leftShiftKey.wasPressedThisFrame
+            return keyboard.leftShiftKey.wasPressedThisFrame
                    || keyboard.rightShiftKey.wasPressedThisFrame;
+
         }
 
         private static bool GetDashHeld()
@@ -360,9 +360,9 @@ namespace NWO
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
 
-            return keyboard.spaceKey.isPressed
-                   || keyboard.leftShiftKey.isPressed
+            return keyboard.leftShiftKey.isPressed
                    || keyboard.rightShiftKey.isPressed;
+                   
         }
     }
 }
