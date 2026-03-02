@@ -29,12 +29,11 @@ namespace NWO
 
             if (_sr != null)
             {
-                // Fade alpha từ startColor -> 0
+                // Fade alpha
                 var c = _startColor;
                 c.a = Mathf.Lerp(_startColor.a, 0f, t);
                 _sr.color = c;
 
-                // Scale nhỏ dần nhẹ
                 float scale = Mathf.Lerp(1f, 0.85f, t);
                 transform.localScale = transform.localScale.normalized * scale;
             }

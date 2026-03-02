@@ -3,17 +3,13 @@ using UnityEngine.InputSystem;
 
 namespace NWO
 {
-    /// <summary>
-    /// Trạng thái của Player Controller
-    /// </summary>
     public enum PlayerMoveState
     {
-        Normal,     // Di chuyển bình thường
-        Dashing,    // Đang dash - bất tử, xuyên qua bẫy
-        Stunned     // Bị stun/freeze
+        Normal,
+        Dashing,
+        Stunned
     }
 
-    // WASD/Arrow di chuyển, Space/Shift dash, Mouse ngắm
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class PlayerController2D : MonoBehaviour
     {
@@ -49,27 +45,14 @@ namespace NWO
         [SerializeField] private bool flipByAim = true;
         [SerializeField] private float flipThreshold = 0.1f;
 
-        // === PUBLIC PROPERTIES ===
         public float AimAngleDeg { get; private set; }
-        
-        /// <summary>Trạng thái di chuyển hiện tại</summary>
         public PlayerMoveState CurrentState { get; private set; } = PlayerMoveState.Normal;
-        
-        /// <summary>True khi đang trong trạng thái Dash (bất tử, né bẫy)</summary>
         public bool IsDashing => CurrentState == PlayerMoveState.Dashing;
-        
-        /// <summary>Backward compat: IsRolling = IsDashing</summary>
         public bool IsRolling => IsDashing;
-        
-        /// <summary>Hướng dash hiện tại (normalized)</summary>
         public Vector2 DashDirection { get; private set; }
-        
-        /// <summary>Tiến trình dash (0 = mới bắt đầu, 1 = hết thời gian max)</summary>
         public float DashProgress => _dashMaxDuration > 0f ? Mathf.Clamp01(_dashElapsed / _dashMaxDuration) : 0f;
-        
         public bool IsFacingRight { get; private set; } = true;
 
-        // === PRIVATE ===
         private Rigidbody2D _rb;
         private PlayerStamina _stamina;
         private PlayerStatusEffects _statusEffects;
@@ -83,9 +66,8 @@ namespace NWO
         private bool _dashKeyHeld;
         private float _afterImageTimer;
 
-        // Layer mask cho trap ignore
         private int _originalLayer;
-        private static int _dashLayer = -1; // Lazy init
+        private static int _dashLayer = -1;
 
         private void Awake()
         {
@@ -114,7 +96,6 @@ namespace NWO
                     UpdateDashState();
                     break;
                 case PlayerMoveState.Stunned:
-                    // Chờ status effects hết
                     if (_statusEffects == null || !_statusEffects.CannotMove)
                         TransitionToState(PlayerMoveState.Normal);
                     break;
@@ -123,7 +104,6 @@ namespace NWO
 
         private void FixedUpdate()
         {
-            // Áp dụng slippery effect nếu có
             float effectiveDrag = linearDrag;
             if (_statusEffects != null)
             {
@@ -141,7 +121,6 @@ namespace NWO
                 return;
             }
 
-            // Kiểm tra nếu không thể di chuyển (frozen/stunned)
             if (_statusEffects != null && _statusEffects.CannotMove)
             {
                 _rb.linearVelocity = Vector2.zero;
@@ -153,7 +132,6 @@ namespace NWO
             var input = GetMoveInputWithEffects();
             if (input.sqrMagnitude > 1f) input.Normalize();
 
-            // Áp dụng speed multiplier từ status effects
             float speedMultiplier = _statusEffects != null ? _statusEffects.MoveSpeedMultiplier : 1f;
             
             _rb.AddForce(input * moveAcceleration * speedMultiplier, ForceMode2D.Force);
@@ -166,13 +144,8 @@ namespace NWO
             }
         }
 
-        // ============================================================
-        //  STATE MACHINE
-        // ============================================================
-
         private void TransitionToState(PlayerMoveState newState)
         {
-            // Exit old state
             switch (CurrentState)
             {
                 case PlayerMoveState.Dashing:
@@ -182,7 +155,6 @@ namespace NWO
 
             CurrentState = newState;
 
-            // Enter new state
             switch (newState)
             {
                 case PlayerMoveState.Dashing:
@@ -190,10 +162,6 @@ namespace NWO
                     break;
             }
         }
-
-        // ============================================================
-        //  NORMAL STATE
-        // ============================================================
 
         private void UpdateNormalState()
         {
@@ -217,10 +185,6 @@ namespace NWO
             }
         }
 
-        // ============================================================
-        //  DASH STATE - Bất tử, xuyên qua bẫy, có thể kéo dài
-        // ============================================================
-
         private void OnDashEnter()
         {
             _dashElapsed = 0f;
@@ -229,13 +193,11 @@ namespace NWO
             _dashKeyHeld = true;
             _afterImageTimer = 0f;
 
-            // Tiêu tốn stamina cơ bản
             if (_stamina != null)
             {
                 _stamina.TryConsumeRoll();
             }
 
-            // Spawn afterimage ngay lập tức
             SpawnAfterImage();
         }
 
@@ -244,12 +206,10 @@ namespace NWO
             _dashElapsed += Time.deltaTime;
             _dashKeyHeld = GetDashHeld();
 
-            // Kiểm tra kết thúc dash
             bool minTimePassed = _dashElapsed >= dashMinDuration;
             bool maxTimeReached = _dashElapsed >= _dashMaxDuration;
             bool outOfStamina = false;
 
-            // Kéo dài dash: tiêu hao stamina mỗi frame nếu giữ phím
             if (_dashKeyHeld && minTimePassed && !maxTimeReached)
             {
                 if (_stamina != null)
@@ -266,14 +226,12 @@ namespace NWO
                 }
             }
 
-            // Kết thúc dash nếu: hết thời gian max, HOẶC thả phím sau min duration, HOẶC hết stamina
             if (maxTimeReached || (minTimePassed && !_dashKeyHeld) || outOfStamina)
             {
                 TransitionToState(PlayerMoveState.Normal);
                 return;
             }
 
-            // Spawn afterimage effect
             _afterImageTimer += Time.deltaTime;
             float afterImageInterval = afterImageRate > 0f ? 1f / afterImageRate : 0.1f;
             if (_afterImageTimer >= afterImageInterval)
@@ -288,16 +246,11 @@ namespace NWO
             _dashCooldownRemaining = dashCooldown;
             _dashVelocity = Vector2.zero;
 
-            // Giảm vận tốc mượt sau dash
             if (_rb != null)
             {
                 _rb.linearVelocity = DashDirection * maxMoveSpeed * 0.5f;
             }
         }
-
-        // ============================================================
-        //  AFTERIMAGE EFFECT
-        // ============================================================
 
         private void SpawnAfterImage()
         {
@@ -326,10 +279,8 @@ namespace NWO
             bool shouldFlip = false;
             bool faceRight = IsFacingRight;
 
-            // Ưu tiên flip theo aim (khi cast spell)
             if (flipByAim)
             {
-                // Aim angle: 0° = right, 180° = left, ±90° = up/down
                 float aimX = Mathf.Cos(AimAngleDeg * Mathf.Deg2Rad);
                 
                 if (Mathf.Abs(aimX) > flipThreshold)
@@ -339,7 +290,6 @@ namespace NWO
                 }
             }
 
-            // Nếu không aim hoặc aim thẳng đứng, flip theo movement
             if (!shouldFlip && flipByMovement)
             {
                 var input = GetMoveInput();
@@ -351,7 +301,6 @@ namespace NWO
                 }
             }
 
-            // Thực hiện flip nếu hướng thay đổi
             if (shouldFlip && faceRight != IsFacingRight)
             {
                 IsFacingRight = faceRight;
@@ -385,14 +334,9 @@ namespace NWO
             return new Vector2(x, y);
         }
 
-        /// <summary>
-        /// Lấy input với status effects đã áp dụng (confusion, etc.)
-        /// </summary>
         private Vector2 GetMoveInputWithEffects()
         {
             var input = GetMoveInput();
-            
-            // Áp dụng confusion (đảo ngược điều khiển)
             if (_statusEffects != null)
             {
                 input = _statusEffects.ApplyConfusion(input);
@@ -422,5 +366,3 @@ namespace NWO
         }
     }
 }
-
-

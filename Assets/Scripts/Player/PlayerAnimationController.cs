@@ -33,11 +33,8 @@ namespace NWO
             {
                 bool isDashing = playerController.IsDashing;
                 
-                // Set cả IsDashing (mới) và IsRolling (backward compat)
                 animator.SetBool("IsDashing", isDashing);
                 animator.SetBool("IsRolling", isDashing);
-                
-                // Tiến trình dash (0-1) để Animator blend
                 animator.SetFloat("DashProgress", playerController.DashProgress);
 
                 if (isDashing)
@@ -54,21 +51,5 @@ namespace NWO
                 }
             }
         }
-
-        //public void TriggerDamage()
-        //{
-        //    if (animator != null)
-        //    {
-        //        animator.SetTrigger("Hurt");
-        //    }
-        //}
-
-        //public void TriggerDeath()
-        //{
-        //    if (animator != null)
-        //    {
-        //        animator.SetBool("IsDead", true);
-        //    }
-        //}
     }
 }

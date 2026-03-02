@@ -38,7 +38,7 @@ namespace NWO
         private float _spell03CooldownRemaining;
 
         private int _currentSpell = 0; // 0=Idle, 1-3=Spell
-        private int _spellBeforeDamage = 0; // Lưu spell state trước khi bị damage
+        private int _spellBeforeDamage = 0;
         private bool _isCasting;
         private float _castingTime = 0f;
         private const float MAX_CAST_TIME = 2f;
@@ -58,7 +58,6 @@ namespace NWO
         private void Start()
         {
             _animator.SetInteger("SpellType", 0);
-            Debug.Log("[Spell] Initial state: Dage_Idle (SpellType = 0)");
         }
 
         private void Update()
@@ -82,21 +81,16 @@ namespace NWO
 
             HandleSpellSwitch();
 
-            // Kiểm tra status effects trước khi cho phép cast
             bool canCastByStatus = _statusEffects == null || !_statusEffects.CannotCast;
             
             if (_controller != null && (_controller.IsRolling || _isCasting))
                 return;
             
-            // Không cast spell khi đang tấn công melee
             if (_meleeController != null && _meleeController.IsAttacking)
                 return;
-                
+
             if (!canCastByStatus)
-            {
-                // Debug.Log("[Spell] Cannot cast - Silenced/Stunned/Frozen!");
                 return;
-            }
 
             HandleSpellCast();
         }
@@ -130,42 +124,24 @@ namespace NWO
             if (_currentSpell == spellNumber) return;
 
             _currentSpell = spellNumber;
-        _spellBeforeDamage = spellNumber; // Lưu state hiện tại
-        
-        // Set animator với SetInteger
-        _animator.SetInteger("SpellType", spellNumber);
-        if (_isCasting)
-        {
-            _isCasting = false;
+            _spellBeforeDamage = spellNumber;
+            _animator.SetInteger("SpellType", spellNumber);
 
+            if (_isCasting)
+                _isCasting = false;
         }
-
-        if (spellNumber == 0)
-        {
-            Debug.Log("[Spell] Returned to Idle (SpellType = 0)");
-        }
-        else
-        {
-
-        }
-    }
 
     private void HandleSpellCast()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Left Click hoặc Q để cast
             bool castInput = mouse.leftButton.wasPressedThisFrame
                           || Keyboard.current.qKey.wasPressedThisFrame;
 
             if (!castInput) return;
+            if (_currentSpell == 0) return;
 
-            if (_currentSpell == 0)
-            {
-
-                return;
-            }
             bool canCast = _currentSpell switch
             {
                 1 => _spell01CooldownRemaining <= 0f && (_stamina == null || _stamina.CanCastSpell(1)),
@@ -178,68 +154,33 @@ namespace NWO
             {
                 CastCurrentSpell();
             }
-            else
-            {
-                // Phân biệt lỗi cooldown vs stamina
-                bool onCooldown = _currentSpell switch
-                {
-                    1 => _spell01CooldownRemaining > 0f,
-                    2 => _spell02CooldownRemaining > 0f,
-                    3 => _spell03CooldownRemaining > 0f,
-                    _ => false
-                };
-                
-                if (onCooldown)
-                {
-
-                }
-                else if (_stamina != null && !_stamina.CanCastSpell(_currentSpell))
-                {
-
-                }
-            }
         }
 
         private void CastCurrentSpell()
         {
-            // Tiêu tốn stamina trước
             if (_stamina != null && !_stamina.TryConsumeSpell(_currentSpell))
-            {
-                Debug.LogWarning("[Spell] Failed to consume stamina!");
                 return;
-            }
-            
+
             _animator.SetTrigger("CastSpell");
             _isCasting = true;
             _castingTime = 0f;
+
             switch (_currentSpell)
             {
-                case 1:
-                    _spell01CooldownRemaining = spell01Cooldown;
-
-                    break;
-                case 2:
-                    _spell02CooldownRemaining = spell02Cooldown;
-
-                    break;
-                case 3:
-                    _spell03CooldownRemaining = spell03Cooldown;
-
-                    break;
+                case 1: _spell01CooldownRemaining = spell01Cooldown; break;
+                case 2: _spell02CooldownRemaining = spell02Cooldown; break;
+                case 3: _spell03CooldownRemaining = spell03Cooldown; break;
             }
 
             OnSpawnSpellProjectile();
-            Invoke(nameof(OnSpellCastComplete), 0.3f); // Reset sau 0.3s
+            Invoke(nameof(OnSpellCastComplete), 0.3f);
         }
-
 
         public void OnSpellCastComplete()
         {
             _isCasting = false;
             _castingTime = 0f;
-
         }
-
 
         public void OnSpawnSpellProjectile()
         {
@@ -264,7 +205,7 @@ namespace NWO
                 );
             }
 
-            // Spawn cách Player 0.5 units
+            // Spawn offset from player
             float spawnOffset = 0.5f;
             Vector2 spawnPosition = (Vector2)transform.position + (aimDirection * spawnOffset);
             
@@ -274,28 +215,26 @@ namespace NWO
                 Quaternion.identity
             );
 
-            // Tắt va chạm với Player
+            // Ignore collision with player
             var projectileCollider = projectile.GetComponent<Collider2D>();
             var playerCollider = GetComponent<Collider2D>();
             if (projectileCollider != null && playerCollider != null)
             {
                 Physics2D.IgnoreCollision(projectileCollider, playerCollider);
             }
-            // Lấy range theo loại spell hiện tại
-            float spellRange = _currentSpell switch
-            {
-                1 => spell01Range,
-                2 => spell02Range,
-                3 => spell03Range,
-                _ => 5f
-            };
 
             var proj = projectile.GetComponent<SpellProjectile>();
             if (proj != null)
             {
+                float spellRange = _currentSpell switch
+                {
+                    1 => spell01Range,
+                    2 => spell02Range,
+                    3 => spell03Range,
+                    _ => 5f
+                };
                 proj.SetMaxRange(spellRange);
                 proj.Fire(aimDirection);
-                Debug.Log($"[Spell] Fired spell {_currentSpell} with range {spellRange} units");
             }
             else
             {
@@ -305,20 +244,15 @@ namespace NWO
                     proj2D.Fire(aimDirection);
                 }
             }
-
-
         }
 
-        /// <summary>
-        /// Lưu spell state hiện tại trước khi bị damage
-        /// </summary>
         public void SaveSpellState()
         {
             _spellBeforeDamage = _currentSpell;
         }
 
         /// <summary>
-        /// Restore spell state sau khi damage animation kết thúc
+        /// Restore spell state sau khi damage
         /// </summary>
         public void RestoreSpellState()
         {
@@ -326,7 +260,6 @@ namespace NWO
             {
                 _currentSpell = _spellBeforeDamage;
                 _animator.SetInteger("SpellType", _spellBeforeDamage);
-
             }
         }
 

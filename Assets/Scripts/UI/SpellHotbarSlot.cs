@@ -33,7 +33,6 @@ namespace NWO
         public void Initialize(int slotIndex, Sprite icon, string keyBind, string spellName)
         {
             _slotIndex = slotIndex;
-            Debug.Log($"[SpellHotbarSlot] Initializing slot {slotIndex}: {spellName}");
 
             // === FIX RENDER ORDER ===
             // Unity UI renders children in sibling order: later = on top.
@@ -43,7 +42,6 @@ namespace NWO
             if (iconImage != null) iconImage.transform.SetSiblingIndex(1);
             if (cooldownOverlay != null) cooldownOverlay.transform.SetSiblingIndex(2);
 
-            // Set icon - luôn enable Image, dùng sprite nếu có
             if (iconImage != null)
             {
                 if (icon != null)
@@ -52,21 +50,14 @@ namespace NWO
                     iconImage.enabled = true;
                     iconImage.color = Color.white;
                     iconImage.preserveAspect = true;
-                    Debug.Log($"[SpellHotbarSlot {slotIndex}] Icon set: {icon.name}");
                 }
                 else
                 {
-                    // Không có icon - ẩn đi
                     iconImage.enabled = false;
-                    Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] No icon sprite provided");
                 }
             }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ IconImage reference is NULL! Drag Icon child object to field.");
-            }
 
-            // Setup cooldownOverlay Image type = Filled để fillAmount hoạt động
+            // Filled type for cooldown fillAmount
             if (cooldownOverlay != null)
             {
                 cooldownOverlay.type = Image.Type.Filled;
@@ -75,24 +66,14 @@ namespace NWO
                 cooldownOverlay.fillClockwise = false;
             }
 
-            // Set key binding text (0, 1, 2, 3)
             if (keyBindText != null)
             {
                 keyBindText.text = keyBind;
             }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ KeyBindText reference is NULL!");
-            }
 
-            // Set spell name
             if (spellNameText != null)
             {
                 spellNameText.text = spellName;
-            }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ SpellNameText reference is NULL!");
             }
 
             // Set initial state
