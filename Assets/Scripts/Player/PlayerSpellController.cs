@@ -340,5 +340,35 @@ namespace NWO
                 _ => 0f
             };
         }
+
+        /// <summary>
+        /// Lấy projectile prefab theo spell number (để UI lấy icon)
+        /// </summary>
+        public GameObject GetSpellProjectilePrefab(int spellNumber)
+        {
+            return spellNumber switch
+            {
+                1 => spell01Projectile,
+                2 => spell02Projectile,
+                3 => spell03Projectile,
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Lấy sprite icon cho spell (từ projectile prefab's SpriteRenderer)
+        /// </summary>
+        public Sprite GetSpellIcon(int spellNumber)
+        {
+            var prefab = GetSpellProjectilePrefab(spellNumber);
+            if (prefab == null) return null;
+
+            var sr = prefab.GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sprite != null) return sr.sprite;
+
+            // Thử tìm trong children
+            sr = prefab.GetComponentInChildren<SpriteRenderer>();
+            return sr != null ? sr.sprite : null;
+        }
     }
 }

@@ -30,7 +30,7 @@ namespace NWO
         [Tooltip("Thời gian dash tối đa khi giữ phím")]
         [SerializeField] private float dashMaxDuration = 0.60f;
         [Tooltip("Cooldown sau khi dash xong")]
-        [SerializeField] private float dashCooldown = 0.50f;
+        [SerializeField] private float dashCooldown = 1f;
         [Tooltip("Stamina tiêu hao mỗi giây khi kéo dài dash")]
         [SerializeField] private float dashExtendStaminaPerSec = 25f;
         [Tooltip("Số lượng afterimage spawn mỗi giây khi dash")]

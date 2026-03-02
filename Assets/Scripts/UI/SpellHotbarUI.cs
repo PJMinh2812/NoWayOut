@@ -4,6 +4,7 @@ namespace NWO
 {
     /// <summary>
     /// Spell Hotbar UI - Hiển thị 4 spell slots (0=Idle, 1/2/3=Spells)
+    /// Tự động lấy icon từ spell projectile prefabs nếu không gán thủ công.
     /// </summary>
     public sealed class SpellHotbarUI : MonoBehaviour
     {
@@ -11,18 +12,24 @@ namespace NWO
         [SerializeField] private PlayerSpellController spellController;
         [SerializeField] private SpellHotbarSlot[] spellSlots; // 4 slots: 0, 1, 2, 3
 
-        [Header("Spell Settings")]
-        [Tooltip("Icon cho Idle state (0)")]
+        [Header("Spell Icons (Tự động lấy từ prefab nếu để trống)")]
+        [Tooltip("Icon cho Idle state (0) - nếu null sẽ tạo placeholder")]
         [SerializeField] private Sprite idleIcon;
         
-        [Tooltip("Icon cho Spell 1")]
+        [Tooltip("Icon cho Spell 1 - nếu null sẽ lấy từ Spell01 Projectile prefab")]
         [SerializeField] private Sprite spell01Icon;
         
-        [Tooltip("Icon cho Spell 2")]
+        [Tooltip("Icon cho Spell 2 - nếu null sẽ lấy từ Spell02 Projectile prefab")]
         [SerializeField] private Sprite spell02Icon;
         
-        [Tooltip("Icon cho Spell 3")]
+        [Tooltip("Icon cho Spell 3 - nếu null sẽ lấy từ Spell03 Projectile prefab")]
         [SerializeField] private Sprite spell03Icon;
+
+        [Header("Fallback Colors (dùng khi không có icon)")]
+        [SerializeField] private Color spell01Color = new Color(0.3f, 0.8f, 1f);   // Xanh dương
+        [SerializeField] private Color spell02Color = new Color(1f, 0.5f, 0.2f);   // Cam
+        [SerializeField] private Color spell03Color = new Color(0.8f, 0.3f, 1f);   // Tím
+        [SerializeField] private Color idleColor   = new Color(1f, 0.9f, 0.2f);    // Vàng
 
         [Header("Key Bindings Display")]
         [SerializeField] private string[] keyLabels = { "0", "1", "2", "3" };
@@ -51,10 +58,85 @@ namespace NWO
                 enabled = false;
                 return;
             }
+
+            // === AUTO-LOAD ICONS từ spell projectile prefabs nếu chưa gán ===
+            AutoLoadSpellIcons();
             
             InitializeSlots();
             UpdateSelection(0); // Start with Idle selected
             Debug.Log($"[SpellHotbarUI] ✅ Initialized {spellSlots.Length} spell slots");
+        }
+
+        /// <summary>
+        /// Tự động lấy icon từ spell projectile prefabs nếu không gán trong Inspector.
+        /// Nếu prefab cũng không có sprite, tạo placeholder màu.
+        /// </summary>
+        private void AutoLoadSpellIcons()
+        {
+            if (spellController == null) return;
+
+            // Idle icon - tạo placeholder nếu null
+            if (idleIcon == null)
+            {
+                idleIcon = CreateColorSprite(idleColor, "IdleIcon");
+                Debug.Log("[SpellHotbarUI] Auto-generated Idle icon (placeholder)");
+            }
+
+            // Spell 1
+            if (spell01Icon == null)
+            {
+                spell01Icon = spellController.GetSpellIcon(1);
+                if (spell01Icon != null)
+                    Debug.Log($"[SpellHotbarUI] Auto-loaded Spell 1 icon from prefab: {spell01Icon.name}");
+                else
+                {
+                    spell01Icon = CreateColorSprite(spell01Color, "Spell01Icon");
+                    Debug.Log("[SpellHotbarUI] Auto-generated Spell 1 icon (placeholder)");
+                }
+            }
+
+            // Spell 2
+            if (spell02Icon == null)
+            {
+                spell02Icon = spellController.GetSpellIcon(2);
+                if (spell02Icon != null)
+                    Debug.Log($"[SpellHotbarUI] Auto-loaded Spell 2 icon from prefab: {spell02Icon.name}");
+                else
+                {
+                    spell02Icon = CreateColorSprite(spell02Color, "Spell02Icon");
+                    Debug.Log("[SpellHotbarUI] Auto-generated Spell 2 icon (placeholder)");
+                }
+            }
+
+            // Spell 3
+            if (spell03Icon == null)
+            {
+                spell03Icon = spellController.GetSpellIcon(3);
+                if (spell03Icon != null)
+                    Debug.Log($"[SpellHotbarUI] Auto-loaded Spell 3 icon from prefab: {spell03Icon.name}");
+                else
+                {
+                    spell03Icon = CreateColorSprite(spell03Color, "Spell03Icon");
+                    Debug.Log("[SpellHotbarUI] Auto-generated Spell 3 icon (placeholder)");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tạo sprite placeholder màu đơn sắc (16x16)
+        /// </summary>
+        private static Sprite CreateColorSprite(Color color, string name)
+        {
+            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            var pixels = new Color[16 * 16];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
+            tex.SetPixels(pixels);
+            tex.Apply();
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
+            sprite.name = name;
+            return sprite;
         }
 
         private void Update()

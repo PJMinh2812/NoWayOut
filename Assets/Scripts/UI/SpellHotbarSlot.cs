@@ -35,16 +35,44 @@ namespace NWO
             _slotIndex = slotIndex;
             Debug.Log($"[SpellHotbarSlot] Initializing slot {slotIndex}: {spellName}");
 
-            // Set icon
+            // === FIX RENDER ORDER ===
+            // Unity UI renders children in sibling order: later = on top.
+            // SelectionBorder phải render DƯỚI Icon, CooldownOverlay render TRÊN Icon.
+            // Thứ tự đúng: SelectionBorder(0) → Icon(1) → CooldownOverlay(2) → Text(3,4)
+            if (selectionBorder != null) selectionBorder.transform.SetAsFirstSibling();
+            if (iconImage != null) iconImage.transform.SetSiblingIndex(1);
+            if (cooldownOverlay != null) cooldownOverlay.transform.SetSiblingIndex(2);
+
+            // Set icon - luôn enable Image, dùng sprite nếu có
             if (iconImage != null)
             {
-                iconImage.sprite = icon;
-                iconImage.enabled = icon != null;
-                Debug.Log($"[SpellHotbarSlot {slotIndex}] Icon set: {(icon != null ? icon.name : "null")}, Image enabled: {iconImage.enabled}");
+                if (icon != null)
+                {
+                    iconImage.sprite = icon;
+                    iconImage.enabled = true;
+                    iconImage.color = Color.white;
+                    iconImage.preserveAspect = true;
+                    Debug.Log($"[SpellHotbarSlot {slotIndex}] Icon set: {icon.name}");
+                }
+                else
+                {
+                    // Không có icon - ẩn đi
+                    iconImage.enabled = false;
+                    Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] No icon sprite provided");
+                }
             }
             else
             {
                 Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ IconImage reference is NULL! Drag Icon child object to field.");
+            }
+
+            // Setup cooldownOverlay Image type = Filled để fillAmount hoạt động
+            if (cooldownOverlay != null)
+            {
+                cooldownOverlay.type = Image.Type.Filled;
+                cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+                cooldownOverlay.fillOrigin = (int)Image.Origin360.Top;
+                cooldownOverlay.fillClockwise = false;
             }
 
             // Set key binding text (0, 1, 2, 3)
