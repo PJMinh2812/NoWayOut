@@ -75,6 +75,10 @@ namespace NWO
         private Color originalColor;
         private Vector2 startPosition;
         
+        // Combat flags (giống Enemy2D)
+        private bool _canAttack = true;
+        private bool _isAttacking = false;
+        
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
@@ -158,6 +162,7 @@ namespace NWO
                 // Set animator parameters (nếu có)
                 SafeSetBool("isSleeping", true);
                 SafeSetBool("isAwake", false);
+                SafeSetBool("isMoving", false); // Đảm bảo không di chuyển khi ngủ
             }
             
             Debug.Log($"[RatMiniBoss] Setup complete. Awake: {isAwake}, Dead: {isDead}");
@@ -178,32 +183,55 @@ namespace NWO
         
         private void FixedUpdate()
         {
-            if (isDead || !isAwake) return;
+            if (isDead) return;
             
-            // Giảm friction để boss di chuyển nhanh hơn
-            rb.linearDamping = 0.5f; // Thay vì dùng friction = 8
+            // Set damping
+            rb.linearDamping = isAwake ? 0.5f : linearDamping;
             
-            if (player == null) return;
+            if (!isAwake)
+            {
+                SafeSetBool("isMoving", false);
+                return;
+            }
+            
+            if (player == null)
+            {
+                SafeSetBool("isMoving", false);
+                return;
+            }
             
             float distanceToPlayer = Vector2.Distance(transform.position, player.transform.position);
             
-            // Đuổi theo player
+            // Start attack if within range and ready
+            if (distanceToPlayer <= attackRange && _canAttack && !_isAttacking)
+            {
+                StartCoroutine(PerformAttack());
+            }
+            
+            // Don't move during attack - stop and play attack animation
+            if (_isAttacking)
+            {
+                SafeSetBool("isMoving", false);
+                rb.linearVelocity = Vector2.zero;
+                
+                // Flip sprite to face player during attack
+                if (spriteRenderer != null && player != null)
+                {
+                    spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
+                }
+                return;
+            }
+            
+            // Đuổi theo player nếu trong chase distance
             if (distanceToPlayer <= chaseDistance)
             {
                 ChasePlayer(distanceToPlayer);
-                
-                // Tấn công nếu đủ gần
-                if (distanceToPlayer <= attackRange && Time.time >= lastAttackTime + attackCooldown)
-                {
-                    AttackPlayer();
-                }
             }
             else
             {
                 // Nếu player chạy xa quá, dừng lại
                 rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.fixedDeltaTime * 5f);
-                
-                SafeSetBool("isRunning", false);
+                SafeSetBool("isMoving", false);
             }
         }
         
@@ -221,9 +249,10 @@ namespace NWO
                 Debug.Log($"[RatMiniBoss] Wake Up! Position: {transform.position}, BodyType: Dynamic");
             }
             
-            // Animation
+            // Animation - thức giấc nhưng vẫn idle trước
             SafeSetBool("isSleeping", false);
             SafeSetBool("isAwake", true);
+            SafeSetBool("isMoving", false);
             SafeSetTrigger("wakeUp");
             
             // Sound effect
@@ -243,39 +272,56 @@ namespace NWO
         
         private void ChasePlayer(float distance)
         {
-            if (distance < 0.1f) return;
-            
-            Vector2 direction = ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
-            
-            // Chuyển động realistic với AddForce
-            rb.AddForce(direction * moveAcceleration, ForceMode2D.Force);
-            
-            // Giới hạn tốc độ tối đa
-            if (rb.linearVelocity.magnitude > maxSpeed)
+            // Move towards player (even if in attack range but on cooldown)
+            // Stop only when very close to avoid jittering
+            if (distance > 0.5f)
             {
-                rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+                Vector2 direction = ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
+                
+                // Chuyển động realistic với AddForce
+                rb.AddForce(direction * moveAcceleration, ForceMode2D.Force);
+                
+                // Giới hạn tốc độ tối đa
+                if (rb.linearVelocity.magnitude > maxSpeed)
+                {
+                    rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+                }
             }
             
-            // Flip sprite theo hướng di chuyển
-            if (direction.x > 0.1f)
+            // Update animator isMoving param
+            if (animator != null)
             {
-                spriteRenderer.flipX = false;
-            }
-            else if (direction.x < -0.1f)
-            {
-                spriteRenderer.flipX = true;
+                bool isMoving = rb.linearVelocity.magnitude > 0.1f;
+                SafeSetBool("isMoving", isMoving);
             }
             
-            // Animation
-            SafeSetBool("isRunning", rb.linearVelocity.magnitude > 0.5f);
+            // Flip sprite to face movement/player (giống Enemy2D)
+            if (spriteRenderer != null)
+            {
+                float vx = rb.linearVelocity.x;
+                if (Mathf.Abs(vx) > 0.05f)
+                {
+                    spriteRenderer.flipX = vx < 0f; // flip when moving left
+                }
+                else if (player != null)
+                {
+                    spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
+                }
+            }
         }
         
-        private void AttackPlayer()
+        /// <summary>
+        /// Perform complete attack sequence: animation -> deal damage -> cooldown (giống Enemy2D)
+        /// </summary>
+        private System.Collections.IEnumerator PerformAttack()
         {
-            lastAttackTime = Time.time;
+            if (isDead || player == null || playerHealth == null) yield break;
             
-            // Animation
-            SafeSetTrigger("attack");
+            _isAttacking = true;
+            _canAttack = false;
+            
+            // Start attack animation
+            SafeSetBool("isAttacking", true);
             
             // Sound
             if (attackSound != null && audioSource != null)
@@ -283,25 +329,40 @@ namespace NWO
                 audioSource.PlayOneShot(attackSound);
             }
             
-            // Particle effect (optional)
-            if (attackEffect != null)
+            // Wait for attack animation to reach hit frame (deal damage halfway through)
+            float attackAnimDuration = 0.4f; // Duration of attack animation
+            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            
+            // Deal damage only after animation has progressed
+            if (player != null && playerHealth != null)
             {
-                attackEffect.Play();
+                float dist = Vector2.Distance(transform.position, player.transform.position);
+                if (dist <= attackRange * 1.2f) // Slight tolerance
+                {
+                    Vector2 knockbackDir = ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
+                    Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+                    playerHealth.TakeDamage(attackDamage, knockbackDir * knockbackForce, playerRb);
+                    
+                    // Particle effect at hit moment
+                    if (attackEffect != null)
+                    {
+                        attackEffect.Play();
+                    }
+                    
+                    Debug.Log($"[RatMiniBoss] CHUỘT TẤN CÔNG! Gây {attackDamage} damage cho Player");
+                }
             }
             
-            // Gây damage cho player
-            if (playerHealth != null && player != null)
-            {
-                Vector2 knockbackDir = ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
-                Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-                playerHealth.TakeDamage(attackDamage, knockbackDir * knockbackForce, playerRb);
-                
-                Debug.Log($"[RatMiniBoss] CHUỘT TẤN CÔNG! Gây {attackDamage} damage cho Player");
-            }
-            else
-            {
-                Debug.LogWarning("[RatMiniBoss] Không thể tấn công - PlayerHealth hoặc Player null!");
-            }
+            // Wait for rest of attack animation
+            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            
+            // Reset attack animation
+            SafeSetBool("isAttacking", false);
+            _isAttacking = false;
+            
+            // Start cooldown before next attack
+            yield return new WaitForSeconds(attackCooldown);
+            _canAttack = true;
         }
         
         /// <summary>
@@ -360,9 +421,9 @@ namespace NWO
             
             isDead = true;
             
-            // Animation
-            SafeSetTrigger("die");
-            SafeSetBool("isDead", true);
+            // Animation - use Trigger to avoid re-triggering from Any State (giống Enemy2D)
+            SafeSetTrigger("Death"); // Use Trigger instead of "die"
+            SafeSetBool("isDead", true); // Optional: can be used for conditions
             
             // Sound
             if (deathSound != null && audioSource != null)

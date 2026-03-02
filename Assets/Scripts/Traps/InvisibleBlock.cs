@@ -75,6 +75,10 @@ public class InvisibleBlock : MonoBehaviour
     
     private void OnPlayerHit(GameObject player)
     {
+        // Nếu player đang Dash → bất tử, không nhận damage/knockback
+        var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
+        if (playerCtrl != null && playerCtrl.IsDashing) return;
+
         hasBeenHit = true;
         
         // Phát âm thanh "BONK!"

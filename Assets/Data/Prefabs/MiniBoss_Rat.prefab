@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1019651775356488707}
   - component: {fileID: 2635386649090294607}
   - component: {fileID: 8283839527429377568}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: MiniBoss_Rat
   m_TagString: enemy
   m_Icon: {fileID: 0}

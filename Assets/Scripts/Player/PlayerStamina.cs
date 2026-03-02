@@ -113,7 +113,10 @@ namespace NWO
             };
         }
 
-        private void ConsumeStamina(float amount)
+        /// <summary>
+        /// Tiêu tốn stamina - có thể gọi từ bên ngoài (melee, ability, etc.)
+        /// </summary>
+        public void ConsumeStamina(float amount)
         {
             CurrentStamina = Mathf.Max(0f, CurrentStamina - amount);
             

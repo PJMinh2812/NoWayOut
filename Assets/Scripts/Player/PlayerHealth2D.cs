@@ -3,7 +3,7 @@
 namespace NWO
 {
     /// <summary>
-    /// Quáº£n lÃ½ HP, regeneration vÃ  animation damage/death cho Player
+    /// Quản lý HP, regeneration và animation damage/death cho Player
     /// </summary>
     public sealed class PlayerHealth2D : MonoBehaviour
     {
@@ -15,14 +15,14 @@ namespace NWO
         [Header("Animation")]
         [SerializeField] private Animator animator;
         
-        [Tooltip("TÃªn parameter trigger cho animation bá»‹ damage")]
+        [Tooltip("Tên parameter trigger cho animation bị damage")]
         [SerializeField] private string hurtTrigger = "Hurt";
         
-        [Tooltip("TÃªn parameter bool cho tráº¡ng thÃ¡i cháº¿t")]
+        [Tooltip("Tên parameter bool cho trạng thái chết")]
         [SerializeField] private string isDeadParameter = "isDead";
         
         [Header("Death Settings")]
-        [Tooltip("Delay trÆ°á»›c khi disable controller sau khi cháº¿t (Ä‘á»ƒ animation death cháº¡y)")]
+        [Tooltip("Delay trước khi disable controller sau khi chết")]
         [SerializeField] private float deathDisableDelay = 0.6f;
 
         public int CurrentHealth { get; private set; }
@@ -31,8 +31,8 @@ namespace NWO
 
         private float _invincibleTimer;
         private PlayerSpellController _spellController;
-        
-        // Animation parameter hashes (tá»‘i Æ°u performance)
+        private PlayerStatusEffects _statusEffects;
+        private PlayerController2D _playerController;
         private int _hurtHash;
         private int _isDeadHash;
 
@@ -40,12 +40,12 @@ namespace NWO
         {
             CurrentHealth = maxHealth;
             
-            // Auto-find animator náº¿u chÆ°a gÃ¡n
             if (animator == null)
                 animator = GetComponent<Animator>();
             
-            // Get spell controller reference
             _spellController = GetComponent<PlayerSpellController>();
+            _statusEffects = GetComponent<PlayerStatusEffects>();
+            _playerController = GetComponent<PlayerController2D>();
             
             // Cache animation parameter hashes
             if (animator != null)
@@ -84,14 +84,33 @@ namespace NWO
 
                 return;
             }
+            
+            // === DASH INVINCIBILITY ===
+            if (_playerController != null && _playerController.IsDashing)
+            {
+                return;
+            }
+            
+            if (_statusEffects != null)
+            {
+                if (_statusEffects.ConsumeShield())
+                {
+                    _invincibleTimer = invincibleDuration;
+                    return;
+                }
+                
+                if (_statusEffects.IsInvincible)
+                {
+                    return;
+                }
+            }
 
             _invincibleTimer = invincibleDuration;
             CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
 
 
 
-            // â­ TRIGGER ANIMATION DAMAGE (CHá»ˆ khi KHÃ”NG á»Ÿ spell state)
-            // Náº¿u Ä‘ang á»Ÿ spell state (1/2/3), giá»¯ nguyÃªn animation, khÃ´ng trigger Hurt
+            // Trigger Hurt animation only when NOT in spell state
             bool isInSpellState = _spellController != null && _spellController.CurrentSpell > 0;
             
             if (animator != null && CurrentHealth > 0 && _hurtHash != 0 && !isInSpellState)
@@ -101,9 +120,7 @@ namespace NWO
             }
             else if (isInSpellState)
             {
-                // Äang á»Ÿ spell state, giá»¯ nguyÃªn spell animation, chá»‰ hiá»ƒn thá»‹ damage effect
 
-                // TODO: ThÃªm damage flash effect á»Ÿ Ä‘Ã¢y (change sprite color briefly)
                 StartCoroutine(DamageFlashEffect());
             }
 
@@ -133,8 +150,6 @@ namespace NWO
             
             var controller = GetComponent<PlayerController2D>();
             if (controller != null) controller.enabled = true;
-            
-
         }
 
         private void Die()
@@ -142,19 +157,17 @@ namespace NWO
             if (IsDead) return;
             IsDead = true;
 
-            
-            // â­ TRIGGER ANIMATION DEATH
+
             if (animator != null)
             {
                 animator.SetBool(_isDeadHash, true);
 
             }
             
-            // Disable controller/shooter SAU khi animation death báº¯t Ä‘áº§u
-            // Ä‘á»ƒ animation cÃ³ thá»i gian cháº¡y
+            // Disable controller after death animation starts
             StartCoroutine(DisableControlsAfterDeath());
             
-            // Trigger Game Over sau delay Ä‘á»ƒ tháº¥y animation
+
             if (GameManager.Instance != null)
             {
                 StartCoroutine(TriggerGameOverAfterDelay());
@@ -162,7 +175,7 @@ namespace NWO
         }
 
         /// <summary>
-        /// Hiá»ƒn thá»‹ damage flash effect khi bá»‹ Ä‘Ã¡nh trong spell state (khÃ´ng trigger Hurt animation)
+        /// Damage flash effect khi bị đánh trong spell state
         /// </summary>
         private System.Collections.IEnumerator DamageFlashEffect()
         {
@@ -171,7 +184,7 @@ namespace NWO
             
             Color originalColor = spriteRenderer.color;
             
-            // Flash Ä‘á» 3 láº§n nhanh
+            // Flash red 3 times
             for (int i = 0; i < 3; i++)
             {
                 spriteRenderer.color = Color.red;
@@ -183,7 +196,6 @@ namespace NWO
 
         private System.Collections.IEnumerator DisableControlsAfterDeath()
         {
-            // Chá» animation death cháº¡y
             yield return new WaitForSeconds(deathDisableDelay);
             
             var controller = GetComponent<PlayerController2D>();
@@ -192,20 +204,16 @@ namespace NWO
             var shooter = GetComponent<PlayerShooter2D>();
             if (shooter != null) shooter.enabled = false;
             
-            // Dá»«ng velocity Ä‘á»ƒ khÃ´ng trÆ°á»£t
             var rb = GetComponent<Rigidbody2D>();
             if (rb != null)
             {
                 rb.linearVelocity = Vector2.zero;
                 rb.angularVelocity = 0f;
             }
-            
-
         }
 
         private System.Collections.IEnumerator TriggerGameOverAfterDelay()
         {
-            // Delay Ä‘á»ƒ xem animation death
             yield return new WaitForSeconds(deathDisableDelay + 0.5f);
             
             if (GameManager.Instance != null)
@@ -215,5 +223,3 @@ namespace NWO
         }
     }
 }
-
-

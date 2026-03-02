@@ -98,5 +98,35 @@ namespace NWO.UI
                 _lastHealth = maxHealth;
             }
         }
+
+        /// <summary>
+        /// Called directly by Enemy2D.TakeDamage for immediate health bar refresh.
+        /// </summary>
+        public void OnHealthChanged(int current, int max)
+        {
+            if (healthBarUI == null) return;
+            healthBarUI.SetHealth(current, max);
+            _lastHealth = current;
+
+            if (hideWhenFullHealth && _canvasGroup != null)
+            {
+                _canvasGroup.alpha = current >= max ? 0f : 1f;
+            }
+        }
+
+        /// <summary>
+        /// Called by Enemy2D.Die to hide the health bar during the death animation.
+        /// </summary>
+        public void OnEnemyDied()
+        {
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
+        }
     }
 }
