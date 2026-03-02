@@ -64,7 +64,7 @@ namespace NWO
         private SpriteRenderer spriteRenderer;
         private Animator animator;
         private AudioSource audioSource;
-        private UI.EnemyHealthBarController healthBarController;
+        private UI.Enemy2DHealthBarController _healthBarController;
         
         // References
         private PlayerController2D player;
@@ -78,6 +78,9 @@ namespace NWO
         // Combat flags (giống Enemy2D)
         private bool _canAttack = true;
         private bool _isAttacking = false;
+
+        // Flash red coroutine tracking
+        private Coroutine _flashCoroutine;
         
         private void Awake()
         {
@@ -105,35 +108,15 @@ namespace NWO
             originalColor = spriteRenderer.color;
             startPosition = transform.position;
             
-            // Tạo health bar đơn giản (chỉ dùng HealthBarUI, không cần EnemyHealthBarController)
+            // Spawn health bar (giống Enemy2D)
             if (healthBarPrefab != null)
             {
-                GameObject healthBarObj = Instantiate(healthBarPrefab, transform.position, Quaternion.identity);
-                
-                // Đặt làm con của boss để tự động follow
-                healthBarObj.transform.SetParent(transform);
-                healthBarObj.transform.localPosition = new Vector3(0, 2.0f, 0);
-                
-                // Lấy HealthBarUI component (có thể ở Canvas hoặc child)
-                UI.HealthBarUI healthBarUI = healthBarObj.GetComponentInChildren<UI.HealthBarUI>();
-                if (healthBarUI == null)
+                var healthBarObj = Instantiate(healthBarPrefab, transform.position, Quaternion.identity);
+                _healthBarController = healthBarObj.GetComponent<UI.Enemy2DHealthBarController>();
+                if (_healthBarController != null)
                 {
-                    healthBarUI = healthBarObj.GetComponent<UI.HealthBarUI>();
+                    _healthBarController.SetTarget(this);
                 }
-                
-                if (healthBarUI != null)
-                {
-                    healthBarUI.Initialize(currentHealth, maxHealth);
-                    Debug.Log("[RatMiniBoss] Health bar created successfully!");
-                }
-                else
-                {
-                    Debug.LogWarning("[RatMiniBoss] HealthBarUI component not found in prefab!");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[RatMiniBoss] Health Bar Prefab not assigned!");
             }
         }
         
@@ -376,17 +359,19 @@ namespace NWO
             
             currentHealth -= damage;
             currentHealth = Mathf.Max(0, currentHealth);
-            
-            // Cập nhật health bar
-            UpdateHealthBar();
+
+            // Cập nhật health bar ngay lập tức (giống Enemy2D)
+            _healthBarController?.OnHealthChanged(currentHealth, maxHealth);
             
             // Knockback
             rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
             
-            // Visual feedback - flash đỏ
+            // Visual feedback - flash đỏ (dừng coroutine cũ trước để tránh stuck màu đỏ)
             if (spriteRenderer != null)
             {
-                StartCoroutine(FlashRed());
+                if (_flashCoroutine != null) StopCoroutine(_flashCoroutine);
+                spriteRenderer.color = originalColor; // reset về màu gốc trước
+                _flashCoroutine = StartCoroutine(FlashRed());
             }
             
             // Sound
@@ -418,9 +403,12 @@ namespace NWO
         private void Die()
         {
             if (isDead) return;
-            
+
             isDead = true;
-            
+
+            // Ẩn health bar ngay khi chết (giống Enemy2D)
+            _healthBarController?.OnEnemyDied();
+
             // Animation - use Trigger to avoid re-triggering from Any State (giống Enemy2D)
             SafeSetTrigger("Death"); // Use Trigger instead of "die"
             SafeSetBool("isDead", true); // Optional: can be used for conditions
@@ -459,23 +447,10 @@ namespace NWO
         
         private System.Collections.IEnumerator FlashRed()
         {
-            Color originalColor = spriteRenderer.color;
             spriteRenderer.color = Color.red;
-            yield return new WaitForSeconds(0.1f);
-            spriteRenderer.color = originalColor;
-        }
-        
-        /// <summary>
-        /// Cập nhật health bar UI
-        /// </summary>
-        private void UpdateHealthBar()
-        {
-            // Tìm HealthBarUI trực tiếp vì EnemyHealthBarController đã bị disable
-            UI.HealthBarUI healthBarUI = GetComponentInChildren<UI.HealthBarUI>();
-            if (healthBarUI != null)
-            {
-                healthBarUI.SetHealth(currentHealth, maxHealth);
-            }
+            yield return new WaitForSeconds(0.15f);
+            spriteRenderer.color = originalColor; // dùng field originalColor đã lưu trong Awake
+            _flashCoroutine = null;
         }
         
         /// <summary>
@@ -548,6 +523,52 @@ namespace NWO
             }
         }
         
+        /// <summary>
+        /// Tự nhận damage khi spell/projectile chạm vào (trigger collider)
+        /// </summary>
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (isDead) return;
+            if (other.TryGetComponent<SpellProjectile>(out var spell))
+            {
+                HandleSpellHit(spell, other.transform.position);
+            }
+        }
+
+        /// <summary>
+        /// Tự nhận damage khi spell/projectile chạm vào (non-trigger collider)
+        /// </summary>
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (isDead) return;
+            if (collision.collider.TryGetComponent<SpellProjectile>(out var spell))
+            {
+                HandleSpellHit(spell, collision.collider.transform.position);
+            }
+        }
+
+        // Frame lock để tránh double-damage khi cả SpellProjectile lẫn RatMiniBoss đều detect hit cùng lúc
+        private int _lastSpellHitFrame = -1;
+
+        private void HandleSpellHit(SpellProjectile spell, Vector3 spellPosition)
+        {
+            if (Time.frameCount == _lastSpellHitFrame) return; // đã nhận damage frame này rồi
+            _lastSpellHitFrame = Time.frameCount;
+
+            // Lấy damage từ SpellProjectile bằng reflection (vì field là private)
+            int spellDamage = 10; // fallback mặc định
+            float spellKnockback = 3f;
+            var damageField = spell.GetType().GetField("damage",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (damageField != null) spellDamage = (int)damageField.GetValue(spell);
+            var knockbackField = spell.GetType().GetField("knockbackForce",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (knockbackField != null) spellKnockback = (float)knockbackField.GetValue(spell);
+
+            Vector2 hitDir = ((Vector2)transform.position - (Vector2)spellPosition).normalized;
+            TakeDamage(spellDamage, hitDir, spellKnockback);
+        }
+
         // Gizmos để debug
         private void OnDrawGizmosSelected()
         {
