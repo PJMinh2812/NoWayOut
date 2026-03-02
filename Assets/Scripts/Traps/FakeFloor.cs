@@ -72,6 +72,9 @@ public class FakeFloor : MonoBehaviour
         // Chá»‰ kÃ­ch hoáº¡t khi player bÆ°á»›c vÃ o
         if (collision.CompareTag("Player"))
         {
+            // Nếu player đang Dash → bất tử, không kích hoạt gạch rơi
+            var playerCtrl = collision.GetComponent<NWO.PlayerController2D>();
+            if (playerCtrl != null && playerCtrl.IsDashing) return;
 
             fallingPlayer = collision.gameObject;
             TriggerFall();

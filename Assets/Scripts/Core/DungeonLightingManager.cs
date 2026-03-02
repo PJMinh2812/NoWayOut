@@ -22,7 +22,7 @@ namespace NWO
         
         [Header("Player Light")]
         [Tooltip("Radius ánh sáng player — rất nhỏ, sát người, kinh dị")]
-        [SerializeField] private float playerDefaultLightRadius = 2.5f;
+        [SerializeField] private float playerDefaultLightRadius = 10f;
         [Tooltip("Radius tăng thêm mỗi lần nhặt Fragment")]
         [SerializeField] private float radiusPerFragment = 1.25f;
         [Tooltip("Radius tối đa sau khi nhặt đủ 3 Fragment")]

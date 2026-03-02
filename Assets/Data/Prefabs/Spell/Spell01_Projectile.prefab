@@ -82,7 +82,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 1606663979
-  m_SortingLayer: 1
+  m_SortingLayer: 0
   m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -5974721980847167186, guid: bbc852da05997c241936196469c76f3b, type: 3}
@@ -193,8 +193,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.SpellProjectile
   speed: 8
-  lifetime: 3
+  lifetime: 1
+  fadeOutDuration: 0.4
   damage: 10
   knockbackForce: 3
+  ignoreLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  destroyOnAnyHit: 1
   hitEffectPrefab: {fileID: 3494719040433803232}
-  destroyOnHit: 1

@@ -33,38 +33,47 @@ namespace NWO
         public void Initialize(int slotIndex, Sprite icon, string keyBind, string spellName)
         {
             _slotIndex = slotIndex;
-            Debug.Log($"[SpellHotbarSlot] Initializing slot {slotIndex}: {spellName}");
 
-            // Set icon
+            // === FIX RENDER ORDER ===
+            // Unity UI renders children in sibling order: later = on top.
+            // SelectionBorder phải render DƯỚI Icon, CooldownOverlay render TRÊN Icon.
+            // Thứ tự đúng: SelectionBorder(0) → Icon(1) → CooldownOverlay(2) → Text(3,4)
+            if (selectionBorder != null) selectionBorder.transform.SetAsFirstSibling();
+            if (iconImage != null) iconImage.transform.SetSiblingIndex(1);
+            if (cooldownOverlay != null) cooldownOverlay.transform.SetSiblingIndex(2);
+
             if (iconImage != null)
             {
-                iconImage.sprite = icon;
-                iconImage.enabled = icon != null;
-                Debug.Log($"[SpellHotbarSlot {slotIndex}] Icon set: {(icon != null ? icon.name : "null")}, Image enabled: {iconImage.enabled}");
-            }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ IconImage reference is NULL! Drag Icon child object to field.");
+                if (icon != null)
+                {
+                    iconImage.sprite = icon;
+                    iconImage.enabled = true;
+                    iconImage.color = Color.white;
+                    iconImage.preserveAspect = true;
+                }
+                else
+                {
+                    iconImage.enabled = false;
+                }
             }
 
-            // Set key binding text (0, 1, 2, 3)
+            // Filled type for cooldown fillAmount
+            if (cooldownOverlay != null)
+            {
+                cooldownOverlay.type = Image.Type.Filled;
+                cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+                cooldownOverlay.fillOrigin = (int)Image.Origin360.Top;
+                cooldownOverlay.fillClockwise = false;
+            }
+
             if (keyBindText != null)
             {
                 keyBindText.text = keyBind;
             }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ KeyBindText reference is NULL!");
-            }
 
-            // Set spell name
             if (spellNameText != null)
             {
                 spellNameText.text = spellName;
-            }
-            else
-            {
-                Debug.LogWarning($"[SpellHotbarSlot {slotIndex}] ⚠️ SpellNameText reference is NULL!");
             }
 
             // Set initial state
