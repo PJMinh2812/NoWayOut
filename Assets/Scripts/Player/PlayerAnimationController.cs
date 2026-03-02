@@ -31,23 +31,26 @@ namespace NWO
 
             if (playerController != null)
             {
-                if (playerController.IsRolling)
+                bool isDashing = playerController.IsDashing;
+                
+                // Set cả IsDashing (mới) và IsRolling (backward compat)
+                animator.SetBool("IsDashing", isDashing);
+                animator.SetBool("IsRolling", isDashing);
+                
+                // Tiến trình dash (0-1) để Animator blend
+                animator.SetFloat("DashProgress", playerController.DashProgress);
+
+                if (isDashing)
                 {
                     Vector2 dashDir = playerController.DashDirection;
                     animator.SetFloat("Horizontal", dashDir.x);
                     animator.SetFloat("Vertical", dashDir.y);
-                    animator.SetBool("IsRolling", true);
                 }
                 else if (speed > 0.1f)
                 {
                     Vector2 direction = rb.linearVelocity.normalized;
                     animator.SetFloat("Horizontal", direction.x);
                     animator.SetFloat("Vertical", direction.y);
-                    animator.SetBool("IsRolling", false);
-                }
-                else
-                {
-                    animator.SetBool("IsRolling", false);
                 }
             }
         }

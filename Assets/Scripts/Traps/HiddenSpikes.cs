@@ -170,6 +170,10 @@ public class HiddenSpikes : MonoBehaviour
     
     private void DamagePlayer(GameObject player)
     {
+        // Nếu player đang Dash → bất tử, bỏ qua damage
+        var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
+        if (playerCtrl != null && playerCtrl.IsDashing) return;
+
         PlayerHealth2D playerHealth = player.GetComponent<PlayerHealth2D>();
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         

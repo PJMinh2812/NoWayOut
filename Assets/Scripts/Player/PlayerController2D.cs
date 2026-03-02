@@ -3,6 +3,16 @@ using UnityEngine.InputSystem;
 
 namespace NWO
 {
+    /// <summary>
+    /// Trạng thái của Player Controller
+    /// </summary>
+    public enum PlayerMoveState
+    {
+        Normal,     // Di chuyển bình thường
+        Dashing,    // Đang dash - bất tử, xuyên qua bẫy
+        Stunned     // Bị stun/freeze
+    }
+
     // WASD/Arrow di chuyển, Space/Shift dash, Mouse ngắm
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class PlayerController2D : MonoBehaviour
@@ -12,10 +22,23 @@ namespace NWO
         [SerializeField] private float maxMoveSpeed = 5.0f;
         [SerializeField] private float linearDrag = 8f;
 
-        [Header("Roll")]
-        [SerializeField] private float rollSpeed = 10f;
-        [SerializeField] private float rollDuration = 0.20f;
-        [SerializeField] private float rollCooldown = 0.50f;
+        [Header("Dash")]
+        [Tooltip("Tốc độ dash")]
+        [SerializeField] private float dashSpeed = 14f;
+        [Tooltip("Thời gian dash tối thiểu khi nhấn nhanh")]
+        [SerializeField] private float dashMinDuration = 0.20f;
+        [Tooltip("Thời gian dash tối đa khi giữ phím")]
+        [SerializeField] private float dashMaxDuration = 0.60f;
+        [Tooltip("Cooldown sau khi dash xong")]
+        [SerializeField] private float dashCooldown = 0.50f;
+        [Tooltip("Stamina tiêu hao mỗi giây khi kéo dài dash")]
+        [SerializeField] private float dashExtendStaminaPerSec = 25f;
+        [Tooltip("Số lượng afterimage spawn mỗi giây khi dash")]
+        [SerializeField] private float afterImageRate = 15f;
+        [Tooltip("Màu afterimage")]
+        [SerializeField] private Color dashAfterImageColor = new Color(0.3f, 0.8f, 1f, 0.6f);
+        [Tooltip("Thời gian afterimage tồn tại")]
+        [SerializeField] private float afterImageLifetime = 0.25f;
 
         [Header("Aim")]
         [SerializeField] private Camera worldCamera;
@@ -24,27 +47,55 @@ namespace NWO
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField] private bool flipByMovement = true;
         [SerializeField] private bool flipByAim = true;
-        [SerializeField] private float flipThreshold = 0.1f; // Ngưỡng để tránh flip liên tục
+        [SerializeField] private float flipThreshold = 0.1f;
 
+        // === PUBLIC PROPERTIES ===
         public float AimAngleDeg { get; private set; }
-        public bool IsRolling => _rollingTimeRemaining > 0f;
+        
+        /// <summary>Trạng thái di chuyển hiện tại</summary>
+        public PlayerMoveState CurrentState { get; private set; } = PlayerMoveState.Normal;
+        
+        /// <summary>True khi đang trong trạng thái Dash (bất tử, né bẫy)</summary>
+        public bool IsDashing => CurrentState == PlayerMoveState.Dashing;
+        
+        /// <summary>Backward compat: IsRolling = IsDashing</summary>
+        public bool IsRolling => IsDashing;
+        
+        /// <summary>Hướng dash hiện tại (normalized)</summary>
         public Vector2 DashDirection { get; private set; }
+        
+        /// <summary>Tiến trình dash (0 = mới bắt đầu, 1 = hết thời gian max)</summary>
+        public float DashProgress => _dashMaxDuration > 0f ? Mathf.Clamp01(_dashElapsed / _dashMaxDuration) : 0f;
+        
         public bool IsFacingRight { get; private set; } = true;
 
+        // === PRIVATE ===
         private Rigidbody2D _rb;
         private PlayerStamina _stamina;
         private PlayerStatusEffects _statusEffects;
-        private float _cooldownRemaining;
-        private float _rollingTimeRemaining;
-        private Vector2 _rollVelocity;
+        private Collider2D _playerCollider;
+
+        // Dash state
+        private float _dashCooldownRemaining;
+        private float _dashElapsed;
+        private float _dashMaxDuration;
+        private Vector2 _dashVelocity;
+        private bool _dashKeyHeld;
+        private float _afterImageTimer;
+
+        // Layer mask cho trap ignore
+        private int _originalLayer;
+        private static int _dashLayer = -1; // Lazy init
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _stamina = GetComponent<PlayerStamina>();
             _statusEffects = GetComponent<PlayerStatusEffects>();
+            _playerCollider = GetComponent<Collider2D>();
             if (worldCamera == null) worldCamera = Camera.main;
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+            _originalLayer = gameObject.layer;
         }
 
         private void Update()
@@ -52,27 +103,21 @@ namespace NWO
             UpdateAim();
             UpdateFlip();
 
-            if (_cooldownRemaining > 0f) _cooldownRemaining -= Time.deltaTime;
-            if (_rollingTimeRemaining > 0f) _rollingTimeRemaining -= Time.deltaTime;
+            if (_dashCooldownRemaining > 0f) _dashCooldownRemaining -= Time.deltaTime;
 
-            // Kiểm tra status effects trước khi cho phép roll
-            bool canRollByStatus = _statusEffects == null || !_statusEffects.CannotRoll;
-            
-            if (!IsRolling && _cooldownRemaining <= 0f && canRollByStatus && GetRollPressed())
+            switch (CurrentState)
             {
-                var input = GetMoveInputWithEffects();
-                if (input.sqrMagnitude > 0.0001f)
-                {
-                    // Kiểm tra stamina trước khi roll
-                    if (_stamina == null || _stamina.CanRoll())
-                    {
-                        StartRoll(input.normalized);
-                    }
-                    else
-                    {
-                        Debug.Log("[Player] Not enough stamina to roll!");
-                    }
-                }
+                case PlayerMoveState.Normal:
+                    UpdateNormalState();
+                    break;
+                case PlayerMoveState.Dashing:
+                    UpdateDashState();
+                    break;
+                case PlayerMoveState.Stunned:
+                    // Chờ status effects hết
+                    if (_statusEffects == null || !_statusEffects.CannotMove)
+                        TransitionToState(PlayerMoveState.Normal);
+                    break;
             }
         }
 
@@ -90,9 +135,9 @@ namespace NWO
             }
             _rb.linearDamping = effectiveDrag;
 
-            if (IsRolling)
+            if (IsDashing)
             {
-                _rb.linearVelocity = _rollVelocity;
+                _rb.linearVelocity = _dashVelocity;
                 return;
             }
 
@@ -100,6 +145,8 @@ namespace NWO
             if (_statusEffects != null && _statusEffects.CannotMove)
             {
                 _rb.linearVelocity = Vector2.zero;
+                if (CurrentState != PlayerMoveState.Stunned)
+                    TransitionToState(PlayerMoveState.Stunned);
                 return;
             }
 
@@ -119,18 +166,157 @@ namespace NWO
             }
         }
 
-        private void StartRoll(Vector2 dir)
+        // ============================================================
+        //  STATE MACHINE
+        // ============================================================
+
+        private void TransitionToState(PlayerMoveState newState)
         {
-            _rollingTimeRemaining = rollDuration;
-            _cooldownRemaining = rollCooldown;
-            _rollVelocity = dir * rollSpeed;
-            DashDirection = dir.normalized;
+            // Exit old state
+            switch (CurrentState)
+            {
+                case PlayerMoveState.Dashing:
+                    OnDashExit();
+                    break;
+            }
+
+            CurrentState = newState;
+
+            // Enter new state
+            switch (newState)
+            {
+                case PlayerMoveState.Dashing:
+                    OnDashEnter();
+                    break;
+            }
+        }
+
+        // ============================================================
+        //  NORMAL STATE
+        // ============================================================
+
+        private void UpdateNormalState()
+        {
+            bool canDashByStatus = _statusEffects == null || !_statusEffects.CannotRoll;
             
-            // Tiêu tốn stamina
+            if (_dashCooldownRemaining <= 0f && canDashByStatus && GetDashPressed())
+            {
+                var input = GetMoveInputWithEffects();
+                if (input.sqrMagnitude > 0.0001f)
+                {
+                    if (_stamina == null || _stamina.CanRoll())
+                    {
+                        DashDirection = input.normalized;
+                        TransitionToState(PlayerMoveState.Dashing);
+                    }
+                    else
+                    {
+                        Debug.Log("[Player] Not enough stamina to dash!");
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        //  DASH STATE - Bất tử, xuyên qua bẫy, có thể kéo dài
+        // ============================================================
+
+        private void OnDashEnter()
+        {
+            _dashElapsed = 0f;
+            _dashMaxDuration = dashMaxDuration;
+            _dashVelocity = DashDirection * dashSpeed;
+            _dashKeyHeld = true;
+            _afterImageTimer = 0f;
+
+            // Tiêu tốn stamina cơ bản
             if (_stamina != null)
             {
                 _stamina.TryConsumeRoll();
             }
+
+            // Spawn afterimage ngay lập tức
+            SpawnAfterImage();
+        }
+
+        private void UpdateDashState()
+        {
+            _dashElapsed += Time.deltaTime;
+            _dashKeyHeld = GetDashHeld();
+
+            // Kiểm tra kết thúc dash
+            bool minTimePassed = _dashElapsed >= dashMinDuration;
+            bool maxTimeReached = _dashElapsed >= _dashMaxDuration;
+            bool outOfStamina = false;
+
+            // Kéo dài dash: tiêu hao stamina mỗi frame nếu giữ phím
+            if (_dashKeyHeld && minTimePassed && !maxTimeReached)
+            {
+                if (_stamina != null)
+                {
+                    float drainAmount = dashExtendStaminaPerSec * Time.deltaTime;
+                    if (_stamina.CurrentStamina >= drainAmount)
+                    {
+                        _stamina.ConsumeStamina(drainAmount);
+                    }
+                    else
+                    {
+                        outOfStamina = true;
+                    }
+                }
+            }
+
+            // Kết thúc dash nếu: hết thời gian max, HOẶC thả phím sau min duration, HOẶC hết stamina
+            if (maxTimeReached || (minTimePassed && !_dashKeyHeld) || outOfStamina)
+            {
+                TransitionToState(PlayerMoveState.Normal);
+                return;
+            }
+
+            // Spawn afterimage effect
+            _afterImageTimer += Time.deltaTime;
+            float afterImageInterval = afterImageRate > 0f ? 1f / afterImageRate : 0.1f;
+            if (_afterImageTimer >= afterImageInterval)
+            {
+                _afterImageTimer -= afterImageInterval;
+                SpawnAfterImage();
+            }
+        }
+
+        private void OnDashExit()
+        {
+            _dashCooldownRemaining = dashCooldown;
+            _dashVelocity = Vector2.zero;
+
+            // Giảm vận tốc mượt sau dash
+            if (_rb != null)
+            {
+                _rb.linearVelocity = DashDirection * maxMoveSpeed * 0.5f;
+            }
+        }
+
+        // ============================================================
+        //  AFTERIMAGE EFFECT
+        // ============================================================
+
+        private void SpawnAfterImage()
+        {
+            if (spriteRenderer == null || spriteRenderer.sprite == null) return;
+
+            var ghost = new GameObject("DashAfterImage");
+            ghost.transform.position = transform.position;
+            ghost.transform.rotation = transform.rotation;
+            ghost.transform.localScale = transform.localScale;
+
+            var sr = ghost.AddComponent<SpriteRenderer>();
+            sr.sprite = spriteRenderer.sprite;
+            sr.color = dashAfterImageColor;
+            sr.flipX = spriteRenderer.flipX;
+            sr.sortingLayerID = spriteRenderer.sortingLayerID;
+            sr.sortingOrder = spriteRenderer.sortingOrder - 1;
+
+            var fader = ghost.AddComponent<DashAfterImage>();
+            fader.Init(afterImageLifetime, dashAfterImageColor);
         }
 
         private void UpdateFlip()
@@ -215,7 +401,7 @@ namespace NWO
             return input;
         }
 
-        private static bool GetRollPressed()
+        private static bool GetDashPressed()
         {
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
@@ -223,6 +409,16 @@ namespace NWO
             return keyboard.spaceKey.wasPressedThisFrame
                    || keyboard.leftShiftKey.wasPressedThisFrame
                    || keyboard.rightShiftKey.wasPressedThisFrame;
+        }
+
+        private static bool GetDashHeld()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return false;
+
+            return keyboard.spaceKey.isPressed
+                   || keyboard.leftShiftKey.isPressed
+                   || keyboard.rightShiftKey.isPressed;
         }
     }
 }

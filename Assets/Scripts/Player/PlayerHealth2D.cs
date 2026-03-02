@@ -31,8 +31,7 @@ namespace NWO
 
         private float _invincibleTimer;
         private PlayerSpellController _spellController;
-        private PlayerStatusEffects _statusEffects;
-        
+        private PlayerStatusEffects _statusEffects;        private PlayerController2D _playerController;        
         // Animation parameter hashes (tá»‘i Æ°u performance)
         private int _hurtHash;
         private int _isDeadHash;
@@ -50,6 +49,9 @@ namespace NWO
             
             // Get status effects reference
             _statusEffects = GetComponent<PlayerStatusEffects>();
+            
+            // Get player controller reference (for dash invincibility)
+            _playerController = GetComponent<PlayerController2D>();
             
             // Cache animation parameter hashes
             if (animator != null)
@@ -86,6 +88,14 @@ namespace NWO
             if (_invincibleTimer > 0f)
             {
 
+                return;
+            }
+            
+            // === DASH INVINCIBILITY ===
+            // Khi đang Dash, player bất tử - không nhận damage từ bẫy hay enemy
+            if (_playerController != null && _playerController.IsDashing)
+            {
+                Debug.Log("[PlayerHealth2D] Damage dodged by Dash!");
                 return;
             }
             

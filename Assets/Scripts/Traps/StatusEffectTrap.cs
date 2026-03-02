@@ -137,6 +137,10 @@ namespace NWO
 
         private void ApplyEffectToPlayer(GameObject player)
         {
+            // Nếu player đang Dash → bất tử, bỏ qua status effect
+            var playerCtrl = player.GetComponent<PlayerController2D>();
+            if (playerCtrl != null && playerCtrl.IsDashing) return;
+
             var statusEffects = player.GetComponent<PlayerStatusEffects>();
             
             if (statusEffects == null)

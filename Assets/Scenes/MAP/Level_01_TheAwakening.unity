@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &35953782
 Transform:
   m_ObjectHideFlags: 0
@@ -414,86 +414,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 90693955}
   m_CullTransparentMesh: 1
---- !u!1 &100000001
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 100000003}
-  - component: {fileID: 100000002}
-  m_Layer: 0
-  m_Name: LevelManager_TheAwakening
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &100000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9635db892e9ad794a85d386cd03ccd94, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NWO.LevelManager_TheAwakening
-  playerPrefab: {fileID: 1296187675758871721, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
-  playerSpawnPosition: {x: -4, y: 3}
-  marshmallowPrefab: {fileID: 251868693}
-  zombiePrefab: {fileID: 231938684}
-  ratMiniBossPrefab: {fileID: 3197248422140556388, guid: 0c2ef033e6fcf4b499e5ce84e0c97c9b, type: 3}
-  dagePrefab: {fileID: 0}
-  enableStartRoom: 1
-  startRoomEnemyPositions:
-  - {x: -7, y: 1}
-  - {x: -2, y: 5}
-  enableHallway: 1
-  hallwayEnemyPositions:
-  - {x: 5, y: 3}
-  - {x: 10, y: 4}
-  - {x: 15, y: 2}
-  - {x: 20, y: 3}
-  - {x: 25, y: 5}
-  enableBossRoom: 1
-  bossRoomCenter: {x: 35, y: 3}
-  bossRoomGuardPositions:
-  - {x: 32, y: 5}
-  - {x: 38, y: 5}
-  - {x: 32, y: 1}
-  - {x: 38, y: 1}
-  enableOrangeZone: 1
-  orangeZoneEnemyPositions:
-  - {x: 45, y: 3}
-  - {x: 48, y: 5}
-  - {x: 52, y: 2}
-  - {x: 55, y: 4}
-  enableGoalRoom: 1
-  goalRoomEnemyPositions:
-  - {x: 62, y: 3}
-  - {x: 65, y: 5}
-  - {x: 68, y: 2}
-  useRoomTriggers: 0
---- !u!4 &100000003
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000001}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.05, y: 0.42, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &135314092
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -879,16 +799,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1626486843773728450, guid: d1748c549d186c04a9b2a4591ae657c1, type: 3}
   m_PrefabInstance: {fileID: 229413185}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &231938684 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8130035309132286076, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
-  m_PrefabInstance: {fileID: 422366843}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &251868693 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6817190312291341347, guid: 890de67a2027f9544927027491459402, type: 3}
-  m_PrefabInstance: {fileID: 1656978085}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &271417563
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1086,6 +996,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 372d74d3428dd7240a053ad3c22dd199, type: 3}
+--- !u!1 &317243094 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7355916300128518898, guid: fb5c5160dbff80e4ca00994c55a9dc64, type: 3}
+  m_PrefabInstance: {fileID: 1291032401}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &332499524
 GameObject:
   m_ObjectHideFlags: 0
@@ -1396,7 +1311,7 @@ PrefabInstance:
     - target: {fileID: 2658628559906454879, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
       propertyPath: healthBarPrefab
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 317243094}
     - target: {fileID: 8124853620213733361, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
       propertyPath: m_LocalPosition.x
       value: 19.27
@@ -2858,12 +2773,12 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2205586639188029955, guid: fb5c5160dbff80e4ca00994c55a9dc64, type: 3}
   m_PrefabInstance: {fileID: 1291032401}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 317243094}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18d1605e74bdea248b2d01e5e217e8a7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.UI.HealthBarUI
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.UI.HealthBarUI
 --- !u!1001 &760532765
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10593,6 +10508,10 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 453646950066916392, guid: 890de67a2027f9544927027491459402, type: 3}
+      propertyPath: healthBarPrefab
+      value: 
+      objectReference: {fileID: 317243094}
     - target: {fileID: 5950224193711388815, guid: 890de67a2027f9544927027491459402, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13.7
@@ -19352,7 +19271,6 @@ SceneRoots:
   - {fileID: 189328898}
   - {fileID: 1863580406}
   - {fileID: 2021885609}
-  - {fileID: 100000003}
   - {fileID: 1291032401}
   - {fileID: 996347691}
   - {fileID: 797899958}

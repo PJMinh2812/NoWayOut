@@ -63,6 +63,10 @@ public class SlipperyFloor : MonoBehaviour
     
     private void StartSliding(GameObject player)
     {
+        // Nếu player đang Dash → không bị trượt
+        var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
+        if (playerCtrl != null && playerCtrl.IsDashing) return;
+
         // Phát âm thanh trượt
         if (slideSound != null)
         {
