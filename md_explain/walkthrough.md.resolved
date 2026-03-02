@@ -1,0 +1,477 @@
+# 📖 Review Chi Tiết Code — Nhánh `feature/auto-gen-map`
+
+Tài liệu này giải thích chi tiết cách hoạt động từng module, giúp bạn trả lời câu hỏi review của giáo viên.
+
+---
+
+## 1. 🗺️ Procedural Dungeon Generation
+
+### 1.1 Tổng quan kiến trúc
+
+Hệ thống sinh dungeon tự động sử dụng **Grid-based Room Placement**. Dungeon được tạo theo flow tuyến tính:
+
+```
+Start → Archetype1 (5 phòng) → MidBoss → Archetype2 (5 phòng) → Boss → Goal
+```
+
+```mermaid
+flowchart LR
+    S[Start Room] --> A1[Archetype1 x5]
+    A1 --> MB[MidBoss]
+    MB --> A2[Archetype2 x5]
+    A2 --> B[Boss]
+    B --> G[Goal]
+    A1 -.->|branch 20%| BR1[Branch Room]
+    A2 -.->|branch 20%| BR2[Branch Room]
+```
+
+### 1.2 DungeonManager.cs — Bộ não chính
+
+**File**: [DungeonManager.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs) (1046 dòng)
+
+#### Flow chính khi gọi [GenerateDungeon()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#109-163):
+
+```mermaid
+sequenceDiagram
+    participant GM as GenerateDungeon()
+    participant Init as Initialize()
+    participant Flow as GenerateDungeonFlow()
+    participant Inst as InstantiateAllRooms()
+    
+    GM->>Init: Clear old data, setup containers
+    GM->>Flow: Tạo rooms theo flow
+    Flow->>Flow: CreateStartRoom()
+    Flow->>Flow: CreateRoomSequence(Arch1, 5)
+    Flow->>Flow: CreateRoomOfType(MidBoss)
+    Flow->>Flow: CreateRoomSequence(Arch2, 5)
+    Flow->>Flow: CreateRoomOfType(Boss)
+    Flow->>Flow: CreateGoalRoom()
+    Flow->>Flow: CalculateDangerLevels()
+    GM->>Inst: Instantiate + render rooms
+```
+
+#### Các biến quan trọng:
+
+| Biến | Kiểu | Mục đích |
+|------|------|----------|
+| `seed` | `int` | Seed cho Random — 0 = random mỗi lần |
+| `worldScale` | `float` | Tỷ lệ grid → world (mặc định 1:1) |
+| `archetype1RoomCount` | `int` | Số phòng trước mid-boss (3-10) |
+| `branchProbability` | `float` | Xác suất tạo phòng nhánh (0-0.5) |
+| `occupiedCells` | `Dictionary<Vector2Int, Room>` | Lưữ ô nào đã bị chiếm |
+| `mainPath` | `List<Room>` | Danh sách phòng trên đường chính |
+| `dangerCurve` | `AnimationCurve` | Tăng độ nguy hiểm theo khoảng cách |
+
+#### Thuật toán đặt phòng — [TryPlaceRoom()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#750-810):
+
+```csharp
+// 1. Lấy các hướng chưa có room kết nối (Top/Bottom/Left/Right)
+List<DoorDirection> available = GetAvailableDirections(fromRoom);
+
+// 2. Shuffle random
+DungeonUtils.Shuffle(available);
+
+// 3. Thử từng hướng, tính offset dựa trên kích thước phòng hiện tại
+Vector2Int scaledOffset = new Vector2Int(
+    offset.x * fromRoom.actualSize.x,  // VD: Right = (7,0)
+    offset.y * fromRoom.actualSize.y
+);
+Vector2Int newPosition = fromRoom.gridPosition + scaledOffset;
+
+// 4. Check xem vị trí mới có trống không
+if (DungeonUtils.CanPlaceRoomAt(newPosition, adjustedSize, occupiedCells)) {
+    // 5. Check door compatibility (phòng mới phải có cửa đối diện)
+    // 6. Tạo Room mới, kết nối 2 chiều
+    fromRoom.connectedRooms[direction] = newRoom;
+    newRoom.connectedRooms[oppositeDir] = fromRoom;
+}
+
+// 7. Nếu không được → Backtrack: thử phòng khác trong mainPath
+```
+
+> [!IMPORTANT]
+> **Backtracking**: Nếu không tìm được chỗ đặt phòng mới kế bên phòng cuối, hệ thống quay lại thử tối đa 10 phòng trước đó trong mainPath. Đây là cách tránh deadlock khi dungeon bị kẹt.
+
+#### Kích thước phòng — [CalculateAdjustedRoomSize()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/DungeonManager.cs#862-893):
+
+- **Luôn số lẻ** (11, 13, 15...) — để door luôn nằm chính giữa wall
+- Start/Goal: min 11×11, max 15×15
+- Các phòng khác: min 15×15, max 25×25
+
+#### Awake & RebuildRoomListFromScene():
+
+Khi Enter Play Mode, nếu dungeon đã được generate trong Editor:
+1. Parse tên `Room_Start_0_0` → lấy loại + grid position
+2. Rebuild `connectedRooms` bằng cách match door pairs (cùng hướng đối diện, gần nhất)
+3. Ẩn tất cả rooms, chỉ hiện Start Room
+4. Auto-create [GameManager](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/GameManager.cs#9-231), [DungeonLightingManager](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/DungeonLightingManager.cs#14-463) nếu chưa có
+
+---
+
+### 1.3 Room.cs — Data model cho mỗi phòng
+
+**File**: [Room.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/Room.cs) (199 dòng)
+
+```csharp
+public class Room {
+    public RoomData roomData;          // ScriptableObject chứa template
+    public Vector2Int gridPosition;     // Vị trí trên grid
+    public Vector2Int actualSize;       // Kích thước thực (có thể override)
+    public GameObject roomInstance;      // GameObject trong scene
+    public Dictionary<DoorDirection, Room> connectedRooms; // Phòng kết nối
+    public int distanceFromStart;       // Khoảng cách từ Start (cho danger level)
+    public int dangerLevel;             // Độ nguy hiểm
+    public bool isMainPath;             // Thuộc đường chính hay branch
+}
+```
+
+**Flow tạo visual cho 1 room**:
+1. [InstantiateRoom()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/Room.cs#124-145) → tạo empty GameObject, đặt vào đúng vị trí world
+2. [ConfigureVisualGenerator()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Core/Room.cs#167-186) → truyền tile assets từ DungeonManager
+3. [GenerateVisuals()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#86-138) → gọi RoomVisualGenerator để vẽ floor/wall/door
+
+---
+
+### 1.4 RoomVisualGenerator.cs — Vẽ Tilemap cho phòng
+
+**File**: [RoomVisualGenerator.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs) (588 dòng)
+
+Component được add vào mỗi Room GameObject, chịu trách nhiệm tạo visual.
+
+#### Tạo Floor — [CreateAutoFilledFloor()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#254-288):
+```csharp
+// Tạo Grid + Tilemap
+// Fill sàn CHỈ phần interior (bỏ edges vì đó là tường)
+for (int x = 1; x < tilesX - 1; x++)
+    for (int y = 1; y < tilesY - 1; y++)
+        tilemap.SetTile(pos, floorTiles[Random.Range(0, count)]);
+```
+
+#### Tạo Walls — [CreateAutoFilledWalls()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#289-387):
+- **Chỉ fill edges** (x=0, x=max, y=0, y=max)
+- Có **collision** (TilemapCollider2D + CompositeCollider2D + static Rigidbody2D)
+- **Skip wall tiles tại vị trí door** (cửa = lỗ trên tường)
+- Chọn tile đúng góc: [GetWallTileForPosition()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#388-412) — TopLeft, TopRight, Top, Bottom, Left, Right...
+
+#### Tạo Doors — [GenerateDoorPrefabs()](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/RoomVisualGenerator.cs#413-487):
+- Chỉ tạo door cho **hướng có room kết nối** (`activeDirections`)
+- Instantiate door prefab → thêm [DoorTrigger](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#13-447) component
+- Configure [DoorTrigger](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#13-447) với `currentRoom`, `targetRoom`, `doorDirection`
+- `BoxCollider2D` bắt đầu `isTrigger = false` (door đóng = tường chắn)
+
+---
+
+### 1.5 DoorTrigger.cs — Hệ thống cửa
+
+**File**: [DoorTrigger.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs) (448 dòng)
+
+#### Cơ chế hoạt động:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed: Khởi tạo
+    Closed --> Open: Player trong range (4f)
+    Open --> Closed: Player ra ngoài range
+    Closed --> Locked: LockDoor()
+    Locked --> Closed: UnlockDoor()
+    
+    note right of Open: isTrigger = true\n(player đi xuyên qua)
+    note right of Closed: isTrigger = false\n(chặn player)
+```
+
+#### Chi tiết:
+1. **Auto Open/Close**: Mỗi frame check khoảng cách player ↔ door. Nếu ≤ 4f → mở, > 4f → đóng
+2. **Collider State**: 
+   - Đóng: `isTrigger = false` → door là tường, chặn player
+   - Mở: `isTrigger = true` → player đi qua → trigger [OnTriggerEnter2D](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/ProceduralGeneration/Components/DoorTrigger.cs#191-208)
+3. **Room Transition**: Khi player đi qua door mở → gọi `RoomTransitionManager.TransitionToRoom()`
+4. **Animation**: Dùng `SetBool("isOpen", true/false)` thay vì Trigger
+5. **Lock/Unlock**: Hỗ trợ khóa cửa cho boss fights
+
+#### Auto-find rooms khi Play Mode:
+```csharp
+// Đi lên hierarchy: Door → Doors → Visuals → Room_Start_0_0
+Transform current = transform.parent;
+while (current != null) {
+    foundRoom = dungeonManager.GetRoomByGameObject(current.gameObject);
+    if (foundRoom != null) break;
+    current = current.parent;
+}
+// Tìm targetRoom từ connectedRooms[doorDirection]
+```
+
+---
+
+## 2. 🔦 Hệ thống Ánh sáng URP 2D
+
+### 2.1 DungeonLightingManager.cs — Quản lý bóng tối
+
+**File**: [DungeonLightingManager.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/DungeonLightingManager.cs) (464 dòng)
+
+**Singleton pattern** — `DungeonLightingManager.Instance`
+
+#### 3 loại ánh sáng:
+
+| Loại | Light Type | Intensity | Mục đích |
+|------|-----------|-----------|----------|
+| Global | `Light2D.Global` | 0.005 | Dungeon gần như tối đen |
+| Player | `Light2D.Point` | 0.8 | Ánh sáng nhỏ quanh player |
+| Start Room | `Light2D.Point` | 1.2 | Phòng Start sáng hoàn toàn |
+
+#### Player Light mở rộng khi nhặt Fragment:
+
+```csharp
+// Mỗi fragment tăng radius thêm 1.25 units
+float targetRadius = playerDefaultLightRadius + fragments * radiusPerFragment;
+// default=2.5, max=6.5
+// 0 fragment: 2.5 units → 1 fragment: 3.75 → 2: 5.0 → 3: 6.25 (max 6.5)
+```
+
+Có **animation mở rộng** mượt mà: flash sáng lên rồi lerp về radius mới trong 1 giây.
+
+#### Convert Sprites → Lit Material:
+```csharp
+// URP 2D Light CHỈ ảnh hưởng lên material "Sprite-Lit-Default"
+// Sprites mặc định dùng "Sprites-Default" (unlit) → ánh sáng KHÔNG có tác dụng
+// → Phải convert tất cả SpriteRenderer + TilemapRenderer sang Lit material
+Shader litShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default");
+```
+
+> [!IMPORTANT]
+> **Câu hỏi hay gặp**: Tại sao phải convert material? → Vì URP 2D Renderer chỉ tính toán ánh sáng cho shader `Sprite-Lit-Default`. Nếu dùng shader `Sprites-Default` (mặc định), sprites sẽ luôn sáng bất kể có Light2D hay không.
+
+---
+
+### 2.2 RoomTransitionManager.cs — Chuyển phòng
+
+**File**: [RoomTransitionManager.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/RoomTransitionManager.cs) (325 dòng)
+
+#### Flow chuyển phòng:
+
+```mermaid
+sequenceDiagram
+    participant DT as DoorTrigger
+    participant RTM as RoomTransitionManager
+    participant UI as FadePanel
+    
+    DT->>RTM: TransitionToRoom(from, to, direction)
+    RTM->>UI: FadeOut (0 → 1 alpha, 0.5s)
+    RTM->>RTM: fromRoom.SetActive(false)
+    RTM->>RTM: toRoom.SetActive(true)
+    RTM->>RTM: ConvertRoomSpritesToLit()
+    RTM->>RTM: CalculatePlayerSpawnPosition()
+    RTM->>RTM: player.position = spawnPos
+    RTM->>UI: FadeIn (1 → 0 alpha, 0.5s)
+```
+
+#### Tính vị trí spawn player:
+- Vào từ **Top** → spawn gần **Bottom** của phòng mới
+- Vào từ **Left** → spawn gần **Right** của phòng mới
+- Offset 2.5 units từ tường để không bị kẹt
+- Tính bounds thực tế từ `Renderer.bounds` (không dùng grid size)
+
+---
+
+## 3. ✨ Flash of Truth + Mirror Puzzle
+
+### 3.1 FlashOfTruth.cs — Kỹ năng ánh sáng
+
+**File**: [FlashOfTruth.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Player/FlashOfTruth.cs) (341 dòng)
+
+#### Điều kiện mở khóa:
+- Thu thập đủ **3 Light Fragments** → `GameManager.OnAllLightFragmentsCollected` event
+
+#### Khi kích hoạt (Space):
+
+| Thời điểm | Hành động |
+|------------|-----------|
+| Frame 0 | Player light burst: radius 2.5 → 50, intensity 0.8 → 3.0 |
+| 0-5s | Traps bị highlight đỏ nhấp nháy (sin wave) |
+| 0-3s | Enemies bị stun (disable script, flash trắng) |
+| 0-5s | LightReceivers trong range được kích hoạt |
+| 5-5.5s | Fade back: light lerp về giá trị gốc |
+| Sau đó | Cooldown 15 giây |
+
+#### Reveal Traps:
+```csharp
+// Tìm tất cả objects có "Trap" trong tên, tag, hoặc component name
+bool isTrap = obj.name.Contains("Trap") || obj.CompareTag("Trap") || ...;
+// Highlight: đổi màu đỏ + alpha sin wave nhấp nháy
+```
+
+#### Stun Enemies:
+```csharp
+// Disable toàn bộ MonoBehaviour trên enemy trong 3 giây
+enemyScript.enabled = false;
+// Flash white hiệu ứng PingPong
+```
+
+---
+
+### 3.2 Mirror Puzzle System
+
+```mermaid
+flowchart LR
+    PL[Player Light] -->|range ≤ 8f| LM[LightMirror]
+    LM -->|Reflect + Raycast| LR[LightReceiver]
+    LR -->|OnActivated event| MPD[MirrorPuzzleDoor]
+    MPD -->|Mở cửa| NEXT[Khu vực mới]
+```
+
+#### LightMirror.cs — Gương phản xạ
+**File**: [LightMirror.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Puzzle/LightMirror.cs) (201 dòng)
+
+```csharp
+// 1. Check player trong range + có line of sight (không bị wall chắn)
+float distance = Vector2.Distance(transform.position, playerTransform.position);
+RaycastHit2D hit = Physics2D.Raycast(pos, dirToPlayer, distance, obstacleLayer);
+isActivated = (hit.collider == null);
+
+// 2. Tính phản xạ: dùng Vector2.Reflect() theo normal của mirror
+Vector2 incomingDir = (mirrorPos - playerPos).normalized;
+Vector2 mirrorNormal = new Vector2(-Sin(angle), Cos(angle));
+Vector2 reflectedDir = Vector2.Reflect(incomingDir, mirrorNormal);
+
+// 3. Raycast theo hướng phản xạ → nếu trúng LightReceiver → kích hoạt
+RaycastHit2D hit = Physics2D.Raycast(pos, reflectedDir, maxDist, obstacleLayer);
+hitReceiver = hit.collider.GetComponent<LightReceiver>();
+hitReceiver.ReceiveLight();
+```
+
+Visual: `LineRenderer` vẽ tia sáng từ gương → điểm đích, có hiệu ứng pulse.
+
+#### LightReceiver.cs — Bộ nhận sáng
+**File**: [LightReceiver.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Puzzle/LightReceiver.cs) (193 dòng)
+
+- `requiresContinuousLight`: true = phải chiếu liên tục, mất sáng → tắt
+- `oneTimeActivation`: true = chỉ cần kích hoạt 1 lần
+- `activationDelay`: 0.5s phải chiếu liên tục mới active
+- Dùng **UnityEvent** (`OnActivated`, `OnDeactivated`) để gắn hành động
+
+#### MirrorPuzzleDoor.cs — Cửa puzzle
+**File**: [MirrorPuzzleDoor.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Puzzle/MirrorPuzzleDoor.cs) (195 dòng)
+
+- Cần **tất cả** hoặc **ít nhất 1** LightReceiver active (configurable)
+- Mở cửa = di chuyển door visual theo `openOffset` + tắt collider
+- Dùng `Vector3.Lerp` để mở mượt mà
+- Check trạng thái receiver bằng **Reflection** (`GetField("isActivated", NonPublic)`)
+
+---
+
+## 4. 🧭 Minimap
+
+### MinimapManager.cs — Minimap tròn
+**File**: [MinimapManager.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/UI/MinimapManager.cs) (465 dòng)
+
+#### Cách hoạt động:
+
+```mermaid
+flowchart TB
+    subgraph Rendering
+        MC[Minimap Camera] -->|Render to| RT[RenderTexture 512x512]
+        ML[Minimap Point Light] -->|Chiếu sáng khu vực| MC
+    end
+    subgraph UI
+        RT -->|Hiển thị trên| RI[RawImage]
+        RI -->|Clip bởi| CM[Circle Mask]
+        CM -->|Nằm trong| FR[Frame circle]
+    end
+```
+
+#### Kiến trúc:
+1. **Camera riêng** ([MinimapCamera](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/UI/MinimapManager.cs#130-156)) — orthographic, depth -50, render tất cả trừ UI layer
+2. **RenderTexture** 512×512 — camera render vào đây thay vì màn hình
+3. **Point Light riêng** cho minimap camera — để map visible (main scene tối đen)
+4. **UI**: Canvas → Frame (circle background) → Circle Mask → RawImage (hiện RenderTexture) + Player Marker (chấm xanh ở giữa) + Sweep Line (quét radar)
+5. **Compass labels**: N/S/E/W ở 4 góc
+
+#### Circle Mask:
+```csharp
+// Tạo texture hình tròn bằng code (không cần asset)
+Sprite CreateCircleSprite(int resolution) {
+    for (int y = 0; y < res; y++)
+        for (int x = 0; x < res; x++) {
+            float dist = Vector2.Distance(new Vector2(x,y), center);
+            tex.SetPixel(x, y, new Color(1,1,1, Clamp01(radius - dist + 0.5f)));
+        }
+}
+```
+
+#### Features:
+- **Toggle**: Tab key (tắt/bật minimap)
+- **Fragment bonus**: Nhặt fragment → minimap sáng hơn + rộng hơn
+- **Smooth follow**: Camera lerp theo player position
+- **URP compatible**: Thêm `UniversalAdditionalCameraData` component
+
+---
+
+## 5. 🎮 GameManager.cs — Quản lý trạng thái game
+
+**File**: [GameManager.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/GameManager.cs) (232 dòng)
+
+**Singleton pattern** — `GameManager.Instance`
+
+#### Event System:
+```csharp
+// 2 events chính:
+event Action<int, int> OnLightFragmentCollected; // (current, total)
+event Action OnAllLightFragmentsCollected;       // Khi đủ 3/3
+```
+
+#### Auto-create components trong Awake():
+```csharp
+// Tự tạo nếu chưa có:
+LightFragmentUI      → hiện UI fragment
+FlashOfTruthUI       → hiện UI cooldown
+DungeonLightingManager → ánh sáng
+MinimapManager       → minimap
+LightingHotbarUI     → hotbar ánh sáng
+```
+
+#### CollectLightFragment():
+```csharp
+lightFragmentsCollected++;
+OnLightFragmentCollected?.Invoke(current, total); // → DungeonLightingManager mở rộng light
+if (collected >= total)
+    OnAllLightFragmentsCollected?.Invoke();        // → FlashOfTruth unlock
+```
+
+#### RestartGame():
+- Thử regenerate map với seed mới (MapInitializationManager hoặc legacy builder)
+- Fallback: reload scene
+
+---
+
+## 6. ❓ Câu hỏi review thường gặp
+
+### Q1: Thuật toán sinh dungeon hoạt động như thế nào?
+**A**: Grid-based room placement. Phòng được đặt lần lượt theo flow (Start→Arch1→MidBoss→Arch2→Boss→Goal). Mỗi phòng mới được đặt kế bên phòng trước đó, kiểm tra không trùng lấp (occupiedCells), có door compatibility. Nếu kẹt → backtrack thử phòng khác.
+
+### Q2: Tại sao kích thước phòng luôn là số lẻ?
+**A**: Để door luôn nằm chính giữa tường. VD: phòng 15×15 → center = tile 7 → door đặt ở (7, 0) hoặc (7, 14). Nếu chẵn thì không có tile center chính xác.
+
+### Q3: Hệ thống ánh sáng hoạt động như thế nào?
+**A**: Dùng URP 2D Light. Global light rất thấp (0.005) → tối đen. Player có Point Light nhỏ (2.5 radius). Nhặt Fragment → expand. Tất cả sprites phải convert sang `Sprite-Lit-Default` material thì mới phản ứng với ánh sáng.
+
+### Q4: Door hoạt động thế nào?
+**A**: Auto open/close dựa khoảng cách. Đóng = solid collider (chặn), mở = trigger (đi xuyên qua). Khi đi qua trigger → RoomTransitionManager fade out → swap room → teleport player → fade in.
+
+### Q5: Mirror Puzzle hoạt động thế nào?
+**A**: Player đến gần Mirror → Mirror detect ánh sáng player → dùng `Vector2.Reflect()` tính hướng phản xạ → Raycast → nếu trúng LightReceiver → active → nếu đủ receivers active → MirrorPuzzleDoor mở.
+
+### Q6: Minimap dùng kỹ thuật gì?
+**A**: Camera thứ hai render vào RenderTexture. UI dùng RawImage hiển thị texture, clip bằng Circle Mask. Có Point Light riêng cho minimap để map visible (vì main scene tối đen). Player marker luôn ở giữa.
+
+### Q7: Design Pattern nào được sử dụng?
+**A**: 
+- **Singleton**: GameManager, DungeonLightingManager, RoomTransitionManager, MinimapManager
+- **Observer/Event**: `OnLightFragmentCollected`, `OnAllLightFragmentsCollected`, UnityEvent trên LightReceiver
+- **Component**: Mỗi feature là MonoBehaviour riêng (DoorTrigger, RoomVisualGenerator, FlashOfTruth...)
+- **ScriptableObject**: RoomData, TrapData làm template
+
+### Q8: Tại sao dùng Coroutine?
+**A**: Để xử lý animation/transition mượt mà mà không block main thread:
+- FadeOut/FadeIn (0.5s)
+- AnimateRadiusExpand (1s lerp)
+- FlashSequence (5s flash + 0.5s fade back)
+- SetupStartRoomLightWhenReady (retry 10 lần)
