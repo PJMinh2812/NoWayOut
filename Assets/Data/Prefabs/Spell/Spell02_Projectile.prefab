@@ -193,8 +193,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.SpellProjectile
   speed: 10
-  lifetime: 3
+  lifetime: 1
+  fadeOutDuration: 0.4
   damage: 20
   knockbackForce: 3
+  ignoreLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  destroyOnAnyHit: 1
   hitEffectPrefab: {fileID: 7133381205109121596}
-  destroyOnHit: 1

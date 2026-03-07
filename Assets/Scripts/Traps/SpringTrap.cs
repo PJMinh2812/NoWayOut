@@ -68,6 +68,10 @@ public class SpringTrap : MonoBehaviour
     
     private void ActivateSpring(GameObject player)
     {
+        // Nếu player đang Dash → bất tử, không bị bật
+        var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
+        if (playerCtrl != null && playerCtrl.IsDashing) return;
+
         isOnCooldown = true;
         
         // Phát âm thanh lò xo "BOING!"

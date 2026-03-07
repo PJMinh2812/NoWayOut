@@ -11,18 +11,24 @@ namespace NWO
         [SerializeField] private PlayerSpellController spellController;
         [SerializeField] private SpellHotbarSlot[] spellSlots; // 4 slots: 0, 1, 2, 3
 
-        [Header("Spell Settings")]
-        [Tooltip("Icon cho Idle state (0)")]
+        [Header("Spell Icons (Auto-load từ prefab nếu để trống)")]
+        [Tooltip("Icon cho Idle state (0) - nếu null sẽ tạo placeholder")]
         [SerializeField] private Sprite idleIcon;
         
-        [Tooltip("Icon cho Spell 1")]
+        [Tooltip("Icon cho Spell 1 - nếu null sẽ lấy từ Spell01 Projectile prefab")]
         [SerializeField] private Sprite spell01Icon;
         
-        [Tooltip("Icon cho Spell 2")]
+        [Tooltip("Icon cho Spell 2 - nếu null sẽ lấy từ Spell02 Projectile prefab")]
         [SerializeField] private Sprite spell02Icon;
         
-        [Tooltip("Icon cho Spell 3")]
+        [Tooltip("Icon cho Spell 3 - nếu null sẽ lấy từ Spell03 Projectile prefab")]
         [SerializeField] private Sprite spell03Icon;
+
+        [Header("Fallback Colors (dùng khi không có icon)")]
+        [SerializeField] private Color spell01Color = new Color(0.3f, 0.8f, 1f);   // Xanh dương
+        [SerializeField] private Color spell02Color = new Color(1f, 0.5f, 0.2f);   // Cam
+        [SerializeField] private Color spell03Color = new Color(0.8f, 0.3f, 1f);   // Tím
+        [SerializeField] private Color idleColor   = new Color(1f, 0.9f, 0.2f);    // Vàng
 
         [Header("Key Bindings Display")]
         [SerializeField] private string[] keyLabels = { "0", "1", "2", "3" };
@@ -47,14 +53,51 @@ namespace NWO
         {
             if (spellSlots == null || spellSlots.Length == 0)
             {
-                Debug.LogError("[SpellHotbarUI] ⚠️ SpellSlots array is EMPTY! Please drag 4 SpellSlot GameObjects into the array in Inspector.");
+                Debug.LogError("[SpellHotbarUI] SpellSlots array is empty!");
                 enabled = false;
                 return;
             }
-            
+
+            AutoLoadSpellIcons();
             InitializeSlots();
-            UpdateSelection(0); // Start with Idle selected
-            Debug.Log($"[SpellHotbarUI] ✅ Initialized {spellSlots.Length} spell slots");
+            UpdateSelection(0);
+        }
+
+        /// <summary>
+        /// Auto-load icons từ spell projectile prefabs nếu chưa gán trong Inspector.
+        /// </summary>
+        private void AutoLoadSpellIcons()
+        {
+            if (spellController == null) return;
+
+            if (idleIcon == null)
+                idleIcon = CreateColorSprite(idleColor, "IdleIcon");
+
+            if (spell01Icon == null)
+                spell01Icon = spellController.GetSpellIcon(1) ?? CreateColorSprite(spell01Color, "Spell01Icon");
+
+            if (spell02Icon == null)
+                spell02Icon = spellController.GetSpellIcon(2) ?? CreateColorSprite(spell02Color, "Spell02Icon");
+
+            if (spell03Icon == null)
+                spell03Icon = spellController.GetSpellIcon(3) ?? CreateColorSprite(spell03Color, "Spell03Icon");
+        }
+
+        /// <summary>
+        /// Tạo sprite placeholder màu đơn sắc (16x16)
+        /// </summary>
+        private static Sprite CreateColorSprite(Color color, string name)
+        {
+            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            var pixels = new Color[16 * 16];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
+            tex.SetPixels(pixels);
+            tex.Apply();
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
+            sprite.name = name;
+            return sprite;
         }
 
         private void Update()
@@ -76,54 +119,17 @@ namespace NWO
         {
             if (spellSlots == null || spellSlots.Length != 4)
             {
-                Debug.LogError($"[SpellHotbarUI] ❌ SpellSlots array must have exactly 4 elements! Current: {(spellSlots == null ? "null" : spellSlots.Length.ToString())}");
+                Debug.LogError("[SpellHotbarUI] SpellSlots array must have exactly 4 elements!");
                 return;
             }
-            
-            Debug.Log("[SpellHotbarUI] Initializing spell slots...");
 
-            // Setup slot 0 - Idle
-            if (spellSlots[0] != null)
-            {
-                spellSlots[0].Initialize(0, idleIcon, keyLabels[0], "Idle");
-                Debug.Log($"[SpellHotbarUI] ✅ Slot 0 (Idle) initialized. Icon: {(idleIcon != null ? idleIcon.name : "null")}");
-            }
-            else
-            {
-                Debug.LogError("[SpellHotbarUI] ❌ Slot 0 is NULL!");
-            }
+            string[] names = { "Idle", "Spell 1", "Spell 2", "Spell 3" };
+            Sprite[] icons = { idleIcon, spell01Icon, spell02Icon, spell03Icon };
 
-            // Setup slot 1 - Spell 1
-            if (spellSlots[1] != null)
+            for (int i = 0; i < 4; i++)
             {
-                spellSlots[1].Initialize(1, spell01Icon, keyLabels[1], "Spell 1");
-                Debug.Log($"[SpellHotbarUI] ✅ Slot 1 (Spell 1) initialized. Icon: {(spell01Icon != null ? spell01Icon.name : "null")}");
-            }
-            else
-            {
-                Debug.LogError("[SpellHotbarUI] ❌ Slot 1 is NULL!");
-            }
-
-            // Setup slot 2 - Spell 2
-            if (spellSlots[2] != null)
-            {
-                spellSlots[2].Initialize(2, spell02Icon, keyLabels[2], "Spell 2");
-                Debug.Log($"[SpellHotbarUI] ✅ Slot 2 (Spell 2) initialized. Icon: {(spell02Icon != null ? spell02Icon.name : "null")}");
-            }
-            else
-            {
-                Debug.LogError("[SpellHotbarUI] ❌ Slot 2 is NULL!");
-            }
-
-            // Setup slot 3 - Spell 3
-            if (spellSlots[3] != null)
-            {
-                spellSlots[3].Initialize(3, spell03Icon, keyLabels[3], "Spell 3");
-                Debug.Log($"[SpellHotbarUI] ✅ Slot 3 (Spell 3) initialized. Icon: {(spell03Icon != null ? spell03Icon.name : "null")}");
-            }
-            else
-            {
-                Debug.LogError("[SpellHotbarUI] ❌ Slot 3 is NULL!");
+                if (spellSlots[i] != null)
+                    spellSlots[i].Initialize(i, icons[i], keyLabels[i], names[i]);
             }
         }
 
@@ -170,16 +176,7 @@ namespace NWO
         /// </summary>
         public void OnSlotClicked(int slotIndex)
         {
-            if (slotIndex == 0)
-            {
-                // Simulate pressing 0 key
-                // spellController sẽ tự handle via keyboard input
-                Debug.Log("[SpellHotbarUI] Clicked Idle slot - press 0 to switch");
-            }
-            else if (slotIndex >= 1 && slotIndex <= 3)
-            {
-                Debug.Log($"[SpellHotbarUI] Clicked Spell {slotIndex} slot - press {slotIndex} to switch");
-            }
+            // UI slot click - spell switching handled by keyboard input
         }
     }
 }

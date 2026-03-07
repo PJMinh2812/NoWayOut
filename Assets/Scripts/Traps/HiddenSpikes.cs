@@ -44,7 +44,6 @@ public class HiddenSpikes : MonoBehaviour
     
     private void Awake()
     {
-        // Nếu không có trigger zone được gán, dùng collider của chính object này
         if (triggerZone == null)
         {
             triggerZone = GetComponent<Collider2D>();
@@ -54,11 +53,10 @@ public class HiddenSpikes : MonoBehaviour
             }
         }
         
-        // Setup vị trí ẩn và hiện của chông
         if (spikesTransform != null)
         {
             activePosition = spikesTransform.localPosition;
-            hiddenPosition = activePosition - new Vector3(0, 1f, 0); // Ẩn xuống dưới 1 unit
+            hiddenPosition = activePosition - new Vector3(0, 1f, 0);
             spikesTransform.localPosition = hiddenPosition;
             
             spikeSpriteRenderer = spikesTransform.GetComponent<SpriteRenderer>();
@@ -79,14 +77,12 @@ public class HiddenSpikes : MonoBehaviour
     {
         isTriggered = true;
         
-        // Hiệu ứng cảnh báo
         if (warningEffect != null)
         {
             GameObject warning = Instantiate(warningEffect, transform.position, Quaternion.identity);
             Destroy(warning, triggerDelay);
         }
         
-        // Delay rồi mới mọc chông
         Invoke(nameof(RaiseSpikes), triggerDelay);
     }
     
@@ -94,19 +90,16 @@ public class HiddenSpikes : MonoBehaviour
     {
         isActive = true;
         
-        // Phát âm thanh chông mọc
         if (spikeRiseSound != null)
         {
             AudioSource.PlayClipAtPoint(spikeRiseSound, transform.position);
         }
         
-        // Animation chông mọc lên
         if (spikesTransform != null)
         {
             StartCoroutine(SpikeRiseAnimation());
         }
         
-        // Camera shake
         CameraShake cameraShake = Camera.main?.GetComponent<CameraShake>();
         if (cameraShake != null)
         {
@@ -123,7 +116,7 @@ public class HiddenSpikes : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / riseTime;
             
-            // Ease out curve để chông mọc nhanh dần
+            // Ease out curve
             t = 1f - Mathf.Pow(1f - t, 3f);
             
             spikesTransform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, t);
@@ -170,6 +163,10 @@ public class HiddenSpikes : MonoBehaviour
     
     private void DamagePlayer(GameObject player)
     {
+        // Nếu player đang Dash → bất tử, bỏ qua damage
+        var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
+        if (playerCtrl != null && playerCtrl.IsDashing) return;
+
         PlayerHealth2D playerHealth = player.GetComponent<PlayerHealth2D>();
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         

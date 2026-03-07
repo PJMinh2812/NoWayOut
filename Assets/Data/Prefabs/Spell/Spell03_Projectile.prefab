@@ -174,7 +174,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -193,8 +193,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.SpellProjectile
   speed: 12
-  lifetime: 3
+  lifetime: 1
+  fadeOutDuration: 0.4
   damage: 35
   knockbackForce: 3
+  ignoreLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  destroyOnAnyHit: 1
   hitEffectPrefab: {fileID: 3389529604998335603}
-  destroyOnHit: 1

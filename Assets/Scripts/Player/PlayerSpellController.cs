@@ -17,12 +17,10 @@ namespace NWO
         [SerializeField] private int spell02Damage = 20;
         [SerializeField] private int spell03Damage = 35;
 
-        [Header("Spell Range")]
-        #pragma warning disable CS0414
+        [Header("Spell Range (phạm vi bay của từng spell)")]
         [SerializeField] private float spell01Range = 5f;
         [SerializeField] private float spell02Range = 7f;
         [SerializeField] private float spell03Range = 10f;
-        #pragma warning restore CS0414
 
         [Header("Spell Prefabs (Optional)")]
         [SerializeField] private GameObject spell01Projectile;
@@ -32,13 +30,15 @@ namespace NWO
         private Animator _animator;
         private PlayerController2D _controller;
         private PlayerStamina _stamina;
+        private PlayerStatusEffects _statusEffects;
+        private PlayerMeleeController _meleeController;
 
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
         private float _spell03CooldownRemaining;
 
         private int _currentSpell = 0; // 0=Idle, 1-3=Spell
-        private int _spellBeforeDamage = 0; // Lưu spell state trước khi bị damage
+        private int _spellBeforeDamage = 0;
         private bool _isCasting;
         private float _castingTime = 0f;
         private const float MAX_CAST_TIME = 2f;
@@ -51,12 +51,13 @@ namespace NWO
             _animator = GetComponent<Animator>();
             _controller = GetComponent<PlayerController2D>();
             _stamina = GetComponent<PlayerStamina>();
+            _statusEffects = GetComponent<PlayerStatusEffects>();
+            _meleeController = GetComponent<PlayerMeleeController>();
         }
 
         private void Start()
         {
             _animator.SetInteger("SpellType", 0);
-            Debug.Log("[Spell] Initial state: Dage_Idle (SpellType = 0)");
         }
 
         private void Update()
@@ -80,7 +81,15 @@ namespace NWO
 
             HandleSpellSwitch();
 
+            bool canCastByStatus = _statusEffects == null || !_statusEffects.CannotCast;
+            
             if (_controller != null && (_controller.IsRolling || _isCasting))
+                return;
+            
+            if (_meleeController != null && _meleeController.IsAttacking)
+                return;
+
+            if (!canCastByStatus)
                 return;
 
             HandleSpellCast();
@@ -115,42 +124,24 @@ namespace NWO
             if (_currentSpell == spellNumber) return;
 
             _currentSpell = spellNumber;
-        _spellBeforeDamage = spellNumber; // Lưu state hiện tại
-        
-        // Set animator với SetInteger
-        _animator.SetInteger("SpellType", spellNumber);
-        if (_isCasting)
-        {
-            _isCasting = false;
+            _spellBeforeDamage = spellNumber;
+            _animator.SetInteger("SpellType", spellNumber);
 
+            if (_isCasting)
+                _isCasting = false;
         }
-
-        if (spellNumber == 0)
-        {
-            Debug.Log("[Spell] Returned to Idle (SpellType = 0)");
-        }
-        else
-        {
-
-        }
-    }
 
     private void HandleSpellCast()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Left Click hoặc Q để cast
             bool castInput = mouse.leftButton.wasPressedThisFrame
                           || Keyboard.current.qKey.wasPressedThisFrame;
 
             if (!castInput) return;
+            if (_currentSpell == 0) return;
 
-            if (_currentSpell == 0)
-            {
-
-                return;
-            }
             bool canCast = _currentSpell switch
             {
                 1 => _spell01CooldownRemaining <= 0f && (_stamina == null || _stamina.CanCastSpell(1)),
@@ -163,68 +154,33 @@ namespace NWO
             {
                 CastCurrentSpell();
             }
-            else
-            {
-                // Phân biệt lỗi cooldown vs stamina
-                bool onCooldown = _currentSpell switch
-                {
-                    1 => _spell01CooldownRemaining > 0f,
-                    2 => _spell02CooldownRemaining > 0f,
-                    3 => _spell03CooldownRemaining > 0f,
-                    _ => false
-                };
-                
-                if (onCooldown)
-                {
-
-                }
-                else if (_stamina != null && !_stamina.CanCastSpell(_currentSpell))
-                {
-
-                }
-            }
         }
 
         private void CastCurrentSpell()
         {
-            // Tiêu tốn stamina trước
             if (_stamina != null && !_stamina.TryConsumeSpell(_currentSpell))
-            {
-                Debug.LogWarning("[Spell] Failed to consume stamina!");
                 return;
-            }
-            
+
             _animator.SetTrigger("CastSpell");
             _isCasting = true;
             _castingTime = 0f;
+
             switch (_currentSpell)
             {
-                case 1:
-                    _spell01CooldownRemaining = spell01Cooldown;
-
-                    break;
-                case 2:
-                    _spell02CooldownRemaining = spell02Cooldown;
-
-                    break;
-                case 3:
-                    _spell03CooldownRemaining = spell03Cooldown;
-
-                    break;
+                case 1: _spell01CooldownRemaining = spell01Cooldown; break;
+                case 2: _spell02CooldownRemaining = spell02Cooldown; break;
+                case 3: _spell03CooldownRemaining = spell03Cooldown; break;
             }
 
             OnSpawnSpellProjectile();
-            Invoke(nameof(OnSpellCastComplete), 0.3f); // Reset sau 0.3s
+            Invoke(nameof(OnSpellCastComplete), 0.3f);
         }
-
 
         public void OnSpellCastComplete()
         {
             _isCasting = false;
             _castingTime = 0f;
-
         }
-
 
         public void OnSpawnSpellProjectile()
         {
@@ -249,7 +205,7 @@ namespace NWO
                 );
             }
 
-            // Spawn cách Player 0.5 units
+            // Spawn offset from player
             float spawnOffset = 0.5f;
             Vector2 spawnPosition = (Vector2)transform.position + (aimDirection * spawnOffset);
             
@@ -259,16 +215,25 @@ namespace NWO
                 Quaternion.identity
             );
 
-            // Tắt va chạm với Player
+            // Ignore collision with player
             var projectileCollider = projectile.GetComponent<Collider2D>();
             var playerCollider = GetComponent<Collider2D>();
             if (projectileCollider != null && playerCollider != null)
             {
                 Physics2D.IgnoreCollision(projectileCollider, playerCollider);
             }
+
             var proj = projectile.GetComponent<SpellProjectile>();
             if (proj != null)
             {
+                float spellRange = _currentSpell switch
+                {
+                    1 => spell01Range,
+                    2 => spell02Range,
+                    3 => spell03Range,
+                    _ => 5f
+                };
+                proj.SetMaxRange(spellRange);
                 proj.Fire(aimDirection);
             }
             else
@@ -279,20 +244,15 @@ namespace NWO
                     proj2D.Fire(aimDirection);
                 }
             }
-
-
         }
 
-        /// <summary>
-        /// Lưu spell state hiện tại trước khi bị damage
-        /// </summary>
         public void SaveSpellState()
         {
             _spellBeforeDamage = _currentSpell;
         }
 
         /// <summary>
-        /// Restore spell state sau khi damage animation kết thúc
+        /// Restore spell state sau khi damage
         /// </summary>
         public void RestoreSpellState()
         {
@@ -300,7 +260,6 @@ namespace NWO
             {
                 _currentSpell = _spellBeforeDamage;
                 _animator.SetInteger("SpellType", _spellBeforeDamage);
-
             }
         }
 
@@ -313,6 +272,36 @@ namespace NWO
                 3 => Mathf.Clamp01(_spell03CooldownRemaining / spell03Cooldown),
                 _ => 0f
             };
+        }
+
+        /// <summary>
+        /// Lấy projectile prefab theo spell number (để UI lấy icon)
+        /// </summary>
+        public GameObject GetSpellProjectilePrefab(int spellNumber)
+        {
+            return spellNumber switch
+            {
+                1 => spell01Projectile,
+                2 => spell02Projectile,
+                3 => spell03Projectile,
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Lấy sprite icon cho spell (từ projectile prefab's SpriteRenderer)
+        /// </summary>
+        public Sprite GetSpellIcon(int spellNumber)
+        {
+            var prefab = GetSpellProjectilePrefab(spellNumber);
+            if (prefab == null) return null;
+
+            var sr = prefab.GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sprite != null) return sr.sprite;
+
+            // Thử tìm trong children
+            sr = prefab.GetComponentInChildren<SpriteRenderer>();
+            return sr != null ? sr.sprite : null;
         }
     }
 }
