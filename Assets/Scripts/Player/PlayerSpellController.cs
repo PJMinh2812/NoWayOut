@@ -100,8 +100,11 @@ namespace NWO
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
 
-            // 0/ESC: Idle, 1-3: Spell
-            if (keyboard.digit0Key.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
+            // Không xử lý input khi game đang paused
+            if (NWO.PauseMenuUI.GameIsPaused) return;
+
+            // 0: Idle, ESC không dùng ở đây nữa (dành cho PauseMenu)
+            if (keyboard.digit0Key.wasPressedThisFrame)
             {
                 SwitchToSpell(0);
             }

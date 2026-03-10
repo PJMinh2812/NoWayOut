@@ -158,6 +158,14 @@ namespace NWO
             Debug.Log($"[PlayerSpawnManager] Checkpoint updated: {checkpoint.position}");
         }
 
+        /// <summary>
+        /// Lấy Transform checkpoint hiện tại (dùng cho SaveManager)
+        /// </summary>
+        public Transform GetCurrentCheckpoint()
+        {
+            return currentCheckpoint;
+        }
+
         // === GIZMOS ===
         private void OnDrawGizmos()
         {
