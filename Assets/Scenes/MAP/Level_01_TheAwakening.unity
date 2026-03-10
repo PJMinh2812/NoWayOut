@@ -8238,7 +8238,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &999824382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19357,6 +19357,10 @@ PrefabInstance:
       propertyPath: attackDamage
       value: 20
       objectReference: {fileID: 0}
+    - target: {fileID: 4893846924125201303, guid: dce052b3682576c4481ba6fc22071711, type: 3}
+      propertyPath: fireballPrefab
+      value: 
+      objectReference: {fileID: 7294537675627470506, guid: 98c950d3889752343a8a1e691d7c710d, type: 3}
     - target: {fileID: 9140339637765662688, guid: dce052b3682576c4481ba6fc22071711, type: 3}
       propertyPath: m_LocalPosition.x
       value: 18.47

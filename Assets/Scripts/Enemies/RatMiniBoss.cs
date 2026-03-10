@@ -627,12 +627,6 @@ namespace NWO
         }
         
         /// <summary>
-        /// Getter cho health (tương thích với Enemy2D)
-        /// </summary>
-        public int GetCurrentHealth() => currentHealth;
-        public int GetMaxHealth() => maxHealth;
-        
-        /// <summary>
         /// Helper: Set animator parameter an toàn (kiểm tra tồn tại trước)
         /// </summary>
         private void SafeSetBool(string paramName, bool value)
