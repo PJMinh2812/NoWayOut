@@ -54,6 +54,24 @@ namespace NWO
         [Header("Health Bar")]
         [SerializeField] private GameObject healthBarPrefab;
         
+        [Header("Fireball")]
+        [Tooltip("Prefab BossFireball để spawn (cần gắn component BossFireball)")]
+        [SerializeField] private GameObject fireballPrefab;
+        [Tooltip("Khoảng cách tối đa để bắn fireball")]
+        [SerializeField] private float fireballShootRange = 10f;
+        [Tooltip("Thời gian hồi chiêu giữa các lần bắn (giây)")]
+        [SerializeField] private float fireballCooldown = 3f;
+        [Tooltip("Damage mỗi viên fireball")]
+        [SerializeField] private int fireballDamage = 8;
+        [Tooltip("Tốc độ bay của fireball")]
+        [SerializeField] private float fireballSpeed = 6f;
+        [Tooltip("Số lượng viên trong pattern Circle (mặc định 8)")]
+        [SerializeField] private int circleCount = 8;
+        [Tooltip("Góc toả của Triple shot (độ)")]
+        [SerializeField] private float tripleSpreadAngle = 30f;
+        [Tooltip("Âm thanh khi bắn fireball")]
+        [SerializeField] private AudioClip fireballSound;
+
         [Header("Loot")]
         [SerializeField] private GameObject[] lootDrops; // Các item rơi ra khi chết
         [SerializeField] private int minDrops = 1;
@@ -78,6 +96,10 @@ namespace NWO
         // Combat flags (giống Enemy2D)
         private bool _canAttack = true;
         private bool _isAttacking = false;
+
+        // Fireball state
+        private bool _isShooting   = false;
+        private bool _canShoot     = true;
 
         // Flash red coroutine tracking
         private Coroutine _flashCoroutine;
@@ -186,18 +208,27 @@ namespace NWO
             float distanceToPlayer = Vector2.Distance(transform.position, player.transform.position);
             
             // Start attack if within range and ready
-            if (distanceToPlayer <= attackRange && _canAttack && !_isAttacking)
+            if (distanceToPlayer <= attackRange && _canAttack && !_isAttacking && !_isShooting)
             {
                 StartCoroutine(PerformAttack());
             }
-            
-            // Don't move during attack - stop and play attack animation
-            if (_isAttacking)
+
+            // Bắn fireball khi player trong tầm, không đang tấn công, không đang bắn
+            if (fireballPrefab != null
+                && distanceToPlayer > attackRange
+                && distanceToPlayer <= fireballShootRange
+                && _canShoot && !_isShooting && !_isAttacking)
+            {
+                StartCoroutine(ShootFireball());
+            }
+
+            // Đứng yên khi đang tấn công cận chiến hoặc đang bắn
+            if (_isAttacking || _isShooting)
             {
                 SafeSetBool("isMoving", false);
                 rb.linearVelocity = Vector2.zero;
-                
-                // Flip sprite to face player during attack
+
+                // Flip sprite về phía player
                 if (spriteRenderer != null && player != null)
                 {
                     spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
@@ -293,6 +324,141 @@ namespace NWO
             }
         }
         
+        // ============================================================
+        //  FIREBALL SHOOTING
+        // ============================================================
+
+        /// <summary>
+        /// Chọn ngẫu nhiên một trong 4 pattern và thực hiện bắn.
+        /// 0 = Single | 1 = Triple | 2 = Circle | 3 = Rain
+        /// </summary>
+        private System.Collections.IEnumerator ShootFireball()
+        {
+            if (isDead || player == null) yield break;
+
+            _isShooting = true;
+            _canShoot   = false;
+
+            // Flip về phía player
+            if (spriteRenderer != null)
+                spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
+
+            int pattern = Random.Range(0, 4); // 0-3
+            Debug.Log($"[RatMiniBoss] Fireball pattern: {pattern}");
+
+            switch (pattern)
+            {
+                case 0: yield return StartCoroutine(FireSingle());  break;
+                case 1: yield return StartCoroutine(FireTriple());  break;
+                case 2: yield return StartCoroutine(FireCircle());  break;
+                case 3: yield return StartCoroutine(FireRain());    break;
+            }
+
+            _isShooting = false;
+
+            // Hồi chiêu
+            yield return new WaitForSeconds(fireballCooldown);
+            _canShoot = true;
+        }
+
+        /// <summary>Pattern 0 – Single: một viên thẳng vào player.</summary>
+        private System.Collections.IEnumerator FireSingle()
+        {
+            yield return new WaitForSeconds(0.2f); // windup
+            SpawnFireball(GetDirectionToPlayer());
+        }
+
+        /// <summary>Pattern 1 – Triple: 3 viên toả ra góc ±tripleSpreadAngle.</summary>
+        private System.Collections.IEnumerator FireTriple()
+        {
+            yield return new WaitForSeconds(0.2f);
+            Vector2 baseDir = GetDirectionToPlayer();
+            SpawnFireball(Rotate(baseDir, -tripleSpreadAngle));
+            SpawnFireball(baseDir);
+            SpawnFireball(Rotate(baseDir,  tripleSpreadAngle));
+        }
+
+        /// <summary>Pattern 2 – Circle: bắn đều circleCount viên quanh 360°.</summary>
+        private System.Collections.IEnumerator FireCircle()
+        {
+            yield return new WaitForSeconds(0.2f);
+            float step = 360f / circleCount;
+            for (int i = 0; i < circleCount; i++)
+            {
+                Vector2 dir = Rotate(Vector2.right, step * i);
+                SpawnFireball(dir);
+            }
+        }
+
+        /// <summary>
+        /// Pattern 3 – Rain: bắn 6 viên lần lượt, xen kẽ 0.18 giây, mỗi viên
+        /// ngắm vào vị trí player có offset ngẫu nhiên nhỏ (giả lập mưa lửa).
+        /// </summary>
+        private System.Collections.IEnumerator FireRain()
+        {
+            int rainCount = 6;
+            float spreadRadius = 1.5f;
+            for (int i = 0; i < rainCount; i++)
+            {
+                if (isDead || player == null) yield break;
+
+                Vector2 offset   = Random.insideUnitCircle * spreadRadius;
+                Vector2 target   = (Vector2)player.transform.position + offset;
+                Vector2 dir      = (target - (Vector2)transform.position).normalized;
+                SpawnFireball(dir);
+                yield return new WaitForSeconds(0.18f);
+            }
+        }
+
+        // ---------- Spawn helper ----------
+
+        private void SpawnFireball(Vector2 direction)
+        {
+            if (fireballPrefab == null) return;
+
+            GameObject fb = Instantiate(fireballPrefab, transform.position, Quaternion.identity);
+            BossFireball script = fb.GetComponent<BossFireball>();
+            if (script != null)
+            {
+                script.Fire(direction, fireballSpeed, fireballDamage);
+            }
+            else
+            {
+                // Fallback: dùng SpellProjectile nếu prefab không có BossFireball
+                SpellProjectile sp = fb.GetComponent<SpellProjectile>();
+                if (sp != null)
+                {
+                    sp.SetDamage(fireballDamage);
+                    sp.Fire(direction);
+                }
+            }
+
+            PlaySound(fireballSound);
+        }
+
+        private Vector2 GetDirectionToPlayer()
+        {
+            if (player == null) return Vector2.right;
+            return ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
+        }
+
+        /// <summary>Xoay vector 2D theo góc (độ).</summary>
+        private static Vector2 Rotate(Vector2 v, float degrees)
+        {
+            float rad = degrees * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+            return new Vector2(cos * v.x - sin * v.y, sin * v.x + cos * v.y);
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (clip != null && audioSource != null)
+                audioSource.PlayOneShot(clip);
+        }
+
+        // ============================================================
+
         /// <summary>
         /// Perform complete attack sequence: animation -> deal damage -> cooldown (giống Enemy2D)
         /// </summary>
@@ -348,6 +514,13 @@ namespace NWO
             _canAttack = true;
         }
         
+        // ------------------------------------------------------------------ //
+        //  Public health accessors (dùng cho BossHealthBarUI cinematic)     //
+        // ------------------------------------------------------------------ //
+
+        public int GetCurrentHealth() => currentHealth;
+        public int GetMaxHealth()     => maxHealth;
+
         /// <summary>
         /// Nhận damage từ bên ngoài (vũ khí player)
         /// </summary>
