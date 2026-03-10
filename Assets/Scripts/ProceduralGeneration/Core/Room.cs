@@ -27,6 +27,9 @@ namespace ProceduralGeneration.Core
         public int distanceFromStart;
         public int dangerLevel;
         public bool isMainPath;
+
+        // Prefab mode flag
+        private bool usingPrefab;
         
         /// <summary>
         /// Constructor
@@ -120,20 +123,32 @@ namespace ProceduralGeneration.Core
         /// </summary>
         public void InstantiateRoom(Transform parent, float worldScale = 1f)
         {
-            this.worldScale = worldScale; // Lưu lại worldScale
-            
-            // Tạo empty room container thay vì instantiate prefab
-            // gridPosition ĐÃ là grid cells, nhân với worldScale cho world units
+            this.worldScale = worldScale;
             Vector3 worldPosition = new Vector3(gridPosition.x * worldScale, gridPosition.y * worldScale, 0);
-            roomInstance = new GameObject($"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}");
-            roomInstance.transform.SetParent(parent);
-            roomInstance.transform.position = worldPosition;
-            
-            // Add RoomVisualGenerator component (nhưng chưa generate - đợi configure tiles)
-            var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
-            if (visualGen == null)
+
+            if (roomData.roomPrefab != null)
             {
-                visualGen = roomInstance.AddComponent<Components.RoomVisualGenerator>();
+                // ===== CHẾ ĐỘ PREFAB: Dùng phòng đã decor sẵn =====
+                roomInstance = Object.Instantiate(roomData.roomPrefab, parent);
+                roomInstance.name = $"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}";
+                roomInstance.transform.position = worldPosition;
+
+                // Prefab phải có RoomVisualGenerator sẵn (hoặc add nếu thiếu)
+                var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
+                if (visualGen == null)
+                    visualGen = roomInstance.AddComponent<Components.RoomVisualGenerator>();
+
+                usingPrefab = true;
+            }
+            else
+            {
+                // ===== CHẾ ĐỘ AUTO-GEN: Như cũ =====
+                roomInstance = new GameObject($"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}");
+                roomInstance.transform.SetParent(parent);
+                roomInstance.transform.position = worldPosition;
+
+                roomInstance.AddComponent<Components.RoomVisualGenerator>();
+                usingPrefab = false;
             }
         }
         
@@ -143,19 +158,27 @@ namespace ProceduralGeneration.Core
         public void GenerateVisuals()
         {
             if (roomInstance == null) return;
-            
+
             var visualGen = roomInstance.GetComponent<Components.RoomVisualGenerator>();
             if (visualGen == null)
             {
                 Debug.LogError("RoomVisualGenerator not found!");
                 return;
             }
-            
+
             // Set currentRoom reference (for DoorTrigger)
             visualGen.SetCurrentRoom(this);
-            
-            // Truyền connectedRooms để chỉ tạo door markers cho các hướng có room kế bên
-            visualGen.GenerateVisuals(roomData, connectedRooms);
+
+            if (usingPrefab)
+            {
+                // Prefab đã có floor/wall → CHỈ cần generate doors
+                visualGen.GenerateDoorsOnly(roomData, connectedRooms);
+            }
+            else
+            {
+                // Auto-gen full: floor + walls + doors
+                visualGen.GenerateVisuals(roomData, connectedRooms);
+            }
         }
         
         /// <summary>

@@ -134,8 +134,45 @@ namespace ProceduralGeneration.Components
             {
                 GenerateDoorMarkers(visualContainer.transform);
             }
+
+            // Spawn decorations nếu có cấu hình
+            if (roomData.decorData != null)
+            {
+                GenerateDecorations(visualContainer.transform, roomData.decorData);
+            }
         }
         
+        /// <summary>
+        /// Generate chỉ doors cho phòng prefab (đã có floor/wall sẵn)
+        /// </summary>
+        public void GenerateDoorsOnly(RoomData data, System.Collections.Generic.Dictionary<DoorDirection, Core.Room> connections = null)
+        {
+            roomData = data;
+            connectedRooms = connections;
+
+            activeDirections = new System.Collections.Generic.HashSet<DoorDirection>();
+            if (connections != null)
+            {
+                foreach (var kvp in connections)
+                    activeDirections.Add(kvp.Key);
+            }
+
+            // Tìm hoặc tạo container cho doors
+            Transform doorParent = transform.Find("Doors");
+            if (doorParent == null)
+            {
+                GameObject doorsGo = new GameObject("Doors");
+                doorsGo.transform.SetParent(transform);
+                doorsGo.transform.localPosition = Vector3.zero;
+                doorParent = doorsGo.transform;
+            }
+
+            if (doorPrefab != null)
+                GenerateDoorPrefabs(doorParent);
+            else
+                GenerateDoorMarkers(doorParent);
+        }
+
         
         /// Tạo empty Tilemap structure (Grid + Tilemap) - với placeholder tiles
         
@@ -582,6 +619,121 @@ namespace ProceduralGeneration.Components
                 0, 
                 SpriteMeshType.FullRect
             );
+        }
+
+        /// <summary>
+        /// Lấy vị trí tile trung tâm của door theo hướng
+        /// </summary>
+        private Vector2Int GetDoorTileCenter(DoorAnchor door, int tilesX, int tilesY)
+        {
+            switch (door.direction)
+            {
+                case DoorDirection.Top:
+                    return new Vector2Int(tilesX / 2 + (int)(door.localPosition.x), tilesY - 1);
+                case DoorDirection.Bottom:
+                    return new Vector2Int(tilesX / 2 + (int)(door.localPosition.x), 0);
+                case DoorDirection.Left:
+                    return new Vector2Int(0, tilesY / 2 + (int)(door.localPosition.y));
+                case DoorDirection.Right:
+                    return new Vector2Int(tilesX - 1, tilesY / 2 + (int)(door.localPosition.y));
+                default:
+                    return Vector2Int.zero;
+            }
+        }
+
+        /// <summary>
+        /// Spawn decor items sau khi floor+wall đã xong
+        /// </summary>
+        private void GenerateDecorations(Transform parent, DecorData decorData)
+        {
+            if (decorData == null || decorData.items == null || decorData.items.Length == 0) return;
+
+            GameObject decorContainer = new GameObject("Decorations");
+            decorContainer.transform.SetParent(parent);
+            decorContainer.transform.localPosition = Vector3.zero;
+
+            int tilesX = currentRoom.actualSize.x * (int)tileSize;
+            int tilesY = currentRoom.actualSize.y * (int)tileSize;
+
+            // BƯỜC 1: Tạo grid vị trí hợp lệ (interior, cách wall 2 tile)
+            bool[,] validPositions = new bool[tilesX, tilesY];
+            for (int x = 2; x < tilesX - 2; x++)
+                for (int y = 2; y < tilesY - 2; y++)
+                    validPositions[x, y] = true;
+
+            // BƯỜC 2: Loại bỏ vùng gần cửa
+            foreach (var door in roomData.doorAnchors)
+            {
+                if (!activeDirections.Contains(door.direction)) continue;
+
+                Vector2Int doorCenter = GetDoorTileCenter(door, tilesX, tilesY);
+                for (int dx = -decorData.doorClearance; dx <= decorData.doorClearance; dx++)
+                {
+                    for (int dy = -decorData.doorClearance; dy <= decorData.doorClearance; dy++)
+                    {
+                        int cx = doorCenter.x + dx;
+                        int cy = doorCenter.y + dy;
+                        if (cx >= 0 && cx < tilesX && cy >= 0 && cy < tilesY)
+                            validPositions[cx, cy] = false;
+                    }
+                }
+            }
+
+            // BƯỜC 3: Chọn random vị trí + spawn
+            var candidates = new System.Collections.Generic.List<Vector2Int>();
+            for (int x = 0; x < tilesX; x++)
+                for (int y = 0; y < tilesY; y++)
+                    if (validPositions[x, y])
+                        candidates.Add(new Vector2Int(x, y));
+
+            Core.DungeonUtils.Shuffle(candidates);
+
+            int maxDecors = Mathf.RoundToInt(candidates.Count * decorData.density);
+            int placed = 0;
+
+            foreach (var pos in candidates)
+            {
+                if (placed >= maxDecors) break;
+                if (!validPositions[pos.x, pos.y]) continue;
+
+                DecorItem item = WeightedRandomSelect(decorData.items);
+                if (item.prefab == null) continue;
+
+                Vector3 worldPos = new Vector3(pos.x + 0.5f, pos.y + 0.5f, 0);
+                GameObject decor = Instantiate(item.prefab, decorContainer.transform);
+                decor.transform.localPosition = worldPos;
+
+                // Invalidate vùng xung quanh (minSpacing)
+                for (int dx = -decorData.minSpacing; dx <= decorData.minSpacing; dx++)
+                    for (int dy = -decorData.minSpacing; dy <= decorData.minSpacing; dy++)
+                    {
+                        int nx = pos.x + dx;
+                        int ny = pos.y + dy;
+                        if (nx >= 0 && nx < tilesX && ny >= 0 && ny < tilesY)
+                            validPositions[nx, ny] = false;
+                    }
+
+                placed++;
+            }
+        }
+
+        /// <summary>
+        /// Chọn ngẫu nhiên có trọng số (weighted random)
+        /// </summary>
+        private DecorItem WeightedRandomSelect(DecorItem[] items)
+        {
+            float totalWeight = 0;
+            foreach (var item in items) totalWeight += item.weight;
+
+            float roll = Random.Range(0f, totalWeight);
+            float cumulative = 0;
+
+            foreach (var item in items)
+            {
+                cumulative += item.weight;
+                if (roll <= cumulative) return item;
+            }
+            return items[items.Length - 1];
         }
     }
 }
