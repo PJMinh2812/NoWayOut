@@ -36,9 +36,6 @@ namespace ProceduralGeneration.Data
         [Tooltip("Màu hiển thị trong Editor")]
         public Color editorColor = Color.white;
 
-        [Header("Decoration")]
-        [Tooltip("Pool đồ trang trí cho phòng (null = không có decor)")]
-        public DecorData decorData;
     }
 
     /// <summary>

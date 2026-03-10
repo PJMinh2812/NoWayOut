@@ -159,6 +159,14 @@ namespace NWO
             _isRegenerating = true;
 
         }
+
+        /// <summary>
+        /// Đặt stamina cụ thể (dùng khi load save game)
+        /// </summary>
+        public void SetStamina(float value)
+        {
+            CurrentStamina = Mathf.Clamp(value, 0f, maxStamina);
+        }
         public Color GetStaminaBarColor()
         {
             if (IsLowStamina)

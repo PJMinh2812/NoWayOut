@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
 using ProceduralGeneration.Data;
@@ -312,6 +313,28 @@ namespace ProceduralGeneration.Core
                     bool isStart = (room == rebuiltStartRoom);
                     room.roomInstance.SetActive(isStart);
                 }
+            }
+
+            // Cập nhật Respawn_Point vào trung tâm start room
+            if (rebuiltStartRoom != null && rebuiltStartRoom.roomInstance != null)
+            {
+                Vector3 spawnCenter = rebuiltStartRoom.roomInstance.transform.position + new Vector3(6f, 6f, 0);
+                foreach (var tm in rebuiltStartRoom.roomInstance.GetComponentsInChildren<Tilemap>())
+                {
+                    if (tm.name.Contains("Floor"))
+                    {
+                        tm.CompressBounds();
+                        var b = tm.cellBounds;
+                        if (b.size.x > 1)
+                        {
+                            spawnCenter = tm.CellToWorld(new Vector3Int(
+                                b.xMin + b.size.x / 2,
+                                b.yMin + b.size.y / 2, 0));
+                            break;
+                        }
+                    }
+                }
+                UpdateRespawnPoint(spawnCenter);
             }
             
             // Set camera background = đen
@@ -908,6 +931,14 @@ namespace ProceduralGeneration.Core
                 }
             }
             
+            // Cập nhật Respawn_Point vào trung tâm start room để player spawn đúng
+            if (startRoom != null && startRoom.roomInstance != null)
+            {
+                float cx = startRoom.roomInstance.transform.position.x + startRoom.actualSize.x * 0.5f;
+                float cy = startRoom.roomInstance.transform.position.y + startRoom.actualSize.y * 0.5f;
+                UpdateRespawnPoint(new Vector3(cx, cy, 0));
+            }
+
             if (verboseLogging)
                 Debug.Log($"Instantiated {allRooms.Count} rooms (only START room active)");
                 
@@ -952,6 +983,18 @@ namespace ProceduralGeneration.Core
         }
         
         
+        /// <summary>
+        /// Cập nhật Respawn_Point để PlayerSpawnManager tìm đúng vị trí spawn
+        /// </summary>
+        private void UpdateRespawnPoint(Vector3 position)
+        {
+            GameObject respawnPoint = GameObject.Find("Respawn_Point");
+            if (respawnPoint == null)
+                respawnPoint = new GameObject("Respawn_Point");
+            respawnPoint.transform.position = position;
+            Debug.Log($"[DungeonManager] Respawn_Point → {position}");
+        }
+
         /// Đảm bảo RoomTransitionManager tồn tại trong scene
         
         private void EnsureTransitionManager()

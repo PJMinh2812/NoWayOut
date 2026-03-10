@@ -9,6 +9,7 @@ namespace NWO
         MainMenu,
         Instructions,
         Game,
+        Paused,
         GameOver
     }
 

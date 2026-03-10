@@ -12,6 +12,7 @@ namespace NWO
 
         [Header("Game State")]
         [SerializeField] private bool isGameOver;
+        [SerializeField] private bool isPaused;
         
         [Header("Light Fragments")]
         [SerializeField] private int lightFragmentsCollected = 0;
@@ -21,6 +22,7 @@ namespace NWO
         [SerializeField] private GameObject gameOverUI; // GameOverPanel hoặc GameOverCanvas
 
         public bool IsGameOver => isGameOver;
+        public bool IsPaused => isPaused;
         public int LightFragmentsCollected => lightFragmentsCollected;
         public int TotalLightFragments => totalLightFragments;
         
@@ -210,6 +212,56 @@ namespace NWO
             #else
             Application.Quit();
             #endif
+        }
+
+        /// <summary>
+        /// Apply save data vào game (gọi sau khi scene load xong)
+        /// </summary>
+        public void ApplySaveData(SaveData data)
+        {
+            if (data == null) return;
+
+            // Restore light fragments
+            lightFragmentsCollected = data.lightFragmentsCollected;
+
+            // Restore player position
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                if (data.hasCheckpoint)
+                {
+                    player.transform.position = new Vector3(data.checkpointPositionX, data.checkpointPositionY, 0f);
+                }
+                else
+                {
+                    player.transform.position = new Vector3(data.playerPositionX, data.playerPositionY, 0f);
+                }
+
+                // Restore health
+                var health = player.GetComponent<PlayerHealth2D>();
+                if (health != null)
+                {
+                    health.SetHealth(data.playerCurrentHealth);
+                }
+
+                // Restore stamina
+                var stamina = player.GetComponent<PlayerStamina>();
+                if (stamina != null)
+                {
+                    stamina.SetStamina(data.playerCurrentStamina);
+                }
+            }
+
+            Debug.Log($"[GameManager] Save data applied. Fragments: {lightFragmentsCollected}, Scene: {data.sceneName}");
+        }
+
+        /// <summary>
+        /// Đặt Light Fragments trực tiếp (dùng khi load save)
+        /// </summary>
+        public void SetLightFragments(int count)
+        {
+            lightFragmentsCollected = count;
+            OnLightFragmentCollected?.Invoke(lightFragmentsCollected, totalLightFragments);
         }
 
         private void OnDestroy()

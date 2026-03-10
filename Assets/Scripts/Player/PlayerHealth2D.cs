@@ -152,6 +152,14 @@ namespace NWO
             if (controller != null) controller.enabled = true;
         }
 
+        /// <summary>
+        /// Đặt HP cụ thể (dùng khi load save game)
+        /// </summary>
+        public void SetHealth(int value)
+        {
+            CurrentHealth = Mathf.Clamp(value, 0, maxHealth);
+        }
+
         private void Die()
         {
             if (IsDead) return;

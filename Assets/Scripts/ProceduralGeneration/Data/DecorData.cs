@@ -3,6 +3,16 @@ using UnityEngine;
 namespace ProceduralGeneration.Data
 {
     /// <summary>
+    /// Loại vị trí đặt decor trong phòng
+    /// </summary>
+    public enum DecorPlacement
+    {
+        Interior,       // Đặt tự do trong interior (cách wall 2 tile)
+        WallAligned,    // Đặt sát tường (row/column thứ 2)
+        Corner          // Đặt ở 4 góc interior
+    }
+
+    /// <summary>
     /// ScriptableObject chứa pool đồ trang trí ngẫu nhiên cho phòng
     /// </summary>
     [CreateAssetMenu(fileName = "New Decor Data", menuName = "Procedural Generation/Decor Data")]
@@ -40,5 +50,16 @@ namespace ProceduralGeneration.Data
 
         [Tooltip("Sorting order offset")]
         public int sortingOrderOffset = 0;
+
+        [Header("Placement")]
+        [Tooltip("Loại vị trí đặt: Interior (giữa phòng), WallAligned (sát tường), Corner (góc)")]
+        public DecorPlacement placement = DecorPlacement.Interior;
+
+        [Header("Visual Variety")]
+        [Tooltip("Cho phép random flip horizontal")]
+        public bool allowRandomFlip = false;
+
+        [Tooltip("Cho phép random rotation (0/90/180/270)")]
+        public bool allowRandomRotation = false;
     }
 }
