@@ -2450,6 +2450,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &512412024
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 512412026}
+  - component: {fileID: 512412025}
+  m_Layer: 0
+  m_Name: spawner (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &512412025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512412024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35846ba69b349f34284c8287dd4c929f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.GateEnemySpawner
+  marshmallowPrefab: {fileID: 6817190312291341347, guid: 890de67a2027f9544927027491459402, type: 3}
+  zombiePrefab: {fileID: 8130035309132286076, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
+  minSpawnCount: 4
+  maxSpawnCount: 5
+  spawnRadius: 2
+  triggerRadius: 5
+  spawnDelay: 0.2
+  spawnOnce: 1
+  linkedDoor: {fileID: 0}
+  showGizmos: 1
+--- !u!4 &512412026
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512412024}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 27.85, y: -20.18, z: -0.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &516305364
 GameObject:
   m_ObjectHideFlags: 0
@@ -7233,6 +7287,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1626486843773728450, guid: d1748c549d186c04a9b2a4591ae657c1, type: 3}
   m_PrefabInstance: {fileID: 8151085319354698155}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &846939052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 846939054}
+  - component: {fileID: 846939053}
+  m_Layer: 0
+  m_Name: spawner (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &846939053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846939052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35846ba69b349f34284c8287dd4c929f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.GateEnemySpawner
+  marshmallowPrefab: {fileID: 6817190312291341347, guid: 890de67a2027f9544927027491459402, type: 3}
+  zombiePrefab: {fileID: 8130035309132286076, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
+  minSpawnCount: 4
+  maxSpawnCount: 5
+  spawnRadius: 2
+  triggerRadius: 5
+  spawnDelay: 0.2
+  spawnOnce: 1
+  linkedDoor: {fileID: 0}
+  showGizmos: 1
+--- !u!4 &846939054
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846939052}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8.99, y: -19.7, z: -0.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &846939052
 GameObject:
   m_ObjectHideFlags: 0
@@ -21620,6 +21728,8 @@ SceneRoots:
   - {fileID: 422366843}
   - {fileID: 1656978085}
   - {fileID: 2110118248}
+  - {fileID: 846939054}
+  - {fileID: 512412026}
 <<<<<<< Updated upstream
   - {fileID: 2120689387}
   - {fileID: 999824386}
