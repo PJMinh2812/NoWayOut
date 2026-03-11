@@ -70,6 +70,14 @@ namespace NWO
                 lightingObj.AddComponent<DungeonLightingManager>();
                 Debug.Log("[GameManager] Auto-created DungeonLightingManager");
             }
+            
+            // Auto-create MinimapManager nếu chưa có
+            if (FindFirstObjectByType<MinimapManager>() == null)
+            {
+                var minimapObj = new GameObject("MinimapManager");
+                minimapObj.AddComponent<MinimapManager>();
+                Debug.Log("[GameManager] Auto-created MinimapManager");
+            }
         }
 
 

@@ -134,8 +134,60 @@ namespace ProceduralGeneration.Components
             {
                 GenerateDoorMarkers(visualContainer.transform);
             }
+
         }
         
+        /// <summary>
+        /// Generate visuals cho phòng prefab: tạo đầy đủ floor + walls + doors
+        /// (prefab chỉ cung cấp spawn points và collider structure, visuals hoàn toàn do code tạo)
+        /// </summary>
+        public void GenerateDoorsOnly(RoomData data, System.Collections.Generic.Dictionary<DoorDirection, Core.Room> connections = null)
+        {
+            roomData = data;
+            connectedRooms = connections;
+
+            activeDirections = new System.Collections.Generic.HashSet<DoorDirection>();
+            if (connections != null)
+            {
+                foreach (var kvp in connections)
+                    activeDirections.Add(kvp.Key);
+            }
+
+            // Xóa visual cũ từ prefab (Background/Walls/Doors thừa tại gốc toạ độ)
+            foreach (string n in new[] { "Background", "Walls", "Doors" })
+            {
+                Transform old = transform.Find(n);
+                if (old != null)
+                {
+                    if (Application.isPlaying) Destroy(old.gameObject);
+                    else DestroyImmediate(old.gameObject);
+                }
+            }
+
+            // Tạo container cho toàn bộ visuals (floor, walls, doors)
+            GameObject visualContainer = new GameObject("Visuals");
+            visualContainer.transform.SetParent(transform);
+            visualContainer.transform.localPosition = Vector3.zero;
+
+            // Tạo Floor Tilemap
+            if (autoFillTiles && floorTiles != null && floorTiles.Length > 0)
+                CreateAutoFilledFloor(visualContainer.transform);
+            else
+                CreateEmptyTilemap(visualContainer.transform, "Floor", -10);
+
+            // Tạo Walls Tilemap
+            if (autoFillTiles && wallCenter != null)
+                CreateAutoFilledWalls(visualContainer.transform);
+            else
+                CreateEmptyTilemap(visualContainer.transform, "Walls", 0);
+
+            // Tạo Doors
+            if (doorPrefab != null)
+                GenerateDoorPrefabs(visualContainer.transform);
+            else
+                GenerateDoorMarkers(visualContainer.transform);
+        }
+
         
         /// Tạo empty Tilemap structure (Grid + Tilemap) - với placeholder tiles
         
@@ -583,5 +635,232 @@ namespace ProceduralGeneration.Components
                 SpriteMeshType.FullRect
             );
         }
+
+
+
+        // Decor removed - map được trang trí thủ công trong Editor
+        /*
+        private void GenerateDecorations_REMOVED(Transform parent, DecorData decorData)
+        {
+            if (decorData == null || decorData.items == null || decorData.items.Length == 0) return;
+
+            GameObject decorContainer = new GameObject("Decorations");
+            decorContainer.transform.SetParent(parent);
+            decorContainer.transform.localPosition = Vector3.zero;
+
+            int tilesX = currentRoom.actualSize.x * (int)tileSize;
+            int tilesY = currentRoom.actualSize.y * (int)tileSize;
+
+            // BƯỚC 1: Tạo grid vị trí hợp lệ (interior, cách wall 2 tile)
+            bool[,] validPositions = new bool[tilesX, tilesY];
+            for (int x = 2; x < tilesX - 2; x++)
+                for (int y = 2; y < tilesY - 2; y++)
+                    validPositions[x, y] = true;
+
+            // BƯỚC 2: Loại bỏ vùng gần cửa
+            foreach (var door in roomData.doorAnchors)
+            {
+                if (!activeDirections.Contains(door.direction)) continue;
+
+                Vector2Int doorCenter = GetDoorTileCenter(door, tilesX, tilesY);
+                for (int dx = -decorData.doorClearance; dx <= decorData.doorClearance; dx++)
+                {
+                    for (int dy = -decorData.doorClearance; dy <= decorData.doorClearance; dy++)
+                    {
+                        int cx = doorCenter.x + dx;
+                        int cy = doorCenter.y + dy;
+                        if (cx >= 0 && cx < tilesX && cy >= 0 && cy < tilesY)
+                            validPositions[cx, cy] = false;
+                    }
+                }
+            }
+
+            // BƯỚC 3: Phân nhóm items theo placement type
+            var interiorItems = new System.Collections.Generic.List<DecorItem>();
+            var wallItems = new System.Collections.Generic.List<DecorItem>();
+            var cornerItems = new System.Collections.Generic.List<DecorItem>();
+
+            foreach (var item in decorData.items)
+            {
+                if (item.prefab == null) continue;
+                switch (item.placement)
+                {
+                    case DecorPlacement.WallAligned: wallItems.Add(item); break;
+                    case DecorPlacement.Corner: cornerItems.Add(item); break;
+                    default: interiorItems.Add(item); break;
+                }
+            }
+
+            int maxDecors = 0;
+            int placed = 0;
+
+            // BƯỚC 4A: Spawn CORNER items (4 góc interior)
+            if (cornerItems.Count > 0)
+            {
+                var cornerPositions = new Vector2Int[]
+                {
+                    new Vector2Int(2, 2),                           // Bottom-left
+                    new Vector2Int(tilesX - 3, 2),                  // Bottom-right
+                    new Vector2Int(2, tilesY - 3),                  // Top-left
+                    new Vector2Int(tilesX - 3, tilesY - 3)          // Top-right
+                };
+
+                foreach (var pos in cornerPositions)
+                {
+                    if (!validPositions[pos.x, pos.y]) continue;
+
+                    DecorItem item = WeightedRandomSelect(cornerItems.ToArray());
+                    if (!CanPlaceDecorAt(pos, item, tilesX, tilesY, validPositions)) continue;
+
+                    PlaceDecor(decorContainer.transform, pos, item, tilesX, tilesY, validPositions, decorData.minSpacing);
+                }
+            }
+
+            // BƯỚC 4B: Spawn WALL-ALIGNED items (sát tường, row/column thứ 2)
+            if (wallItems.Count > 0)
+            {
+                var wallCandidates = new System.Collections.Generic.List<Vector2Int>();
+
+                // Row sát tường trên (y = tilesY - 3)
+                for (int x = 2; x < tilesX - 2; x++)
+                    if (validPositions[x, tilesY - 3]) wallCandidates.Add(new Vector2Int(x, tilesY - 3));
+                // Row sát tường dưới (y = 2)
+                for (int x = 2; x < tilesX - 2; x++)
+                    if (validPositions[x, 2]) wallCandidates.Add(new Vector2Int(x, 2));
+                // Column sát tường trái (x = 2)
+                for (int y = 3; y < tilesY - 3; y++)
+                    if (validPositions[2, y]) wallCandidates.Add(new Vector2Int(2, y));
+                // Column sát tường phải (x = tilesX - 3)
+                for (int y = 3; y < tilesY - 3; y++)
+                    if (validPositions[tilesX - 3, y]) wallCandidates.Add(new Vector2Int(tilesX - 3, y));
+
+                Core.DungeonUtils.Shuffle(wallCandidates);
+                maxDecors = Mathf.RoundToInt(wallCandidates.Count * decorData.density);
+                placed = 0;
+
+                foreach (var pos in wallCandidates)
+                {
+                    if (placed >= maxDecors) break;
+                    if (!validPositions[pos.x, pos.y]) continue;
+
+                    DecorItem item = WeightedRandomSelect(wallItems.ToArray());
+                    if (!CanPlaceDecorAt(pos, item, tilesX, tilesY, validPositions)) continue;
+
+                    PlaceDecor(decorContainer.transform, pos, item, tilesX, tilesY, validPositions, decorData.minSpacing);
+                    placed++;
+                }
+            }
+
+            // BƯỚC 4C: Spawn INTERIOR items (giữa phòng)
+            if (interiorItems.Count > 0)
+            {
+                var candidates = new System.Collections.Generic.List<Vector2Int>();
+                for (int x = 0; x < tilesX; x++)
+                    for (int y = 0; y < tilesY; y++)
+                        if (validPositions[x, y])
+                            candidates.Add(new Vector2Int(x, y));
+
+                Core.DungeonUtils.Shuffle(candidates);
+                maxDecors = Mathf.RoundToInt(candidates.Count * decorData.density);
+                placed = 0;
+
+                foreach (var pos in candidates)
+                {
+                    if (placed >= maxDecors) break;
+                    if (!validPositions[pos.x, pos.y]) continue;
+
+                    DecorItem item = WeightedRandomSelect(interiorItems.ToArray());
+                    if (!CanPlaceDecorAt(pos, item, tilesX, tilesY, validPositions)) continue;
+
+                    PlaceDecor(decorContainer.transform, pos, item, tilesX, tilesY, validPositions, decorData.minSpacing);
+                    placed++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra xem decor item (có thể multi-tile) có thể đặt tại vị trí này không
+        /// </summary>
+        private bool CanPlaceDecorAt(Vector2Int pos, DecorItem item, int tilesX, int tilesY, bool[,] validPositions)
+        {
+            for (int sx = 0; sx < item.size.x; sx++)
+            {
+                for (int sy = 0; sy < item.size.y; sy++)
+                {
+                    int fx = pos.x + sx;
+                    int fy = pos.y + sy;
+                    if (fx >= tilesX || fy >= tilesY || !validPositions[fx, fy])
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Thực sự instantiate decor, apply transforms, collider, sorting, rồi invalidate vùng xung quanh
+        /// </summary>
+        private void PlaceDecor(Transform container, Vector2Int pos, DecorItem item,
+            int tilesX, int tilesY, bool[,] validPositions, int minSpacing)
+        {
+            // Tính world position (center of footprint)
+            float worldX = pos.x + item.size.x * 0.5f;
+            float worldY = pos.y + item.size.y * 0.5f;
+            Vector3 worldPos = new Vector3(worldX, worldY, 0);
+
+            GameObject decor = Instantiate(item.prefab, container);
+            decor.transform.localPosition = worldPos;
+
+            // Random flip horizontal
+            if (item.allowRandomFlip && Random.value > 0.5f)
+                decor.transform.localScale = new Vector3(-1, 1, 1);
+
+            // Random rotation (0, 90, 180, 270)
+            if (item.allowRandomRotation)
+                decor.transform.localRotation = Quaternion.Euler(0, 0, 90f * Random.Range(0, 4));
+
+            // BlocksMovement → add collider nếu chưa có
+            if (item.blocksMovement && decor.GetComponent<Collider2D>() == null)
+            {
+                var box = decor.AddComponent<BoxCollider2D>();
+                box.size = new Vector2(item.size.x, item.size.y);
+            }
+
+            // Apply sorting order offset
+            var sr = decor.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+                sr.sortingOrder += item.sortingOrderOffset;
+
+            // Invalidate vùng xung quanh (footprint + minSpacing buffer)
+            for (int dx = -minSpacing; dx < item.size.x + minSpacing; dx++)
+            {
+                for (int dy = -minSpacing; dy < item.size.y + minSpacing; dy++)
+                {
+                    int nx = pos.x + dx;
+                    int ny = pos.y + dy;
+                    if (nx >= 0 && nx < tilesX && ny >= 0 && ny < tilesY)
+                        validPositions[nx, ny] = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Chọn ngẫu nhiên có trọng số (weighted random)
+        /// </summary>
+        private DecorItem WeightedRandomSelect(DecorItem[] items)
+        {
+            float totalWeight = 0;
+            foreach (var item in items) totalWeight += item.weight;
+
+            float roll = Random.Range(0f, totalWeight);
+            float cumulative = 0;
+
+            foreach (var item in items)
+            {
+                cumulative += item.weight;
+                if (roll <= cumulative) return item;
+            }
+            return items[items.Length - 1];
+        }
+        */
     }
 }

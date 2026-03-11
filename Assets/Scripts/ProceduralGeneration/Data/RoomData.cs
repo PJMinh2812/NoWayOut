@@ -35,6 +35,7 @@ namespace ProceduralGeneration.Data
         [Header("Visual")]
         [Tooltip("Màu hiển thị trong Editor")]
         public Color editorColor = Color.white;
+
     }
 
     /// <summary>
