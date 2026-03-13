@@ -57,7 +57,7 @@ namespace NWO
         {
             // Load Main Menu scene
             Time.timeScale = 1f; // Reset time scale in case game was paused
-            SceneManager.LoadScene(mainMenuSceneName);
+            SceneLoader.LoadScene(mainMenuSceneName);
         }
 
         private void OnExitClicked()

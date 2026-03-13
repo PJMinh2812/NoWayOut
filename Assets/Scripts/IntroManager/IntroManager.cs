@@ -28,6 +28,6 @@ public class IntroManager : MonoBehaviour
         PlayerPrefs.SetInt("IntroPlayed", 1);
         PlayerPrefs.Save();
 
-        SceneManager.LoadScene(nextSceneName);
+        NWO.SceneLoader.LoadScene(nextSceneName);
     }
 }

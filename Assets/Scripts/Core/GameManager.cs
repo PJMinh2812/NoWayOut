@@ -188,7 +188,7 @@ namespace NWO
             
             // Fallback: reload scene if no dungeon manager found
             Debug.LogWarning("[GameManager] No dungeon manager found, reloading scene...");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneLoader.LoadScene(SceneManager.GetActiveScene().name);
         }
 
 
@@ -198,7 +198,7 @@ namespace NWO
         {
             Time.timeScale = 1f;
             isGameOver = false;
-            SceneManager.LoadScene("MainMenu"); // Change to your menu scene name
+            SceneLoader.LoadScene("MainMenu"); // Change to your menu scene name
         }
 
 
