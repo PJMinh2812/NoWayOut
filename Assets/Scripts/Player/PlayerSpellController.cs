@@ -306,5 +306,53 @@ namespace NWO
             sr = prefab.GetComponentInChildren<SpriteRenderer>();
             return sr != null ? sr.sprite : null;
         }
+
+        // === Upgrade System Modifiers ===
+
+        /// <summary>Tăng damage tất cả spell</summary>
+        public void AddAllSpellDamage(int amount)
+        {
+            spell01Damage += amount;
+            spell02Damage += amount;
+            spell03Damage += amount;
+        }
+
+        /// <summary>Tăng range tất cả spell</summary>
+        public void AddAllSpellRange(float amount)
+        {
+            spell01Range += amount;
+            spell02Range += amount;
+            spell03Range += amount;
+        }
+
+        /// <summary>Giảm cooldown tất cả spell (giá trị dương = giảm cooldown)</summary>
+        public void AddAllSpellCooldownReduction(float amount)
+        {
+            spell01Cooldown = Mathf.Max(0.3f, spell01Cooldown - amount);
+            spell02Cooldown = Mathf.Max(0.5f, spell02Cooldown - amount);
+            spell03Cooldown = Mathf.Max(0.8f, spell03Cooldown - amount);
+        }
+
+        /// <summary>Tăng damage spell cụ thể</summary>
+        public void AddSpellDamage(int spellNumber, int amount)
+        {
+            switch (spellNumber)
+            {
+                case 1: spell01Damage += amount; break;
+                case 2: spell02Damage += amount; break;
+                case 3: spell03Damage += amount; break;
+            }
+        }
+
+        /// <summary>Giảm cooldown spell cụ thể</summary>
+        public void AddSpellCooldownReduction(int spellNumber, float amount)
+        {
+            switch (spellNumber)
+            {
+                case 1: spell01Cooldown = Mathf.Max(0.3f, spell01Cooldown - amount); break;
+                case 2: spell02Cooldown = Mathf.Max(0.5f, spell02Cooldown - amount); break;
+                case 3: spell03Cooldown = Mathf.Max(0.8f, spell03Cooldown - amount); break;
+            }
+        }
     }
 }

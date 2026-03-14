@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
+using System.Collections.Generic;
 
 namespace NWO
 {
@@ -71,6 +72,8 @@ namespace NWO
         private Button _settingsButton;
         private InputActionRebindingExtensions.RebindingOperation _rebindOp;
         private GameObject _mainPanelRoot;
+        private readonly List<GameObject> _upgradeSlots = new();
+        private GameObject _upgradeRowGo;
 
         private void Start()
         {
@@ -146,6 +149,9 @@ namespace NWO
 
             // Always return to main pause view when pausing
             ShowSettings(false);
+
+            // Cập nhật slot hiển thị nâng cấp đã chọn
+            RefreshUpgradeSlots();
 
             Debug.Log("[PauseMenuUI] Game Paused");
         }
@@ -383,7 +389,7 @@ namespace NWO
             _settingsPanel = BuildSettingsPanel(overlayGo.transform);
             _settingsPanel.SetActive(false);
 
-            // Icon row (placeholder like screenshot)
+            // Icon row - hiển thị nâng cấp đã chọn
             var rowGo = new GameObject("IconRow");
             rowGo.transform.SetParent(panelGo.transform, false);
             var rowRt = rowGo.AddComponent<RectTransform>();
@@ -392,6 +398,7 @@ namespace NWO
             rowRt.pivot = new Vector2(0.5f, 0.5f);
             rowRt.sizeDelta = new Vector2(0f, 90f);
             rowRt.anchoredPosition = new Vector2(0f, 10f);
+            _upgradeRowGo = rowGo;
 
             var h = rowGo.AddComponent<HorizontalLayoutGroup>();
             h.childAlignment = TextAnchor.MiddleCenter;
@@ -399,6 +406,7 @@ namespace NWO
             h.childForceExpandHeight = false;
             h.childForceExpandWidth = false;
 
+            _upgradeSlots.Clear();
             for (int i = 0; i < 9; i++)
             {
                 var slotStroke = NewUiImage($"SlotStroke_{i}", rowGo.transform, panelStrokeColor);
@@ -413,6 +421,7 @@ namespace NWO
                 slotRt.sizeDelta = new Vector2(58f, 58f);
                 slotRt.anchoredPosition = Vector2.zero;
 
+                // Mặc định hiển thị "+"
                 var isStar = i == 0;
                 var iconSprite = isStar ? slotStarSprite : slotPlusSprite;
                 if (iconSprite != null)
@@ -437,6 +446,8 @@ namespace NWO
                     t.alignment = TextAlignmentOptions.Center;
                     StretchToFull(t.rectTransform);
                 }
+
+                _upgradeSlots.Add(slot);
             }
 
             // Bottom buttons bar
@@ -780,6 +791,73 @@ namespace NWO
             if (TMP_Settings.defaultFontAsset != null)
                 t.font = TMP_Settings.defaultFontAsset;
             return t;
+        }
+
+        /// <summary>
+        /// Cập nhật 9 slot icon trong pause menu để hiển thị nâng cấp đã chọn.
+        /// Slot có nâng cấp sẽ hiện glyph + màu của upgrade; slot trống hiện "+".
+        /// </summary>
+        private void RefreshUpgradeSlots()
+        {
+            if (_upgradeSlots.Count == 0) return;
+
+            var upgrades = UpgradeManager.Instance != null
+                ? UpgradeManager.Instance.ChosenUpgrades
+                : (IReadOnlyList<UpgradeData>)new List<UpgradeData>();
+
+            for (int i = 0; i < _upgradeSlots.Count; i++)
+            {
+                var slot = _upgradeSlots[i];
+                if (slot == null) continue;
+
+                // Xóa nội dung cũ trong slot
+                for (int c = slot.transform.childCount - 1; c >= 0; c--)
+                    Destroy(slot.transform.GetChild(c).gameObject);
+
+                if (i < upgrades.Count)
+                {
+                    var upgrade = upgrades[i];
+
+                    // Đổi màu nền slot theo upgrade
+                    var slotImg = slot.GetComponent<Image>();
+                    if (slotImg != null)
+                        slotImg.color = new Color(upgrade.glyphColor.r * 0.2f, upgrade.glyphColor.g * 0.2f, upgrade.glyphColor.b * 0.2f, 1f);
+
+                    if (upgrade.icon != null)
+                    {
+                        var iconGo = new GameObject("UpgradeIcon");
+                        iconGo.transform.SetParent(slot.transform, false);
+                        var icon = iconGo.AddComponent<Image>();
+                        icon.sprite = upgrade.icon;
+                        icon.preserveAspect = true;
+                        icon.color = Color.white;
+                        icon.raycastTarget = false;
+                        var rt = icon.GetComponent<RectTransform>();
+                        rt.anchorMin = new Vector2(0.5f, 0.5f);
+                        rt.anchorMax = new Vector2(0.5f, 0.5f);
+                        rt.pivot = new Vector2(0.5f, 0.5f);
+                        rt.sizeDelta = new Vector2(38f, 38f);
+                        rt.anchoredPosition = Vector2.zero;
+                    }
+                    else
+                    {
+                        var t = NewTmpText($"UpgradeGlyph_{i}", slot.transform, upgrade.glyphSymbol, 34, upgrade.glyphColor);
+                        t.alignment = TextAlignmentOptions.Center;
+                        StretchToFull(t.rectTransform);
+                    }
+                }
+                else
+                {
+                    // Slot trống - hiện "+"
+                    var slotImg = slot.GetComponent<Image>();
+                    if (slotImg != null)
+                        slotImg.color = new Color(0.08f, 0.09f, 0.10f, 1f);
+
+                    var t = NewTmpText($"SlotEmpty_{i}", slot.transform, "+", 40, new Color(0.95f, 0.95f, 0.95f, 0.85f));
+                    t.alignment = TextAlignmentOptions.Center;
+                    StretchToFull(t.rectTransform);
+                }
+            }
         }
 
         private static void StretchToFull(RectTransform rt)

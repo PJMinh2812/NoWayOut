@@ -167,6 +167,19 @@ namespace NWO
         {
             CurrentStamina = Mathf.Clamp(value, 0f, maxStamina);
         }
+
+        /// <summary>Tăng stamina tối đa (upgrade system). Cũng hồi thêm lượng tương ứng.</summary>
+        public void AddMaxStamina(float amount)
+        {
+            maxStamina += amount;
+            CurrentStamina = Mathf.Min(CurrentStamina + amount, maxStamina);
+        }
+
+        /// <summary>Tăng tốc độ hồi stamina (upgrade system)</summary>
+        public void AddRegenPerSecond(float amount)
+        {
+            regenPerSecond += amount;
+        }
         public Color GetStaminaBarColor()
         {
             if (IsLowStamina)
