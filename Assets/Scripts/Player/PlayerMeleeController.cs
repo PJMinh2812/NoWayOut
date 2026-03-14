@@ -381,6 +381,15 @@ namespace NWO
             // Hiện tại damage được gây ngay khi bắt đầu attack
         }
         
+        /// <summary>Tăng sát thương cơ bản (upgrade system)</summary>
+        public void AddBaseDamage(int amount) => baseDamage += amount;
+
+        /// <summary>Tăng tầm đánh (upgrade system)</summary>
+        public void AddAttackRange(float amount) => attackRange += amount;
+
+        /// <summary>Tăng lực đẩy lùi (upgrade system)</summary>
+        public void AddKnockbackForce(float amount) => knockbackForce += amount;
+
         /// <summary>
         /// Gọi từ Animation Event khi animation kết thúc
         /// </summary>

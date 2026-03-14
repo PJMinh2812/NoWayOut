@@ -19,6 +19,7 @@ namespace NWO
             {
                 PlayerPrefs.SetInt("LoadFromSave", 0);
                 PlayerPrefs.Save();
+                SceneLoader.BeginBlocking("LOADING SAVE...");
                 StartCoroutine(LoadSaveDataCoroutine());
             }
         }
@@ -31,6 +32,7 @@ namespace NWO
             if (SaveManager.Instance == null)
             {
                 Debug.LogWarning("[SaveGameLoader] SaveManager not found!");
+                SceneLoader.EndBlocking();
                 yield break;
             }
 
@@ -38,6 +40,7 @@ namespace NWO
             if (data == null)
             {
                 Debug.LogWarning("[SaveGameLoader] No save data found!");
+                SceneLoader.EndBlocking();
                 yield break;
             }
 
@@ -47,6 +50,8 @@ namespace NWO
             }
 
             Debug.Log("[SaveGameLoader] Save data loaded and applied successfully!");
+            yield return null; // allow a frame for spawned objects to settle
+            SceneLoader.EndBlocking();
         }
     }
 }

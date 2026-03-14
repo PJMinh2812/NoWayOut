@@ -17,6 +17,12 @@ namespace NWO
 
         private float _cooldown;
 
+        /// <summary>Giảm fire cooldown (tăng tốc độ bắn). Giá trị dương = giảm cooldown.</summary>
+        public void AddFireRate(float reductionAmount)
+        {
+            fireCooldown = Mathf.Max(0.03f, fireCooldown - reductionAmount);
+        }
+
         private void Awake()
         {
             if (controller == null) controller = GetComponent<PlayerController2D>();

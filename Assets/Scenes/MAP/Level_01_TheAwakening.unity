@@ -8251,11 +8251,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20de042885f31824fb09a735ed5e9743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NWO.PauseMenuUI
-  pauseMenuPanel: {fileID: 1893765789}
-  resumeButton: {fileID: 1666142632}
-  saveAndQuitButton: {fileID: 353596238}
-  quitButton: {fileID: 1197033434}
+  pauseMenuPanel: {fileID: 0}
+  resumeButton: {fileID: 0}
+  saveAndQuitButton: {fileID: 0}
+  quitButton: {fileID: 0}
   titleText: {fileID: 2048555174}
+  autoBuildUiIfMissing: 1
+  autoReplaceExistingUi: 1
+  pausedTitle: PAUSED
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.55}
+  panelColor: {r: 0.12, g: 0.14, b: 0.16, a: 0.95}
+  panelStrokeColor: {r: 0.86, g: 0.78, b: 0.6, a: 1}
+  ribbonColor: {r: 0.65, g: 0.12, b: 0.12, a: 1}
+  buttonColor: {r: 0.6, g: 0.44, b: 0.23, a: 1}
+  buttonStrokeColor: {r: 0.86, g: 0.78, b: 0.6, a: 1}
+  homeButtonSprite: {fileID: 7635013726552783190, guid: 79b7d45225a575643b8973cd926ed495, type: 3}
+  resumeButtonSprite: {fileID: 7474600171507541349, guid: 5405635120a052b4e93187300c4c5933, type: 3}
+  quitButtonSprite: {fileID: 5839820706974066888, guid: 558654eec12c75348aef888eb8e3457d, type: 3}
+  slotStarSprite: {fileID: 0}
+  slotPlusSprite: {fileID: 0}
+  avatarSprite: {fileID: 8506896268907211860, guid: ceb75eaf4034dc4488328a482a7b1f0a, type: 3}
+  settingsButtonSprite: {fileID: 6542990584870916783, guid: 1ec1f7fae815baa479045b4af48a73f8, type: 3}
+  avatarSize: {x: 84, y: 84}
+  avatarOffset: {x: 24, y: -28}
+  audioMixer: {fileID: 0}
+  masterVolumeParam: MasterVolume
+  musicVolumeParam: MusicVolume
+  sfxVolumeParam: SFXVolume
+  inputActions: {fileID: 0}
+  playerMapName: Player
+  rebindPrefsKey: InputRebindsJson
   mainMenuSceneName: MainMenu
 --- !u!114 &999824383
 MonoBehaviour:
@@ -19880,7 +19905,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1893765790
 RectTransform:
   m_ObjectHideFlags: 0
