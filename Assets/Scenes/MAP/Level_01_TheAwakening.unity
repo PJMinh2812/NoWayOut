@@ -1759,6 +1759,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff1a35ab1a383fb4ab97824844110e2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GloomCraft.PlayerSpellController
+--- !u!1 &414249929
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 414249931}
+  - component: {fileID: 414249930}
+  - component: {fileID: 414249932}
+  m_Layer: 0
+  m_Name: CoinManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &414249930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 414249929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 777d954e119c55742a5547bd1402c08f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.CoinManager
+  rerollCost: 3
+  normalEnemyMinDrop: 1
+  normalEnemyMaxDrop: 2
+  bossMinDrop: 3
+  bossMaxDrop: 6
+  coinAnimFrames:
+  - {fileID: 4994948417755550580, guid: b9f05cb1e7d67dd4d87076bbf7d067eb, type: 3}
+  - {fileID: -8987809590498007947, guid: 605f70c27581e6e4e9df822aae818753, type: 3}
+  - {fileID: 5993543728748791393, guid: 179443d8a902e9c41843c64a6d0a173d, type: 3}
+  - {fileID: -6548248550459514729, guid: d0586bcc8211bf948becc2e84fa4a557, type: 3}
+  coinPickupSound: {fileID: 8300000, guid: 2a37e56021ea34e4096151a63f93a1db, type: 3}
+--- !u!4 &414249931
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 414249929}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 21.28815, y: 8.87698, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &414249932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 414249929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 867b5284f9749cd40b5ab5067840800a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.CoinUI
+  coinIconSprite: {fileID: 4994948417755550580, guid: b9f05cb1e7d67dd4d87076bbf7d067eb, type: 3}
+  textColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  fontSize: 24
+  offsetX: 20
+  offsetY: -130
 --- !u!1001 &422366843
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19264,6 +19337,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1626486843773728450, guid: d1748c549d186c04a9b2a4591ae657c1, type: 3}
   m_PrefabInstance: {fileID: 1678420246}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1746323722
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1746323724}
+  - component: {fileID: 1746323723}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!95 &1746323723
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746323722}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &1746323724
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746323722}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18.45759, y: -20.64227, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1755612595
 GameObject:
   m_ObjectHideFlags: 0
@@ -21176,6 +21303,7 @@ MonoBehaviour:
   spawnOnce: 1
   linkedDoor: {fileID: 0}
   showGizmos: 1
+  triggerUpgradeOnClear: 1
 --- !u!4 &2110118248
 Transform:
   m_ObjectHideFlags: 0
@@ -21543,3 +21671,5 @@ SceneRoots:
   - {fileID: 2110118248}
   - {fileID: 2120689387}
   - {fileID: 999824386}
+  - {fileID: 1746323724}
+  - {fileID: 414249931}

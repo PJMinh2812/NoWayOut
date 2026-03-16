@@ -564,6 +564,9 @@ namespace NWO
 
             // Cập nhật health bar ngay lập tức (giống Enemy2D)
             _healthBarController?.OnHealthChanged(currentHealth, maxHealth);
+
+            // Show floating damage number
+            UI.DamagePopup.Spawn(transform.position, damage);
             
             // Knockback
             rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
@@ -607,6 +610,10 @@ namespace NWO
             if (isDead) return;
 
             isDead = true;
+
+            // Drop coin boss vật lý khi chết
+            if (CoinManager.Instance != null)
+                CoinManager.Instance.SpawnCoinsFromBoss(transform.position);
 
             // Ẩn health bar ngay khi chết (giống Enemy2D)
             _healthBarController?.OnEnemyDied();

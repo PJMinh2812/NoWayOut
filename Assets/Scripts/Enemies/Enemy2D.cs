@@ -186,6 +186,9 @@ namespace NWO
             // Notify health bar immediately on damage (don't wait for next LateUpdate poll)
             _healthBarController?.OnHealthChanged(_currentHealth, maxHealth);
 
+            // Show floating damage number
+            UI.DamagePopup.Spawn(transform.position, amount);
+
             if (_currentHealth <= 0)
             {
                 Die();
@@ -196,6 +199,10 @@ namespace NWO
         {
             if (_isDead) return;
             _isDead = true;
+
+            // Drop coin vật lý khi chết
+            if (CoinManager.Instance != null)
+                CoinManager.Instance.SpawnCoinsFromEnemy(transform.position);
 
             // Hide health bar immediately when enemy dies
             _healthBarController?.OnEnemyDied();

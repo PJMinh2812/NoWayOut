@@ -94,6 +94,22 @@ namespace NWO
                 upgradeUIObj.AddComponent<UpgradeSelectionUI>();
                 Debug.Log("[GameManager] Auto-created UpgradeSelectionUI");
             }
+
+            // Auto-create CoinManager nếu chưa có
+            if (FindFirstObjectByType<CoinManager>() == null)
+            {
+                var coinObj = new GameObject("CoinManager");
+                coinObj.AddComponent<CoinManager>();
+                Debug.Log("[GameManager] Auto-created CoinManager");
+            }
+
+            // Auto-create CoinUI nếu chưa có
+            if (FindFirstObjectByType<CoinUI>() == null)
+            {
+                var coinUIObj = new GameObject("CoinUI");
+                coinUIObj.AddComponent<CoinUI>();
+                Debug.Log("[GameManager] Auto-created CoinUI");
+            }
         }
 
 
@@ -183,6 +199,12 @@ namespace NWO
             if (UpgradeManager.Instance != null)
             {
                 UpgradeManager.Instance.ResetUpgrades();
+            }
+
+            // Reset coins
+            if (CoinManager.Instance != null)
+            {
+                CoinManager.Instance.ResetCoins();
             }
             
             // Try to regenerate map with new layout instead of reloading scene
