@@ -33,6 +33,10 @@ namespace NWO
         private PlayerStatusEffects _statusEffects;
         private PlayerMeleeController _meleeController;
 
+        // Cached animator hashes
+        private static readonly int HashSpellType = Animator.StringToHash("SpellType");
+        private static readonly int HashCastSpell = Animator.StringToHash("CastSpell");
+
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
         private float _spell03CooldownRemaining;
@@ -57,7 +61,7 @@ namespace NWO
 
         private void Start()
         {
-            _animator.SetInteger("SpellType", 0);
+            _animator.SetInteger(HashSpellType, 0);
         }
 
         private void Update()
@@ -128,7 +132,7 @@ namespace NWO
 
             _currentSpell = spellNumber;
             _spellBeforeDamage = spellNumber;
-            _animator.SetInteger("SpellType", spellNumber);
+            _animator.SetInteger(HashSpellType, spellNumber);
 
             if (_isCasting)
                 _isCasting = false;
@@ -164,7 +168,7 @@ namespace NWO
             if (_stamina != null && !_stamina.TryConsumeSpell(_currentSpell))
                 return;
 
-            _animator.SetTrigger("CastSpell");
+            _animator.SetTrigger(HashCastSpell);
             _isCasting = true;
             _castingTime = 0f;
 
@@ -262,7 +266,7 @@ namespace NWO
             if (_spellBeforeDamage > 0 && _spellBeforeDamage != _currentSpell)
             {
                 _currentSpell = _spellBeforeDamage;
-                _animator.SetInteger("SpellType", _spellBeforeDamage);
+                _animator.SetInteger(HashSpellType, _spellBeforeDamage);
             }
         }
 

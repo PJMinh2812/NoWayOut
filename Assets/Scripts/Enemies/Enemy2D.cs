@@ -51,6 +51,12 @@ namespace NWO
         private bool _isAttacking = false;
         private bool _isDead = false;
 
+        // Cached animator hashes
+        private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
+        private static readonly int HashIsAttacking = Animator.StringToHash("isAttacking");
+        private static readonly int HashDeath = Animator.StringToHash("Death");
+        private static readonly int HashIsDead = Animator.StringToHash("isDead");
+
         public int GetCurrentHealth() => _currentHealth;
         public int GetMaxHealth() => maxHealth;
 
@@ -98,7 +104,7 @@ namespace NWO
 
             if (_player == null)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 return;
             }
 
@@ -107,7 +113,7 @@ namespace NWO
             
             if (dist > aggroRadius)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 return;
             }
 
@@ -120,7 +126,7 @@ namespace NWO
             // Don't move during attack - stop and play attack animation
             if (_isAttacking)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 _rb.linearVelocity = Vector2.zero;
                 
                 // Flip sprite to face player during attack
@@ -150,7 +156,7 @@ namespace NWO
             if (animator != null)
             {
                 bool isMoving = _rb.linearVelocity.magnitude > 0.1f;
-                animator.SetBool("isMoving", isMoving);
+                animator.SetBool(HashIsMoving, isMoving);
             }
 
             // Flip sprite to face movement/player
@@ -197,8 +203,8 @@ namespace NWO
             // Play death animation - use Trigger to avoid re-triggering from Any State
             if (animator != null)
             {
-                animator.SetTrigger("Death"); // Use Trigger instead of Bool
-                animator.SetBool("isDead", true); // Optional: can be used for conditions
+                animator.SetTrigger(HashDeath);
+                animator.SetBool(HashIsDead, true);
             }
 
             // disable physics and collisions
@@ -237,7 +243,7 @@ namespace NWO
             // Start attack animation
             if (animator != null)
             {
-                animator.SetBool("isAttacking", true);
+                animator.SetBool(HashIsAttacking, true);
             }
 
             // Wait for attack animation to reach hit frame (deal damage halfway through animation)
@@ -264,7 +270,7 @@ namespace NWO
             // Reset attack animation
             if (animator != null)
             {
-                animator.SetBool("isAttacking", false);
+                animator.SetBool(HashIsAttacking, false);
             }
             _isAttacking = false;
 

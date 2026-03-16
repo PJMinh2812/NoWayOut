@@ -12,6 +12,7 @@ namespace NWO
 
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
+        private Collider2D _collider;
         private float _t;
         private bool _isFading = false;
         private bool _isDestroyed = false;
@@ -36,6 +37,7 @@ namespace NWO
         {
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
+            _collider = GetComponent<Collider2D>();
             if (_spriteRenderer != null)
             {
                 _originalColor = _spriteRenderer.color;
@@ -54,9 +56,7 @@ namespace NWO
             {
                 _isFading = true;
                 _fadeTimer = 0f;
-                // Tắt collider để không gây damage trong lúc tan biến
-                var col = GetComponent<Collider2D>();
-                if (col != null) col.enabled = false;
+                if (_collider != null) _collider.enabled = false;
             }
 
             // Xử lý fade-out (tan biến dần)
@@ -126,8 +126,7 @@ namespace NWO
         {
             if (_isDestroyed) return;
             _isDestroyed = true;
-            var col = GetComponent<Collider2D>();
-            if (col != null) col.enabled = false;
+            if (_collider != null) _collider.enabled = false;
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
             Destroy(gameObject);
         }

@@ -84,6 +84,9 @@ namespace NWO
             if (worldCamera == null) worldCamera = Camera.main;
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
             _originalLayer = gameObject.layer;
+
+            // Warm afterimage pool for zero-alloc dash visuals
+            DashAfterImage.WarmPool();
         }
 
         private void Update()
@@ -262,20 +265,17 @@ namespace NWO
         {
             if (spriteRenderer == null || spriteRenderer.sprite == null) return;
 
-            var ghost = new GameObject("DashAfterImage");
-            ghost.transform.position = transform.position;
-            ghost.transform.rotation = transform.rotation;
-            ghost.transform.localScale = transform.localScale;
-
-            var sr = ghost.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteRenderer.sprite;
-            sr.color = dashAfterImageColor;
-            sr.flipX = spriteRenderer.flipX;
-            sr.sortingLayerID = spriteRenderer.sortingLayerID;
-            sr.sortingOrder = spriteRenderer.sortingOrder - 1;
-
-            var fader = ghost.AddComponent<DashAfterImage>();
-            fader.Init(afterImageLifetime, dashAfterImageColor);
+            DashAfterImage.GetFromPool(
+                transform.position,
+                transform.rotation,
+                transform.localScale,
+                spriteRenderer.sprite,
+                dashAfterImageColor,
+                spriteRenderer.flipX,
+                spriteRenderer.sortingLayerID,
+                spriteRenderer.sortingOrder - 1,
+                afterImageLifetime
+            );
         }
 
         private void UpdateFlip()

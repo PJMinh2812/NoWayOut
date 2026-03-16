@@ -103,6 +103,20 @@ namespace NWO
 
         // Flash red coroutine tracking
         private Coroutine _flashCoroutine;
+
+        // Cached animator hashes
+        private static readonly int HashIsSleeping = Animator.StringToHash("isSleeping");
+        private static readonly int HashIsAwakeAnim = Animator.StringToHash("isAwake");
+        private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
+        private static readonly int HashWakeUp = Animator.StringToHash("wakeUp");
+        private static readonly int HashIsAttacking = Animator.StringToHash("isAttacking");
+        private static readonly int HashHurt = Animator.StringToHash("hurt");
+        private static readonly int HashDeath = Animator.StringToHash("Death");
+        private static readonly int HashIsDead = Animator.StringToHash("isDead");
+
+        // Cached set of valid animator parameter hashes for safe setting
+        private System.Collections.Generic.HashSet<int> _validBoolParams;
+        private System.Collections.Generic.HashSet<int> _validTriggerParams;
         
         private void Awake()
         {
@@ -129,6 +143,21 @@ namespace NWO
             currentHealth = maxHealth;
             originalColor = spriteRenderer.color;
             startPosition = transform.position;
+
+            // Cache valid animator parameters for O(1) lookup instead of iterating every call
+            _validBoolParams = new System.Collections.Generic.HashSet<int>();
+            _validTriggerParams = new System.Collections.Generic.HashSet<int>();
+            if (animator != null)
+            {
+                foreach (var param in animator.parameters)
+                {
+                    int hash = Animator.StringToHash(param.name);
+                    if (param.type == AnimatorControllerParameterType.Bool)
+                        _validBoolParams.Add(hash);
+                    else if (param.type == AnimatorControllerParameterType.Trigger)
+                        _validTriggerParams.Add(hash);
+                }
+            }
             
             // Spawn health bar (giống Enemy2D)
             if (healthBarPrefab != null)
@@ -165,9 +194,9 @@ namespace NWO
                 spriteRenderer.color = sleepingTint;
                 
                 // Set animator parameters (nếu có)
-                SafeSetBool("isSleeping", true);
-                SafeSetBool("isAwake", false);
-                SafeSetBool("isMoving", false); // Đảm bảo không di chuyển khi ngủ
+                SafeSetBool(HashIsSleeping, true);
+                SafeSetBool(HashIsAwakeAnim, false);
+                SafeSetBool(HashIsMoving, false); // Đảm bảo không di chuyển khi ngủ
             }
             
             Debug.Log($"[RatMiniBoss] Setup complete. Awake: {isAwake}, Dead: {isDead}");
@@ -195,13 +224,13 @@ namespace NWO
             
             if (!isAwake)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 return;
             }
             
             if (player == null)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 return;
             }
             
@@ -225,7 +254,7 @@ namespace NWO
             // Đứng yên khi đang tấn công cận chiến hoặc đang bắn
             if (_isAttacking || _isShooting)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 rb.linearVelocity = Vector2.zero;
 
                 // Flip sprite về phía player
@@ -245,7 +274,7 @@ namespace NWO
             {
                 // Nếu player chạy xa quá, dừng lại
                 rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.fixedDeltaTime * 5f);
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
             }
         }
         
@@ -264,10 +293,10 @@ namespace NWO
             }
             
             // Animation - thức giấc nhưng vẫn idle trước
-            SafeSetBool("isSleeping", false);
-            SafeSetBool("isAwake", true);
-            SafeSetBool("isMoving", false);
-            SafeSetTrigger("wakeUp");
+            SafeSetBool(HashIsSleeping, false);
+            SafeSetBool(HashIsAwakeAnim, true);
+            SafeSetBool(HashIsMoving, false);
+            SafeSetTrigger(HashWakeUp);
             
             // Sound effect
             if (wakeUpSound != null && audioSource != null)
@@ -306,7 +335,7 @@ namespace NWO
             if (animator != null)
             {
                 bool isMoving = rb.linearVelocity.magnitude > 0.1f;
-                SafeSetBool("isMoving", isMoving);
+                SafeSetBool(HashIsMoving, isMoving);
             }
             
             // Flip sprite to face movement/player (giống Enemy2D)
@@ -470,7 +499,7 @@ namespace NWO
             _canAttack = false;
             
             // Start attack animation
-            SafeSetBool("isAttacking", true);
+            SafeSetBool(HashIsAttacking, true);
             
             // Sound
             if (attackSound != null && audioSource != null)
@@ -506,7 +535,7 @@ namespace NWO
             yield return new WaitForSeconds(attackAnimDuration * 0.5f);
             
             // Reset attack animation
-            SafeSetBool("isAttacking", false);
+            SafeSetBool(HashIsAttacking, false);
             _isAttacking = false;
             
             // Start cooldown before next attack
@@ -554,7 +583,7 @@ namespace NWO
             }
             
             // Animation
-            SafeSetTrigger("hurt");
+            SafeSetTrigger(HashHurt);
             
             Debug.Log($"[RatMiniBoss] Nhận {damage} damage! HP: {currentHealth}/{maxHealth}");
             
@@ -583,8 +612,8 @@ namespace NWO
             _healthBarController?.OnEnemyDied();
 
             // Animation - use Trigger to avoid re-triggering from Any State (giống Enemy2D)
-            SafeSetTrigger("Death"); // Use Trigger instead of "die"
-            SafeSetBool("isDead", true); // Optional: can be used for conditions
+            SafeSetTrigger(HashDeath); // Use Trigger instead of "die"
+            SafeSetBool(HashIsDead, true); // Optional: can be used for conditions
             
             // Sound
             if (deathSound != null && audioSource != null)
@@ -627,34 +656,20 @@ namespace NWO
         }
         
         /// <summary>
-        /// Helper: Set animator parameter an toàn (kiểm tra tồn tại trước)
+        /// Helper: Set animator parameter an toàn (kiểm tra tồn tại trước) - O(1) with cached HashSet
         /// </summary>
-        private void SafeSetBool(string paramName, bool value)
+        private void SafeSetBool(int paramHash, bool value)
         {
-            if (animator == null) return;
-            
-            foreach (var param in animator.parameters)
-            {
-                if (param.name == paramName && param.type == AnimatorControllerParameterType.Bool)
-                {
-                    animator.SetBool(paramName, value);
-                    return;
-                }
-            }
+            if (animator == null || _validBoolParams == null) return;
+            if (_validBoolParams.Contains(paramHash))
+                animator.SetBool(paramHash, value);
         }
         
-        private void SafeSetTrigger(string paramName)
+        private void SafeSetTrigger(int paramHash)
         {
-            if (animator == null) return;
-            
-            foreach (var param in animator.parameters)
-            {
-                if (param.name == paramName && param.type == AnimatorControllerParameterType.Trigger)
-                {
-                    animator.SetTrigger(paramName);
-                    return;
-                }
-            }
+            if (animator == null || _validTriggerParams == null) return;
+            if (_validTriggerParams.Contains(paramHash))
+                animator.SetTrigger(paramHash);
         }
         
         /// <summary>
