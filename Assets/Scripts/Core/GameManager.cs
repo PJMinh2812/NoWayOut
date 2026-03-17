@@ -78,6 +78,22 @@ namespace NWO
                 minimapObj.AddComponent<MinimapManager>();
                 Debug.Log("[GameManager] Auto-created MinimapManager");
             }
+
+            // Auto-create UpgradeManager nếu chưa có
+            if (FindFirstObjectByType<UpgradeManager>() == null)
+            {
+                var upgradeObj = new GameObject("UpgradeManager");
+                upgradeObj.AddComponent<UpgradeManager>();
+                Debug.Log("[GameManager] Auto-created UpgradeManager");
+            }
+
+            // Auto-create UpgradeSelectionUI nếu chưa có
+            if (FindFirstObjectByType<UpgradeSelectionUI>() == null)
+            {
+                var upgradeUIObj = new GameObject("UpgradeSelectionUI");
+                upgradeUIObj.AddComponent<UpgradeSelectionUI>();
+                Debug.Log("[GameManager] Auto-created UpgradeSelectionUI");
+            }
         }
 
 
@@ -162,6 +178,12 @@ namespace NWO
             {
                 playerHealth.ResetHealth();
             }
+
+            // Reset upgrades
+            if (UpgradeManager.Instance != null)
+            {
+                UpgradeManager.Instance.ResetUpgrades();
+            }
             
             // Try to regenerate map with new layout instead of reloading scene
             // Support both new and legacy dungeon systems
@@ -188,7 +210,7 @@ namespace NWO
             
             // Fallback: reload scene if no dungeon manager found
             Debug.LogWarning("[GameManager] No dungeon manager found, reloading scene...");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneLoader.LoadScene(SceneManager.GetActiveScene().name);
         }
 
 
@@ -198,7 +220,7 @@ namespace NWO
         {
             Time.timeScale = 1f;
             isGameOver = false;
-            SceneManager.LoadScene("MainMenu"); // Change to your menu scene name
+            SceneLoader.LoadScene("MainMenu"); // Change to your menu scene name
         }
 
 

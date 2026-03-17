@@ -43,9 +43,14 @@ namespace NWO
         [Header("Debug")]
         [SerializeField] private bool showGizmos = true;
 
+        [Header("Upgrade System")]
+        [Tooltip("Hiển thị thẻ nâng cấp khi tiêu diệt hết enemy")]
+        [SerializeField] private bool triggerUpgradeOnClear = true;
+
         // ----- State -----
         private bool _hasSpawned = false;
         private bool _playerInRange = false;
+        private bool _upgradeTriggered = false;
         private readonly List<GameObject> _spawnedEnemies = new();
 
         private PlayerController2D _player;
@@ -82,6 +87,14 @@ namespace NWO
                     linkedDoor.CloseDoor();
                 else if (!anyAlive && !linkedDoor.isOpen && _hasSpawned)
                     linkedDoor.OpenDoor();
+            }
+
+            // Trigger upgrade selection khi tất cả enemy bị tiêu diệt
+            if (_hasSpawned && !_upgradeTriggered && triggerUpgradeOnClear && !HasLivingEnemies())
+            {
+                _upgradeTriggered = true;
+                if (UpgradeManager.Instance != null)
+                    UpgradeManager.Instance.TriggerUpgradeSelection();
             }
         }
 

@@ -102,8 +102,8 @@ public class MainMenuUI : MonoBehaviour
         PlayerPrefs.SetInt("GenerateNewMap", 1);
         PlayerPrefs.SetInt("LoadFromSave", 0);
         PlayerPrefs.Save();
-        
-        SceneManager.LoadScene(gameSceneName);
+
+        NWO.SceneLoader.LoadScene(gameSceneName);
     }
 
     public void OnContinueClicked()
@@ -128,7 +128,7 @@ public class MainMenuUI : MonoBehaviour
 
         // Load scene đã save
         string sceneToLoad = !string.IsNullOrEmpty(data.sceneName) ? data.sceneName : gameSceneName;
-        SceneManager.LoadScene(sceneToLoad);
+        NWO.SceneLoader.LoadScene(sceneToLoad);
     }
 
     public void OnSettingsClicked()

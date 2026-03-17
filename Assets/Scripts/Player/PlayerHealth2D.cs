@@ -160,6 +160,25 @@ namespace NWO
             CurrentHealth = Mathf.Clamp(value, 0, maxHealth);
         }
 
+        /// <summary>Tăng HP tối đa (upgrade system). Cũng hồi thêm lượng HP tương ứng.</summary>
+        public void AddMaxHealth(int amount)
+        {
+            maxHealth += amount;
+            CurrentHealth = Mathf.Min(CurrentHealth + amount, maxHealth);
+        }
+
+        /// <summary>Tăng tốc độ hồi máu (upgrade system)</summary>
+        public void AddRegeneration(float amount)
+        {
+            regenerationPerSecond += amount;
+        }
+
+        /// <summary>Tăng/giảm thời gian bất tử sau khi bị đánh (upgrade system)</summary>
+        public void AddInvincibleDuration(float amount)
+        {
+            invincibleDuration = Mathf.Max(0.1f, invincibleDuration + amount);
+        }
+
         private void Die()
         {
             if (IsDead) return;

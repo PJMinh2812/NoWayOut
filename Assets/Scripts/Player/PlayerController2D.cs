@@ -69,6 +69,12 @@ namespace NWO
         private int _originalLayer;
         private static int _dashLayer = -1;
 
+        /// <summary>Tăng tốc độ di chuyển tối đa (upgrade system)</summary>
+        public void AddMaxMoveSpeed(float amount) => maxMoveSpeed += amount;
+
+        /// <summary>Tăng tốc độ dash (upgrade system)</summary>
+        public void AddDashSpeed(float amount) => dashSpeed += amount;
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
