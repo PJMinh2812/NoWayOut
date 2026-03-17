@@ -28,6 +28,12 @@ namespace NWO
         private PlayerController2D _player;
         private PlayerHealth2D _playerHealth;
         private UI.Enemy2DHealthBarController _healthBarController;
+        private BossManager _bossManager;
+
+        // Cached WaitForSeconds to avoid GC allocation each coroutine call
+        private WaitForSeconds _waitAttackHalf;
+        private WaitForSeconds _waitAttackCooldown;
+        private WaitForSeconds _waitDeathAnim;
 
         [Header("Animation")]
         [SerializeField] private Animator animator;
@@ -71,6 +77,14 @@ namespace NWO
             }
             
             _currentHealth = maxHealth;
+            
+            // Cache WaitForSeconds (reusable, zero GC per coroutine)
+            _waitAttackHalf = new WaitForSeconds(attackAnimDuration * 0.5f);
+            _waitAttackCooldown = new WaitForSeconds(attackCooldown);
+            _waitDeathAnim = new WaitForSeconds(deathAnimDuration);
+
+            // Cache BossManager once instead of FindFirstObjectByType in Die()
+            _bossManager = FindFirstObjectByType<BossManager>();
             
             // Spawn health bar if prefab assigned
             if (healthBarPrefab != null)
@@ -220,11 +234,10 @@ namespace NWO
             _rb.linearVelocity = Vector2.zero;
             _rb.bodyType = RigidbodyType2D.Kinematic;
 
-            // Check if this is a boss and notify BossManager
-            BossManager bossManager = FindFirstObjectByType<BossManager>();
-            if (bossManager != null)
+            // Check if this is a boss and notify BossManager (cached in Awake)
+            if (_bossManager != null)
             {
-                bossManager.OnBossDefeated();
+                _bossManager.OnBossDefeated();
             }
 
             // Delay destroy so death animation can play
@@ -233,7 +246,7 @@ namespace NWO
 
         private IEnumerator DelayedDestroy(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            yield return _waitDeathAnim;
             Destroy(gameObject);
         }
 
@@ -254,7 +267,7 @@ namespace NWO
             }
 
             // Wait for attack animation to reach hit frame (deal damage halfway through animation)
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
 
             // Deal damage only after animation has progressed
             if (_player != null && _playerHealth != null)
@@ -272,7 +285,7 @@ namespace NWO
             }
 
             // Wait for rest of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
 
             // Reset attack animation
             if (animator != null)
@@ -282,7 +295,7 @@ namespace NWO
             _isAttacking = false;
 
             // Start cooldown before next attack
-            yield return new WaitForSeconds(attackCooldown);
+            yield return _waitAttackCooldown;
             _canAttack = true;
         }
 

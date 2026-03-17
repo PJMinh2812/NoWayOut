@@ -42,6 +42,9 @@ namespace NWO
         private float _frameTimer;
         private int _frameIndex;
 
+        // === Cached player (shared across all instances) ===
+        private static Transform _cachedPlayerTransform;
+
         // === Audio ===
         private static AudioClip _coinSound;
         private static AudioSource _sharedAudioSource;
@@ -149,12 +152,13 @@ namespace NWO
             _sr.sprite = GetCurrentFrame(0);
             _sr.color = Color.white;
 
-            // Cache player
-            if (_playerTransform == null)
+            // Use cached player (avoid FindGameObjectWithTag per spawn)
+            if (_cachedPlayerTransform == null)
             {
                 var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _playerTransform = player.transform;
+                if (player != null) _cachedPlayerTransform = player.transform;
             }
+            _playerTransform = _cachedPlayerTransform;
         }
 
         private void Update()
