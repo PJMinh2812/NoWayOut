@@ -39,6 +39,9 @@ namespace NWO
         [Tooltip("Component RatMiniBoss của boss (nếu boss dùng RatMiniBoss)")]
         [SerializeField] private RatMiniBoss ratMiniBoss;
 
+        [Tooltip("Component GoatManBoss của boss (nếu boss dùng GoatManBoss)")]
+        [SerializeField] private GoatManBoss goatManBoss;
+
         [Tooltip("Tên hiển thị của boss trên health bar")]
         [SerializeField] private string bossDisplayName = "Boss";
 
@@ -241,6 +244,8 @@ namespace NWO
                 bossHealthBarUI.AttachBoss(enemy2DBoss);
             else if (ratMiniBoss != null)
                 bossHealthBarUI.AttachBoss(ratMiniBoss);
+            else if (goatManBoss != null)
+                bossHealthBarUI.AttachBoss(goatManBoss);
         }
 
         // ------------------------------------------------------------------ //

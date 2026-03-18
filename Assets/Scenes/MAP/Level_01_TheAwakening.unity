@@ -1700,11 +1700,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 14.75
+      value: -3.37
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.22
+      value: 3.73
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -21176,6 +21176,7 @@ MonoBehaviour:
   spawnOnce: 1
   linkedDoor: {fileID: 0}
   showGizmos: 1
+  triggerUpgradeOnClear: 1
 --- !u!4 &2110118248
 Transform:
   m_ObjectHideFlags: 0

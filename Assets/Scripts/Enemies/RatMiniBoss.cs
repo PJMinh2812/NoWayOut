@@ -137,7 +137,6 @@ namespace NWO
             if (!isAwake)
             {
                 rb.bodyType = RigidbodyType2D.Kinematic;
-                Debug.Log($"[RatMiniBoss] Awake - Position: {transform.position}, BodyType: Kinematic (ngủ)");
             }
             
             currentHealth = maxHealth;
@@ -178,7 +177,6 @@ namespace NWO
             if (player != null)
             {
                 playerHealth = player.GetComponent<PlayerHealth2D>();
-                Debug.Log($"[RatMiniBoss] Found Player: {player.name}");
             }
             else
             {
@@ -199,7 +197,6 @@ namespace NWO
                 SafeSetBool(HashIsMoving, false); // Đảm bảo không di chuyển khi ngủ
             }
             
-            Debug.Log($"[RatMiniBoss] Setup complete. Awake: {isAwake}, Dead: {isDead}");
         }
         
         private void Update()
@@ -289,7 +286,6 @@ namespace NWO
             if (rb != null)
             {
                 rb.bodyType = RigidbodyType2D.Dynamic;
-                Debug.Log($"[RatMiniBoss] Wake Up! Position: {transform.position}, BodyType: Dynamic");
             }
             
             // Animation - thức giấc nhưng vẫn idle trước
@@ -310,7 +306,6 @@ namespace NWO
                 wakeUpEffect.Play();
             }
             
-            Debug.Log("[RatMiniBoss] CON CHUỘT ĐÃ THỨC GIẤC! 🐭");
         }
         
         private void ChasePlayer(float distance)
@@ -373,7 +368,6 @@ namespace NWO
                 spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
 
             int pattern = Random.Range(0, 4); // 0-3
-            Debug.Log($"[RatMiniBoss] Fireball pattern: {pattern}");
 
             switch (pattern)
             {
@@ -526,8 +520,6 @@ namespace NWO
                     {
                         attackEffect.Play();
                     }
-                    
-                    Debug.Log($"[RatMiniBoss] CHUỘT TẤN CÔNG! Gây {attackDamage} damage cho Player");
                 }
             }
             
@@ -557,8 +549,6 @@ namespace NWO
         {
             if (isDead) return;
             
-            Debug.Log($"[RatMiniBoss] TakeDamage called! Damage: {damage}, HP before: {currentHealth}");
-            
             currentHealth -= damage;
             currentHealth = Mathf.Max(0, currentHealth);
 
@@ -584,8 +574,6 @@ namespace NWO
             
             // Animation
             SafeSetTrigger(HashHurt);
-            
-            Debug.Log($"[RatMiniBoss] Nhận {damage} damage! HP: {currentHealth}/{maxHealth}");
             
             // Chết nếu hết máu
             if (currentHealth <= 0)
@@ -637,8 +625,6 @@ namespace NWO
             {
                 bossManager.OnBossDefeated();
             }
-            
-            Debug.Log("[RatMiniBoss] CHUỘT ĐÃ CHẾT! ☠️");
             
             // Rơi loot
             DropLoot();
