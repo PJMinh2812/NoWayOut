@@ -94,6 +94,36 @@ namespace NWO
                 upgradeUIObj.AddComponent<UpgradeSelectionUI>();
                 Debug.Log("[GameManager] Auto-created UpgradeSelectionUI");
             }
+
+            // Auto-create CoinManager nếu chưa có
+            if (FindFirstObjectByType<CoinManager>() == null)
+            {
+                var coinObj = new GameObject("CoinManager");
+                coinObj.AddComponent<CoinManager>();
+                Debug.Log("[GameManager] Auto-created CoinManager");
+            }
+
+            // Auto-create KeyBindManager nếu chưa có
+            if (KeyBindManager.Instance == null && FindFirstObjectByType<KeyBindManager>() == null)
+            {
+                var kbObj = new GameObject("KeyBindManager");
+                kbObj.AddComponent<KeyBindManager>();
+            }
+
+            // Auto-create CoinUI nếu chưa có
+            if (FindFirstObjectByType<CoinUI>() == null)
+            {
+                var coinUIObj = new GameObject("CoinUI");
+                coinUIObj.AddComponent<CoinUI>();
+                Debug.Log("[GameManager] Auto-created CoinUI");
+            }
+
+            // Auto-create AnimationPreloader to pre-warm all animation clips
+            if (FindFirstObjectByType<AnimationPreloader>() == null)
+            {
+                var preloaderObj = new GameObject("AnimationPreloader");
+                preloaderObj.AddComponent<AnimationPreloader>();
+            }
         }
 
 
@@ -184,6 +214,15 @@ namespace NWO
             {
                 UpgradeManager.Instance.ResetUpgrades();
             }
+
+            // Reset coins
+            if (CoinManager.Instance != null)
+            {
+                CoinManager.Instance.ResetCoins();
+            }
+
+            // Allow animation preloading on next scene
+            AnimationPreloader.ResetPreloadFlag();
             
             // Try to regenerate map with new layout instead of reloading scene
             // Support both new and legacy dungeon systems

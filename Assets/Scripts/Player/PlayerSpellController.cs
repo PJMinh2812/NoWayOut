@@ -101,29 +101,35 @@ namespace NWO
 
         private void HandleSpellSwitch()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-
             // Không xử lý input khi game đang paused
             if (NWO.PauseMenuUI.GameIsPaused) return;
 
-            // 0: Idle, ESC không dùng ở đây nữa (dành cho PauseMenu)
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+            {
+                if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL0))
+                    SwitchToSpell(0);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL1))
+                    SwitchToSpell(1);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL2))
+                    SwitchToSpell(2);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL3))
+                    SwitchToSpell(3);
+                return;
+            }
+
+            // Fallback
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+
             if (keyboard.digit0Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(0);
-            }
             else if (keyboard.digit1Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(1);
-            }
             else if (keyboard.digit2Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(2);
-            }
             else if (keyboard.digit3Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(3);
-            }
         }
 
         private void SwitchToSpell(int spellNumber)
@@ -143,8 +149,14 @@ namespace NWO
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            bool castInput = mouse.leftButton.wasPressedThisFrame
-                          || Keyboard.current.qKey.wasPressedThisFrame;
+            bool castInput = mouse.leftButton.wasPressedThisFrame;
+
+            // Also check keybind for Attack/Cast
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+                castInput = castInput || kb.WasPressedThisFrame(KeyBindManager.ACT_ATTACK);
+            else if (Keyboard.current != null)
+                castInput = castInput || Keyboard.current.qKey.wasPressedThisFrame;
 
             if (!castInput) return;
             if (_currentSpell == 0) return;

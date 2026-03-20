@@ -104,6 +104,15 @@ namespace NWO
         // Flash red coroutine tracking
         private Coroutine _flashCoroutine;
 
+        // Cached WaitForSeconds to avoid GC allocation each coroutine call
+        private WaitForSeconds _waitFireballCooldown;
+        private WaitForSeconds _waitWindup;
+        private WaitForSeconds _waitRainInterval;
+        private WaitForSeconds _waitAttackHalf;
+        private WaitForSeconds _waitAttackCooldown;
+        private WaitForSeconds _waitFlashRed;
+        private BossManager _cachedBossManager;
+
         // Cached animator hashes
         private static readonly int HashIsSleeping = Animator.StringToHash("isSleeping");
         private static readonly int HashIsAwakeAnim = Animator.StringToHash("isAwake");
@@ -168,6 +177,15 @@ namespace NWO
                     _healthBarController.SetTarget(this);
                 }
             }
+
+            // Cache WaitForSeconds (reusable, zero GC per coroutine)
+            _waitFireballCooldown = new WaitForSeconds(fireballCooldown);
+            _waitWindup = new WaitForSeconds(0.2f);
+            _waitRainInterval = new WaitForSeconds(0.18f);
+            _waitAttackHalf = new WaitForSeconds(0.2f); // attackAnimDuration * 0.5f
+            _waitAttackCooldown = new WaitForSeconds(attackCooldown);
+            _waitFlashRed = new WaitForSeconds(0.15f);
+            _cachedBossManager = FindFirstObjectByType<BossManager>();
         }
         
         private void Start()
@@ -380,21 +398,21 @@ namespace NWO
             _isShooting = false;
 
             // Hồi chiêu
-            yield return new WaitForSeconds(fireballCooldown);
+            yield return _waitFireballCooldown;
             _canShoot = true;
         }
 
         /// <summary>Pattern 0 – Single: một viên thẳng vào player.</summary>
         private System.Collections.IEnumerator FireSingle()
         {
-            yield return new WaitForSeconds(0.2f); // windup
+            yield return _waitWindup;
             SpawnFireball(GetDirectionToPlayer());
         }
 
         /// <summary>Pattern 1 – Triple: 3 viên toả ra góc ±tripleSpreadAngle.</summary>
         private System.Collections.IEnumerator FireTriple()
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return _waitWindup;
             Vector2 baseDir = GetDirectionToPlayer();
             SpawnFireball(Rotate(baseDir, -tripleSpreadAngle));
             SpawnFireball(baseDir);
@@ -404,7 +422,7 @@ namespace NWO
         /// <summary>Pattern 2 – Circle: bắn đều circleCount viên quanh 360°.</summary>
         private System.Collections.IEnumerator FireCircle()
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return _waitWindup;
             float step = 360f / circleCount;
             for (int i = 0; i < circleCount; i++)
             {
@@ -429,7 +447,7 @@ namespace NWO
                 Vector2 target   = (Vector2)player.transform.position + offset;
                 Vector2 dir      = (target - (Vector2)transform.position).normalized;
                 SpawnFireball(dir);
-                yield return new WaitForSeconds(0.18f);
+                yield return _waitRainInterval;
             }
         }
 
@@ -503,7 +521,7 @@ namespace NWO
             
             // Wait for attack animation to reach hit frame (deal damage halfway through)
             float attackAnimDuration = 0.4f; // Duration of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
             
             // Deal damage only after animation has progressed
             if (player != null && playerHealth != null)
@@ -524,14 +542,14 @@ namespace NWO
             }
             
             // Wait for rest of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
             
             // Reset attack animation
             SafeSetBool(HashIsAttacking, false);
             _isAttacking = false;
             
             // Start cooldown before next attack
-            yield return new WaitForSeconds(attackCooldown);
+            yield return _waitAttackCooldown;
             _canAttack = true;
         }
         
@@ -554,6 +572,9 @@ namespace NWO
 
             // Cập nhật health bar ngay lập tức (giống Enemy2D)
             _healthBarController?.OnHealthChanged(currentHealth, maxHealth);
+
+            // Show floating damage number
+            UI.DamagePopup.Spawn(transform.position, damage);
             
             // Knockback
             rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
@@ -596,6 +617,10 @@ namespace NWO
 
             isDead = true;
 
+            // Drop coin boss vật lý khi chết
+            if (CoinManager.Instance != null)
+                CoinManager.Instance.SpawnCoinsFromBoss(transform.position);
+
             // Ẩn health bar ngay khi chết (giống Enemy2D)
             _healthBarController?.OnEnemyDied();
 
@@ -619,11 +644,10 @@ namespace NWO
                 col.enabled = false;
             }
             
-            // Thông báo boss manager (nếu có)
-            BossManager bossManager = FindFirstObjectByType<BossManager>();
-            if (bossManager != null)
+            // Thông báo boss manager (cached in Awake)
+            if (_cachedBossManager != null)
             {
-                bossManager.OnBossDefeated();
+                _cachedBossManager.OnBossDefeated();
             }
             
             // Rơi loot
@@ -636,8 +660,8 @@ namespace NWO
         private System.Collections.IEnumerator FlashRed()
         {
             spriteRenderer.color = Color.red;
-            yield return new WaitForSeconds(0.15f);
-            spriteRenderer.color = originalColor; // dùng field originalColor đã lưu trong Awake
+            yield return _waitFlashRed;
+            spriteRenderer.color = originalColor;
             _flashCoroutine = null;
         }
         

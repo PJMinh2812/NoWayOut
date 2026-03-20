@@ -83,9 +83,18 @@ namespace NWO
                 }
             }
             
-            // Check for activation input (using new Input System)
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && CanActivate())
+            // Check for activation input
+            bool activated = false;
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+                activated = kb.WasPressedThisFrame(KeyBindManager.ACT_INTERACT);
+            else
+            {
+                var keyboard = Keyboard.current;
+                activated = keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+            }
+
+            if (activated && CanActivate())
             {
                 ActivateFlash();
             }
