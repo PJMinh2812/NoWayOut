@@ -15,6 +15,13 @@ namespace ProceduralGeneration.Core
     
     public class DungeonManager : MonoBehaviour
     {
+        [System.Serializable]
+        private class RoomTypePrefabPool
+        {
+            public RoomType roomType;
+            public List<GameObject> prefabs = new List<GameObject>();
+        }
+
         [Header("Generation Settings")]
         [Tooltip("Seed cho random generation (0 = random seed)")]
         public int seed = 0;
@@ -43,6 +50,10 @@ namespace ProceduralGeneration.Core
         [Header("Room Data")]
         [Tooltip("Danh sách RoomData có thể sử dụng")]
         public List<RoomData> roomDatabase = new List<RoomData>();
+
+        [Header("Room Prefab Pools (Optional)")]
+        [Tooltip("Prefab pool theo từng room type. Nếu rỗng sẽ dùng roomData.roomPrefab như cũ")]
+        [SerializeField] private List<RoomTypePrefabPool> roomTypePrefabPools = new List<RoomTypePrefabPool>();
         
         [Header("Trap Settings (For RoomVisualGenerator)")]
         [Tooltip("Danh sách TrapData có thể spawn - Assign vào RoomVisualGenerator")]
@@ -68,6 +79,16 @@ namespace ProceduralGeneration.Core
         [SerializeField] private UnityEngine.Tilemaps.TileBase wallBottom;
         [SerializeField] private UnityEngine.Tilemaps.TileBase wallLeft;
         [SerializeField] private UnityEngine.Tilemaps.TileBase wallRight;
+        
+        [Header("Wall Fill Tiles (theo hướng)")]
+        [Tooltip("Tile trám tường TRÊN khi không có cửa. Null = dùng wallTop.")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallFillTop;
+        [Tooltip("Tile trám tường DƯỚI. Null = dùng wallBottom.")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallFillBottom;
+        [Tooltip("Tile trám tường TRÁI. Null = dùng wallLeft.")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallFillLeft;
+        [Tooltip("Tile trám tường PHẢI. Null = dùng wallRight.")]
+        [SerializeField] private UnityEngine.Tilemaps.TileBase wallFillRight;
         
         [Header("Door Prefab")]
         [SerializeField] private GameObject doorPrefab;
@@ -233,6 +254,22 @@ namespace ProceduralGeneration.Core
         public List<Room> GetAllRooms()
         {
             return allRooms;
+        }
+
+        /// <summary>
+        /// Lấy start room hiện tại
+        /// </summary>
+        public Room GetStartRoom()
+        {
+            return startRoom;
+        }
+
+        /// <summary>
+        /// Lấy goal room hiện tại
+        /// </summary>
+        public Room GetGoalRoom()
+        {
+            return goalRoom;
         }
         
         /// <summary>
@@ -613,7 +650,7 @@ namespace ProceduralGeneration.Core
             // Tính adjusted size: luôn là số lẻ, START room nhỏ hơn
             Vector2Int adjustedSize = CalculateAdjustedRoomSize(startData);
             
-            startRoom = new Room(startData, Vector2Int.zero, adjustedSize);
+            startRoom = CreateRoomInstance(startData, Vector2Int.zero, adjustedSize);
             startRoom.distanceFromStart = 0;
             startRoom.isMainPath = true;
             
@@ -772,7 +809,7 @@ namespace ProceduralGeneration.Core
                     DoorDirection requiredDoor = DungeonUtils.GetOppositeDirection(direction);
                     if (roomData.doorAnchors.Any(anchor => anchor.direction == requiredDoor))
                     {
-                        Room newRoom = new Room(roomData, newPosition, adjustedSize);
+                        Room newRoom = CreateRoomInstance(roomData, newPosition, adjustedSize);
                         newRoom.distanceFromStart = fromRoom.distanceFromStart + 1;
                         
                         AddRoomToGrid(newRoom);
@@ -834,6 +871,39 @@ namespace ProceduralGeneration.Core
             }
             
             allRooms.Add(room);
+        }
+
+        /// <summary>
+        /// Tạo Room instance với prefab random theo room type (nếu có pool)
+        /// </summary>
+        private Room CreateRoomInstance(RoomData roomData, Vector2Int position, Vector2Int adjustedSize)
+        {
+            GameObject selectedPrefab = GetRandomPrefabForType(roomData.roomType, roomData.roomPrefab);
+            return new Room(roomData, position, adjustedSize, selectedPrefab);
+        }
+
+        /// <summary>
+        /// Lấy prefab ngẫu nhiên theo room type, fallback về prefab mặc định của RoomData
+        /// </summary>
+        private GameObject GetRandomPrefabForType(RoomType roomType, GameObject fallbackPrefab)
+        {
+            // Ưu tiên prefab gắn trực tiếp trên RoomData.
+            // Chỉ dùng pool khi RoomData không có prefab.
+            if (fallbackPrefab != null)
+                return fallbackPrefab;
+
+            if (roomTypePrefabPools == null || roomTypePrefabPools.Count == 0)
+                return fallbackPrefab;
+
+            RoomTypePrefabPool pool = roomTypePrefabPools.Find(p => p.roomType == roomType);
+            if (pool == null || pool.prefabs == null || pool.prefabs.Count == 0)
+                return fallbackPrefab;
+
+            List<GameObject> validPrefabs = pool.prefabs.Where(p => p != null).ToList();
+            if (validPrefabs.Count == 0)
+                return fallbackPrefab;
+
+            return validPrefabs[Random.Range(0, validPrefabs.Count)];
         }
         
         
@@ -904,7 +974,8 @@ namespace ProceduralGeneration.Core
                 // 2. Configure visual generator với tile settings
                 room.ConfigureVisualGenerator(autoFillTiles, floorTiles, 
                     wallCenter, wallTopLeft, wallTopRight, wallBottomLeft, wallBottomRight,
-                    wallTop, wallBottom, wallLeft, wallRight, doorPrefab, trapTypes);
+                    wallTop, wallBottom, wallLeft, wallRight, doorPrefab, trapTypes,
+                    wallFillTop, wallFillBottom, wallFillLeft, wallFillRight);
                 
                 // 3. Generate visuals (SAU khi đã configure)
                 room.GenerateVisuals();

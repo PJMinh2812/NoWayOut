@@ -15,7 +15,10 @@ public class HiddenSpikes : MonoBehaviour
     [SerializeField] private float riseTime = 0.3f;
     
     [Tooltip("Thời gian chông thu xuống")]
-    [SerializeField] private float retractTime = 1f;
+    [SerializeField] private float retractTime = 0.08f;
+
+    [Tooltip("Thời gian chông giữ ở trạng thái mọc lên")]
+    [SerializeField] private float activeDuration = 1.5f;
     
     [Tooltip("Thời gian chờ trước khi reset")]
     [SerializeField] private float resetDelay = 3f;
@@ -35,42 +38,89 @@ public class HiddenSpikes : MonoBehaviour
     [SerializeField] private AudioClip spikeRiseSound;
     [SerializeField] private AudioClip spikeHitSound;
     [SerializeField] private GameObject warningEffect; // Hiệu ứng cảnh báo (vòng tròn đỏ chớp chớp)
+
+    [Header("Animator Mode (Door-style)")]
+    [Tooltip("Animator điều khiển chông lên/xuống bằng clip")]
+    [SerializeField] private Animator spikeAnimator;
+
+    [Tooltip("Bool parameter trong Animator (giống Door: isOpen)")]
+    [SerializeField] private string activeBoolParameter = "isOpen";
+
+    [Tooltip("Bật để dùng Animator điều khiển movement thay cho coroutine")]
+    [SerializeField] private bool useAnimatorMovement = true;
+
+    [Tooltip("Chông chỉ gây damage khi đã mọc xong")]
+    [SerializeField] private bool damageOnlyWhenFullyRaised = true;
     
     private Vector3 hiddenPosition;
     private Vector3 activePosition;
     private bool isActive = false;
     private bool isTriggered = false;
     private SpriteRenderer spikeSpriteRenderer;
+    private int _activeBoolHash;
+    private readonly Collider2D[] _overlapResults = new Collider2D[4];
     
     private void Awake()
     {
-        if (triggerZone == null)
-        {
-            triggerZone = GetComponent<Collider2D>();
-            if (triggerZone != null)
-            {
-                triggerZone.isTrigger = true;
-            }
-        }
+        AutoAssignReferences();
+        EnsureTriggerZone();
+        AttachRelayIfNeeded();
         
         if (spikesTransform != null)
         {
             activePosition = spikesTransform.localPosition;
             hiddenPosition = activePosition - new Vector3(0, 1f, 0);
-            spikesTransform.localPosition = hiddenPosition;
+            if (!UseAnimatorMode())
+            {
+                spikesTransform.localPosition = hiddenPosition;
+            }
             
             spikeSpriteRenderer = spikesTransform.GetComponent<SpriteRenderer>();
+        }
+
+        if (spikeAnimator == null)
+        {
+            spikeAnimator = GetComponent<Animator>();
+        }
+
+        if (!string.IsNullOrEmpty(activeBoolParameter))
+        {
+            _activeBoolHash = Animator.StringToHash(activeBoolParameter);
+        }
+
+        if (UseAnimatorMode())
+        {
+            SetAnimatorActive(false);
+        }
+        else if (useAnimatorMovement)
+        {
+            Debug.LogWarning("[HiddenSpikes] Animator Mode enabled but Animator/Controller is missing. Falling back to transform animation.");
+        }
+
+        if (spikesTransform == null)
+        {
+            Debug.LogWarning("[HiddenSpikes] spikesTransform is missing. Trap cannot animate visually.");
         }
     }
     
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (isTriggered || isActive) return;
+        HandlePotentialTrigger(collision);
+    }
+
+    private void Update()
+    {
+        CheckPlayerOverlapFallback();
+    }
+
+    public void HandlePotentialTrigger(Collider2D collision)
+    {
+            if (isTriggered || isActive) return;
         
-        if (collision.CompareTag("Player"))
-        {
-            TriggerSpikes();
-        }
+            if (collision.CompareTag("Player"))
+            {
+                TriggerSpikes();
+            }
     }
     
     private void TriggerSpikes()
@@ -88,15 +138,29 @@ public class HiddenSpikes : MonoBehaviour
     
     private void RaiseSpikes()
     {
-        isActive = true;
-        
         if (spikeRiseSound != null)
         {
             AudioSource.PlayClipAtPoint(spikeRiseSound, transform.position);
         }
-        
-        if (spikesTransform != null)
+
+        if (UseAnimatorMode())
         {
+            SetAnimatorActive(true);
+
+            if (damageOnlyWhenFullyRaised)
+            {
+                Invoke(nameof(EnableDamageWindow), riseTime);
+            }
+            else
+            {
+                EnableDamageWindow();
+            }
+
+            Invoke(nameof(RetractSpikes), riseTime + activeDuration);
+        }
+        else if (spikesTransform != null)
+        {
+            isActive = true;
             StartCoroutine(SpikeRiseAnimation());
         }
         
@@ -105,6 +169,27 @@ public class HiddenSpikes : MonoBehaviour
         {
             cameraShake.Shake(0.2f, 0.4f);
         }
+    }
+
+    private void EnableDamageWindow()
+    {
+        isActive = true;
+    }
+
+    private void RetractSpikes()
+    {
+        isActive = false;
+
+        if (UseAnimatorMode())
+        {
+            SetAnimatorActive(false);
+            Invoke(nameof(ResetTriggerState), retractTime + resetDelay);
+        }
+    }
+
+    private void ResetTriggerState()
+    {
+        isTriggered = false;
     }
     
     private System.Collections.IEnumerator SpikeRiseAnimation()
@@ -145,10 +230,10 @@ public class HiddenSpikes : MonoBehaviour
         
         spikesTransform.localPosition = hiddenPosition;
         isActive = false;
-        
+
         // Reset sau một khoảng thời gian
         yield return new WaitForSeconds(resetDelay);
-        isTriggered = false;
+        ResetTriggerState();
     }
     
     private void OnTriggerStay2D(Collider2D collision)
@@ -189,6 +274,166 @@ public class HiddenSpikes : MonoBehaviour
             if (spikeHitSound != null)
             {
                 AudioSource.PlayClipAtPoint(spikeHitSound, transform.position);
+            }
+        }
+    }
+
+    private bool UseAnimatorMode()
+    {
+        return useAnimatorMovement && spikeAnimator != null && spikeAnimator.runtimeAnimatorController != null;
+    }
+
+    private void SetAnimatorActive(bool active)
+    {
+        if (spikeAnimator == null || _activeBoolHash == 0)
+        {
+            return;
+        }
+        spikeAnimator.SetBool(_activeBoolHash, active);
+    }
+
+    private void EnsureTriggerZone()
+    {
+        if (triggerZone == null)
+        {
+            triggerZone = GetComponent<Collider2D>();
+        }
+
+        if (triggerZone == null)
+        {
+            triggerZone = GetComponentInChildren<Collider2D>(true);
+        }
+
+        if (triggerZone == null)
+        {
+            bool has3DCollider = GetComponent<Collider>() != null;
+            if (!has3DCollider)
+            {
+                var autoZone = gameObject.AddComponent<BoxCollider2D>();
+                if (autoZone != null)
+                {
+                    autoZone.isTrigger = true;
+                    autoZone.size = new Vector2(1f, 1f);
+                    triggerZone = autoZone;
+                    Debug.LogWarning("[HiddenSpikes] Missing Collider2D. Auto-created BoxCollider2D trigger.");
+                }
+            }
+
+            if (triggerZone == null)
+            {
+                // Fallback when this GameObject has 3D colliders that conflict with 2D collider creation.
+                var child = new GameObject("SpikeTrigger2D");
+                child.transform.SetParent(transform, false);
+                child.transform.localPosition = Vector3.zero;
+
+                var childZone = child.AddComponent<BoxCollider2D>();
+                childZone.isTrigger = true;
+                childZone.size = new Vector2(1f, 1f);
+                triggerZone = childZone;
+                Debug.LogWarning("[HiddenSpikes] Created child SpikeTrigger2D because root collider setup conflicts with 2D trigger.");
+            }
+        }
+        else
+        {
+            triggerZone.isTrigger = true;
+        }
+
+        EnsureTriggerRigidbody2D();
+    }
+
+    private void AttachRelayIfNeeded()
+    {
+        if (triggerZone == null) return;
+        if (triggerZone.gameObject == gameObject) return;
+
+        var relay = triggerZone.GetComponent<HiddenSpikesTriggerRelay>();
+        if (relay == null)
+        {
+            relay = triggerZone.gameObject.AddComponent<HiddenSpikesTriggerRelay>();
+        }
+
+        relay.SetOwner(this);
+    }
+
+    private void EnsureTriggerRigidbody2D()
+    {
+        if (triggerZone == null) return;
+        if (triggerZone.attachedRigidbody != null) return;
+
+        var rb2d = triggerZone.gameObject.GetComponent<Rigidbody2D>();
+        if (rb2d == null)
+        {
+            rb2d = triggerZone.gameObject.AddComponent<Rigidbody2D>();
+        }
+
+        rb2d.bodyType = RigidbodyType2D.Kinematic;
+        rb2d.gravityScale = 0f;
+        rb2d.simulated = true;
+    }
+
+    private void CheckPlayerOverlapFallback()
+    {
+        if (triggerZone == null || isTriggered || isActive) return;
+
+        int hitCount = Physics2D.OverlapCollider(triggerZone, new ContactFilter2D().NoFilter(), _overlapResults);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider2D col = _overlapResults[i];
+            if (col != null && col.CompareTag("Player"))
+            {
+                TriggerSpikes();
+                return;
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        CancelInvoke();
+        isActive = false;
+        isTriggered = false;
+
+        if (UseAnimatorMode())
+        {
+            SetAnimatorActive(false);
+        }
+    }
+
+    private void OnValidate()
+    {
+        AutoAssignReferences();
+
+        if (spikeAnimator == null)
+        {
+            spikeAnimator = GetComponent<Animator>();
+        }
+
+        if (string.IsNullOrWhiteSpace(activeBoolParameter))
+        {
+            activeBoolParameter = "isOpen";
+        }
+    }
+
+    private void AutoAssignReferences()
+    {
+        if (spikesTransform == null)
+        {
+            Transform child = transform.Find("SpikesVisual");
+            if (child != null)
+            {
+                spikesTransform = child;
+            }
+            else if (transform.childCount > 0)
+            {
+                spikesTransform = transform.GetChild(0);
+            }
+            else
+            {
+                var sr = GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    spikesTransform = transform;
+                }
             }
         }
     }

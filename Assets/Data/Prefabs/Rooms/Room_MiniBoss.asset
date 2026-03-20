@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f69dac71153eca4da217f026ef0ed55, type: 3}
   m_Name: Room_MiniBoss
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.RoomData
-  roomPrefab: {fileID: 0}
+  roomPrefab: {fileID: 2839078991265060477, guid: 7371ace42438ca74f87ca45168fe40f4, type: 3}
   roomType: 3
   size: {x: 1, y: 1}
   doorAnchors:
