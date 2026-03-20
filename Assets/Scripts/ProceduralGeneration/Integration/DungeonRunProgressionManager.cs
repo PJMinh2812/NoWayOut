@@ -28,12 +28,15 @@ namespace ProceduralGeneration.Integration
         [Header("Completion")]
         [SerializeField] private bool autoCompleteWhenNoEnemiesAlive = true;
         [SerializeField] private float minAutoCompleteDelay = 2f;
+        [SerializeField] private float portalSpawnRetryInterval = 0.5f;
+        [SerializeField] private int portalSpawnMaxRetries = 6;
 
         private int currentRound = 1;
         private int currentMap = 1;
         private bool currentMapCompleted;
         private float mapGeneratedAt;
         private GameObject spawnedPortal;
+        private Coroutine portalSpawnRetryCoroutine;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
@@ -68,7 +71,9 @@ namespace ProceduralGeneration.Integration
             if (Time.time - mapGeneratedAt < minAutoCompleteDelay)
                 return;
 
-            if (EnemySpawnManager.Instance != null && EnemySpawnManager.Instance.AliveEnemyCount <= 0)
+            bool noEnemyManager = EnemySpawnManager.Instance == null;
+            bool allEnemiesDead = EnemySpawnManager.Instance != null && EnemySpawnManager.Instance.AliveEnemyCount <= 0;
+            if (noEnemyManager || allEnemiesDead)
             {
                 MarkCurrentMapCompleted();
             }
@@ -83,7 +88,9 @@ namespace ProceduralGeneration.Integration
                 return;
 
             currentMapCompleted = true;
-            SpawnPortalAtGoalRoom();
+            bool spawned = SpawnPortalAtGoalRoom();
+            if (!spawned && portalSpawnRetryCoroutine == null)
+                portalSpawnRetryCoroutine = StartCoroutine(RetrySpawnPortalAtGoalRoom());
 
             Debug.Log($"[RunProgression] Map completed: {currentRound}-{currentMap}");
         }
@@ -94,7 +101,25 @@ namespace ProceduralGeneration.Integration
         public bool TryAdvanceToNextMap()
         {
             if (!currentMapCompleted)
-                return false;
+            {
+                // Fallback: in scenes without enemy system, allow portal to complete map on confirm.
+                if (autoCompleteWhenNoEnemiesAlive)
+                {
+                    bool noEnemyManager = EnemySpawnManager.Instance == null;
+                    bool allEnemiesDead = EnemySpawnManager.Instance != null && EnemySpawnManager.Instance.AliveEnemyCount <= 0;
+
+                    if (noEnemyManager || allEnemiesDead)
+                    {
+                        MarkCurrentMapCompleted();
+                    }
+                }
+
+                if (!currentMapCompleted)
+                {
+                    Debug.Log("[RunProgression] Cannot advance: current map is not completed yet.");
+                    return false;
+                }
+            }
 
             if (currentMap < mapsPerRound)
             {
@@ -128,6 +153,12 @@ namespace ProceduralGeneration.Integration
             DestroySpawnedPortal();
             currentMapCompleted = false;
 
+            if (portalSpawnRetryCoroutine != null)
+            {
+                StopCoroutine(portalSpawnRetryCoroutine);
+                portalSpawnRetryCoroutine = null;
+            }
+
             if (EnemySpawnManager.Instance != null)
                 EnemySpawnManager.Instance.DespawnAll();
 
@@ -147,19 +178,22 @@ namespace ProceduralGeneration.Integration
             Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
         }
 
-        private void SpawnPortalAtGoalRoom()
+        private bool SpawnPortalAtGoalRoom()
         {
             if (portalPrefab == null)
             {
                 Debug.LogWarning("[RunProgression] portalPrefab chưa gán.");
-                return;
+                return false;
             }
+
+            if (spawnedPortal != null)
+                return true;
 
             Room goalRoom = dungeonManager.GetGoalRoom();
             if (goalRoom == null || goalRoom.roomInstance == null)
             {
                 Debug.LogWarning("[RunProgression] Goal room chưa sẵn sàng.");
-                return;
+                return false;
             }
 
             Vector3 goalCenter = goalRoom.roomInstance.transform.position +
@@ -173,6 +207,26 @@ namespace ProceduralGeneration.Integration
                 portal = spawnedPortal.AddComponent<GoalPortal>();
 
             portal.Setup(this);
+            Debug.Log($"[RunProgression] Portal spawned at goal room for map {currentRound}-{currentMap}.");
+            return true;
+        }
+
+        private System.Collections.IEnumerator RetrySpawnPortalAtGoalRoom()
+        {
+            int retries = Mathf.Max(1, portalSpawnMaxRetries);
+            float delay = Mathf.Max(0.1f, portalSpawnRetryInterval);
+
+            for (int i = 0; i < retries && spawnedPortal == null; i++)
+            {
+                yield return new WaitForSeconds(delay);
+                if (SpawnPortalAtGoalRoom())
+                    break;
+            }
+
+            if (spawnedPortal == null)
+                Debug.LogWarning("[RunProgression] Portal spawn retry exhausted. Goal room might not be ready.");
+
+            portalSpawnRetryCoroutine = null;
         }
 
         private void MovePlayerToRespawnPoint()

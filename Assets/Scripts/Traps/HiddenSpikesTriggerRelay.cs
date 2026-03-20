@@ -16,4 +16,12 @@ public class HiddenSpikesTriggerRelay : MonoBehaviour
             owner.HandlePotentialTrigger(collision);
         }
     }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (owner != null)
+        {
+            owner.HandlePotentialDamage(collision);
+        }
+    }
 }

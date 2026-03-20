@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 namespace ProceduralGeneration.Integration
 {
@@ -9,11 +11,19 @@ namespace ProceduralGeneration.Integration
     public class GoalPortal : MonoBehaviour
     {
         [Header("Interaction")]
-        [SerializeField] private KeyCode confirmKey = KeyCode.E;
+        [SerializeField] private Key confirmKey = Key.E;
         [SerializeField] private bool requirePlayerInTrigger = true;
+
+        [Header("Auto Wiring")]
+        [SerializeField] private bool autoFindProgressionManager = true;
+
+        [Header("Debug")]
+        [SerializeField] private bool verboseLogs = true;
 
         private DungeonRunProgressionManager progressionManager;
         private bool playerInTrigger;
+        private bool hasWarnedMissingManager;
+        private readonly HashSet<int> playerBodyIdsInTrigger = new HashSet<int>();
 
         public void Setup(DungeonRunProgressionManager manager)
         {
@@ -24,34 +34,147 @@ namespace ProceduralGeneration.Integration
         {
             Collider2D col = GetComponent<Collider2D>();
             col.isTrigger = true;
+
+            // Existing prefabs/scenes can deserialize this as None after field type migration.
+            if (confirmKey == Key.None)
+            {
+                confirmKey = Key.E;
+                if (verboseLogs)
+                    Debug.Log("[GoalPortal] confirmKey dang la None, da fallback ve Key.E");
+            }
+
+            if (autoFindProgressionManager && progressionManager == null)
+                TryResolveProgressionManager();
+        }
+
+        private void Start()
+        {
+            if (progressionManager == null)
+            {
+                TryResolveProgressionManager();
+                if (progressionManager == null)
+                {
+                    Debug.LogWarning("[GoalPortal] Chua tim thay DungeonRunProgressionManager. Portal se khong the qua map.");
+                    hasWarnedMissingManager = true;
+                }
+            }
         }
 
         private void Update()
         {
             if (progressionManager == null)
-                return;
-
-            if (requirePlayerInTrigger && !playerInTrigger)
-                return;
-
-            if (Input.GetKeyDown(confirmKey))
             {
+                if (autoFindProgressionManager)
+                    TryResolveProgressionManager();
+
+                if (progressionManager == null)
+                {
+                    if (!hasWarnedMissingManager)
+                    {
+                        Debug.LogWarning("[GoalPortal] Khong co progression manager. Hay gan portalPrefab trong DungeonRunProgressionManager hoac dat manager trong scene.");
+                        hasWarnedMissingManager = true;
+                    }
+                    return;
+                }
+            }
+
+            if (hasWarnedMissingManager)
+                hasWarnedMissingManager = false;
+
+            if (WasConfirmPressedThisFrame())
+            {
+                if (requirePlayerInTrigger && !playerInTrigger)
+                {
+                    if (verboseLogs)
+                        Debug.Log("[GoalPortal] Da nhan phim xac nhan, nhung player chua nam trong trigger.");
+                    return;
+                }
+
+                if (verboseLogs)
+                    Debug.Log("[GoalPortal] Nhan phim xac nhan, dang thu chuyen map...");
+
                 bool advanced = progressionManager.TryAdvanceToNextMap();
                 if (!advanced)
-                    Debug.Log("[GoalPortal] Chưa thể qua map tiếp theo.");
+                    Debug.Log("[GoalPortal] Chua the qua map tiep theo (map co the chua hoan thanh). ");
             }
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.CompareTag("Player"))
-                playerInTrigger = true;
+            if (IsPlayerCollider(other))
+            {
+                int bodyId = GetPlayerBodyId(other);
+                playerBodyIdsInTrigger.Add(bodyId);
+                playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+
+                if (verboseLogs)
+                    Debug.Log($"[GoalPortal] Player da vao trigger portal. overlap={playerBodyIdsInTrigger.Count}");
+            }
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            if (IsPlayerCollider(other))
+            {
+                int bodyId = GetPlayerBodyId(other);
+                playerBodyIdsInTrigger.Add(bodyId);
+                playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+            }
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (other.CompareTag("Player"))
-                playerInTrigger = false;
+            if (IsPlayerCollider(other))
+            {
+                int bodyId = GetPlayerBodyId(other);
+                playerBodyIdsInTrigger.Remove(bodyId);
+                playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+
+                if (verboseLogs)
+                    Debug.Log($"[GoalPortal] Player da ra khoi trigger portal. overlap={playerBodyIdsInTrigger.Count}");
+            }
+        }
+
+        private void OnDisable()
+        {
+            playerBodyIdsInTrigger.Clear();
+            playerInTrigger = false;
+        }
+
+        private static bool IsPlayerCollider(Collider2D other)
+        {
+            if (other.CompareTag("Player")) return true;
+
+            Rigidbody2D attachedRb = other.attachedRigidbody;
+            return attachedRb != null && attachedRb.CompareTag("Player");
+        }
+
+        private static int GetPlayerBodyId(Collider2D other)
+        {
+            Rigidbody2D attachedRb = other.attachedRigidbody;
+            return attachedRb != null ? attachedRb.GetInstanceID() : other.GetInstanceID();
+        }
+
+        private bool WasConfirmPressedThisFrame()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
+
+            if (confirmKey != Key.None && keyboard[confirmKey].wasPressedThisFrame)
+                return true;
+
+            // Fallback for migrated data or unexpected key binding values.
+            return keyboard.eKey.wasPressedThisFrame
+                   || keyboard.enterKey.wasPressedThisFrame
+                   || keyboard.numpadEnterKey.wasPressedThisFrame;
+        }
+
+        private void TryResolveProgressionManager()
+        {
+            progressionManager = FindFirstObjectByType<DungeonRunProgressionManager>();
+            if (progressionManager != null && verboseLogs)
+                Debug.Log("[GoalPortal] Da auto-tim thay DungeonRunProgressionManager.");
         }
     }
 }

@@ -32,6 +32,8 @@ public class HiddenSpikes : MonoBehaviour
     [Header("Trigger Zone")]
     [Tooltip("Collider kích hoạt (đặt tách riêng hoặc dùng chính GameObject này)")]
     [SerializeField] private Collider2D triggerZone;
+    [Tooltip("Kích thước trigger chuẩn cho spike trap")]
+    [SerializeField] private float triggerSize = 1f;
     
     [Header("Visual")]
     [SerializeField] private Transform spikesTransform; // Transform của sprite chông
@@ -51,6 +53,16 @@ public class HiddenSpikes : MonoBehaviour
 
     [Tooltip("Chông chỉ gây damage khi đã mọc xong")]
     [SerializeField] private bool damageOnlyWhenFullyRaised = true;
+
+    [Header("Continuous Animation")]
+    [Tooltip("Bật để trap tự chạy animation liên tục, không cần player kích hoạt")]
+    [SerializeField] private bool continuousAnimation = false;
+    [Tooltip("Nếu tắt, animation chỉ để trang trí và không tạo damage window")]
+    [SerializeField] private bool continuousAnimationDealsDamage = true;
+    [Tooltip("Độ lệch ngẫu nhiên ban đầu để các trap không chạy đồng bộ")]
+    [SerializeField] private float continuousStartDelayMax = 0.75f;
+    [Tooltip("Thời gian chờ giữa các chu kỳ animation")]
+    [SerializeField] private float continuousCycleInterval = 0.2f;
     
     private Vector3 hiddenPosition;
     private Vector3 activePosition;
@@ -59,11 +71,13 @@ public class HiddenSpikes : MonoBehaviour
     private SpriteRenderer spikeSpriteRenderer;
     private int _activeBoolHash;
     private readonly Collider2D[] _overlapResults = new Collider2D[4];
+    private Coroutine continuousAnimationCoroutine;
     
     private void Awake()
     {
         AutoAssignReferences();
         EnsureTriggerZone();
+        NormalizeTriggerZone();
         AttachRelayIfNeeded();
         
         if (spikesTransform != null)
@@ -101,6 +115,11 @@ public class HiddenSpikes : MonoBehaviour
         {
             Debug.LogWarning("[HiddenSpikes] spikesTransform is missing. Trap cannot animate visually.");
         }
+
+        if (continuousAnimation)
+        {
+            continuousAnimationCoroutine = StartCoroutine(ContinuousAnimationLoop());
+        }
     }
     
     private void OnTriggerEnter2D(Collider2D collision)
@@ -115,9 +134,10 @@ public class HiddenSpikes : MonoBehaviour
 
     public void HandlePotentialTrigger(Collider2D collision)
     {
+            if (continuousAnimation) return;
             if (isTriggered || isActive) return;
         
-            if (collision.CompareTag("Player"))
+            if (IsPlayerInsideTrigger(collision))
             {
                 TriggerSpikes();
             }
@@ -238,9 +258,14 @@ public class HiddenSpikes : MonoBehaviour
     
     private void OnTriggerStay2D(Collider2D collision)
     {
+        HandlePotentialDamage(collision);
+    }
+
+    public void HandlePotentialDamage(Collider2D collision)
+    {
         if (!isActive) return;
         
-        if (collision.CompareTag("Player"))
+        if (IsPlayerInsideTrigger(collision))
         {
             DamagePlayer(collision.gameObject);
         }
@@ -341,6 +366,67 @@ public class HiddenSpikes : MonoBehaviour
         EnsureTriggerRigidbody2D();
     }
 
+    private void NormalizeTriggerZone()
+    {
+        if (triggerZone == null)
+            return;
+
+        triggerSize = Mathf.Max(0.2f, triggerSize);
+        Vector2 localSize = GetLocalSizeForWorldUnits(triggerZone.transform, triggerSize);
+
+        if (triggerZone is BoxCollider2D box)
+        {
+            box.size = localSize;
+            box.offset = Vector2.zero;
+        }
+        else if (triggerZone is CircleCollider2D circle)
+        {
+            float maxScale = Mathf.Max(Mathf.Abs(triggerZone.transform.lossyScale.x), Mathf.Abs(triggerZone.transform.lossyScale.y));
+            if (maxScale < 0.0001f) maxScale = 1f;
+            circle.radius = (triggerSize * 0.5f) / maxScale;
+            circle.offset = Vector2.zero;
+        }
+        else if (triggerZone is CapsuleCollider2D capsule)
+        {
+            capsule.size = localSize;
+            capsule.offset = Vector2.zero;
+        }
+        else if (triggerZone.transform == transform)
+        {
+            // Unsupported collider on root object: replace with dedicated 1x1 Box trigger.
+            var child = new GameObject("SpikeTrigger2D");
+            child.transform.SetParent(transform, false);
+            var childZone = child.AddComponent<BoxCollider2D>();
+            childZone.isTrigger = true;
+            childZone.size = Vector2.one * triggerSize;
+            triggerZone = childZone;
+        }
+
+        triggerZone.isTrigger = true;
+        EnsureTriggerRigidbody2D();
+    }
+
+    private static Vector2 GetLocalSizeForWorldUnits(Transform target, float worldSize)
+    {
+        float sx = Mathf.Abs(target.lossyScale.x);
+        float sy = Mathf.Abs(target.lossyScale.y);
+        if (sx < 0.0001f) sx = 1f;
+        if (sy < 0.0001f) sy = 1f;
+        return new Vector2(worldSize / sx, worldSize / sy);
+    }
+
+    private bool IsPlayerInsideTrigger(Collider2D collision)
+    {
+        if (collision == null || triggerZone == null)
+            return false;
+
+        if (!collision.CompareTag("Player"))
+            return false;
+
+        ColliderDistance2D distance = triggerZone.Distance(collision);
+        return distance.isOverlapped;
+    }
+
     private void AttachRelayIfNeeded()
     {
         if (triggerZone == null) return;
@@ -375,11 +461,11 @@ public class HiddenSpikes : MonoBehaviour
     {
         if (triggerZone == null || isTriggered || isActive) return;
 
-        int hitCount = Physics2D.OverlapCollider(triggerZone, new ContactFilter2D().NoFilter(), _overlapResults);
+        int hitCount = Physics2D.OverlapCollider(triggerZone, ContactFilter2D.noFilter, _overlapResults);
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D col = _overlapResults[i];
-            if (col != null && col.CompareTag("Player"))
+            if (IsPlayerInsideTrigger(col))
             {
                 TriggerSpikes();
                 return;
@@ -392,6 +478,12 @@ public class HiddenSpikes : MonoBehaviour
         CancelInvoke();
         isActive = false;
         isTriggered = false;
+
+        if (continuousAnimationCoroutine != null)
+        {
+            StopCoroutine(continuousAnimationCoroutine);
+            continuousAnimationCoroutine = null;
+        }
 
         if (UseAnimatorMode())
         {
@@ -412,6 +504,79 @@ public class HiddenSpikes : MonoBehaviour
         {
             activeBoolParameter = "isOpen";
         }
+
+        continuousStartDelayMax = Mathf.Max(0f, continuousStartDelayMax);
+        continuousCycleInterval = Mathf.Max(0f, continuousCycleInterval);
+
+        NormalizeTriggerZone();
+    }
+
+    private System.Collections.IEnumerator ContinuousAnimationLoop()
+    {
+        if (continuousStartDelayMax > 0f)
+            yield return new WaitForSeconds(Random.Range(0f, continuousStartDelayMax));
+
+        while (enabled && gameObject.activeInHierarchy)
+        {
+            yield return StartCoroutine(PlayContinuousCycle());
+            if (continuousCycleInterval > 0f)
+                yield return new WaitForSeconds(continuousCycleInterval);
+            else
+                yield return null;
+        }
+    }
+
+    private System.Collections.IEnumerator PlayContinuousCycle()
+    {
+        if (UseAnimatorMode())
+        {
+            SetAnimatorActive(true);
+
+            if (continuousAnimationDealsDamage)
+            {
+                if (damageOnlyWhenFullyRaised)
+                    yield return new WaitForSeconds(riseTime);
+
+                isActive = true;
+            }
+
+            yield return new WaitForSeconds(activeDuration);
+
+            isActive = false;
+            SetAnimatorActive(false);
+            yield return new WaitForSeconds(retractTime);
+            yield break;
+        }
+
+        // Fallback when no animator controller is configured.
+        if (spikesTransform == null)
+            yield break;
+
+        float elapsed = 0f;
+        while (elapsed < riseTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = riseTime > 0f ? elapsed / riseTime : 1f;
+            t = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
+            spikesTransform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, t);
+            yield return null;
+        }
+
+        spikesTransform.localPosition = activePosition;
+        isActive = continuousAnimationDealsDamage;
+        yield return new WaitForSeconds(activeDuration);
+
+        elapsed = 0f;
+        while (elapsed < retractTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = retractTime > 0f ? elapsed / retractTime : 1f;
+            spikesTransform.localPosition = Vector3.Lerp(activePosition, hiddenPosition, Mathf.Clamp01(t));
+            yield return null;
+        }
+
+        spikesTransform.localPosition = hiddenPosition;
+        isActive = false;
     }
 
     private void AutoAssignReferences()

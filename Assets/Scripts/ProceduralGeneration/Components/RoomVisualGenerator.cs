@@ -568,25 +568,7 @@ namespace ProceduralGeneration.Components
                 }
             }
             
-            // Trám tường cho các DoorAnchor KHÔNG có kết nối (không nằm trong activeDirections)
-            // CHỈ fill các ô EDGE (nằm trên cạnh tường), không fill interior cells
-            foreach (var door in roomData.doorAnchors)
-            {
-                if (activeDirections != null && activeDirections.Contains(door.direction))
-                    continue; // Hướng này có cửa thật → bỏ qua
-                
-                Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
-                
-                // Chỉ fill ô EDGE (depth=1) để tránh đặt wall tile vào vùng floor
-                foreach (var cell in GetDoorOpeningCells(door.direction, doorCell, tilesX, tilesY, 1))
-                {
-                    // Dùng fill tile theo hướng, fallback về wall tile phù hợp vị trí
-                    TileBase fillTile = GetWallFillTileForDirection(door.direction);
-                    TileBase tileForCell = fillTile ?? GetWallTileForPosition(cell.x, cell.y, tilesX, tilesY);
-                    baseTilemap.SetTile(new Vector3Int(cell.x, cell.y, 0), wallBaseTile);
-                    tilemap.SetTile(new Vector3Int(cell.x, cell.y, 0), tileForCell);
-                }
-            }
+            // KEEP DOOR GAPS OPEN: do not auto-fill door cells back with wall tiles.
         }
 
         private Tile CreateSolidColorTile(Color color)
@@ -828,39 +810,20 @@ namespace ProceduralGeneration.Components
 
             int tilesX = bounds.size.x;
             int tilesY = bounds.size.y;
-            Tile wallBaseTile = null;
-
             foreach (var door in roomData.doorAnchors)
             {
-                bool hasConnection = activeDirections == null || activeDirections.Contains(door.direction);
                 Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
-                int openingDepth = hasConnection ? GetActiveOpeningDepth() : 2;
+                int openingDepth = GetActiveOpeningDepth();
 
                 foreach (var localCell in GetDoorOpeningCells(door.direction, doorCell, tilesX, tilesY, openingDepth))
                 {
                     Vector3Int cell = new Vector3Int(bounds.xMin + localCell.x, bounds.yMin + localCell.y, 0);
 
-                    if (hasConnection)
-                    {
-                        foreach (var wallTilemap in wallTilemaps)
-                            wallTilemap.SetTile(cell, null);
-
-                        if (baseWallTilemap != null)
-                            baseWallTilemap.SetTile(cell, null);
-                        continue;
-                    }
-
-                    TileBase fillTile = GetWallFillTileForDirection(door.direction);
-                    TileBase wallTile = fillTile ?? GetWallTileForPosition(localCell.x, localCell.y, tilesX, tilesY);
                     foreach (var wallTilemap in wallTilemaps)
-                        wallTilemap.SetTile(cell, wallTile ?? wallCenter);
+                        wallTilemap.SetTile(cell, null);
 
                     if (baseWallTilemap != null)
-                    {
-                        if (wallBaseTile == null)
-                            wallBaseTile = CreateSolidColorTile(wallColor);
-                        baseWallTilemap.SetTile(cell, wallBaseTile);
-                    }
+                        baseWallTilemap.SetTile(cell, null);
                 }
             }
         }
