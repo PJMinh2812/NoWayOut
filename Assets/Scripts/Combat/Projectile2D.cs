@@ -112,6 +112,26 @@ namespace NWO
                 return;
             }
 
+            // Check for GoatManBoss
+            if (other.TryGetComponent<GoatManBoss>(out var goatBoss))
+            {
+                var dir = (Vector2)goatBoss.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit GoatManBoss! Dealing {damage} damage");
+                goatBoss.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                DestroyImmediate();
+                return;
+            }
+
+            // Check for NightBonesBoss
+            if (other.TryGetComponent<NightBonesBoss>(out var nightBonesBoss))
+            {
+                var dir = (Vector2)nightBonesBoss.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit NightBonesBoss! Dealing {damage} damage");
+                nightBonesBoss.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                DestroyImmediate();
+                return;
+            }
+
             // Destroy on any other collision (wall, etc) - va chạm vật thể -> hủy ngay
             if (!other.CompareTag("Player"))
             {

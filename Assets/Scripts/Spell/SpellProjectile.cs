@@ -185,6 +185,18 @@ namespace NWO
                 boss.TakeDamage(damage, hitDir.normalized, knockbackForce);
                 Debug.Log($"[SpellProjectile] Hit boss {other.name}! Damage: {damage}");
             }
+            else if (other.TryGetComponent<GoatManBoss>(out var goatBoss))
+            {
+                var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
+                goatBoss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit GoatManBoss {other.name}! Damage: {damage}");
+            }
+            else if (other.TryGetComponent<NightBonesBoss>(out var nightBonesBoss))
+            {
+                var hitDir = (Vector2)other.transform.position - (Vector2)transform.position;
+                nightBonesBoss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit NightBonesBoss {other.name}! Damage: {damage}");
+            }
             // Tilemap, Wall, Ground - chỉ destroy spell, KHÔNG gây damage
 
             // Destroy khi chạm bất kỳ vật thể nào
@@ -223,6 +235,18 @@ namespace NWO
                 var hitDir = (Vector2)collision.transform.position - (Vector2)transform.position;
                 boss.TakeDamage(damage, hitDir.normalized, knockbackForce);
                 Debug.Log($"[SpellProjectile] Hit boss {collision.collider.name}! Damage: {damage}");
+            }
+            else if (collision.collider.TryGetComponent<GoatManBoss>(out var goatBoss))
+            {
+                var hitDir = (Vector2)collision.transform.position - (Vector2)transform.position;
+                goatBoss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit GoatManBoss {collision.collider.name}! Damage: {damage}");
+            }
+            else if (collision.collider.TryGetComponent<NightBonesBoss>(out var nightBonesBoss))
+            {
+                var hitDir = (Vector2)collision.transform.position - (Vector2)transform.position;
+                nightBonesBoss.TakeDamage(damage, hitDir.normalized, knockbackForce);
+                Debug.Log($"[SpellProjectile] Hit NightBonesBoss {collision.collider.name}! Damage: {damage}");
             }
             // Tilemap, Wall, Ground - chỉ destroy spell, KHÔNG gây damage
 
