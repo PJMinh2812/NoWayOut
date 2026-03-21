@@ -1,5 +1,6 @@
 using UnityEngine;
 using NWO;
+using System.Collections.Generic;
 
 /// <summary>
 /// Sàn trơn - Người chơi bị trượt không kiểm soát được
@@ -29,13 +30,25 @@ public class SlipperyFloor : MonoBehaviour
     [SerializeField] private Color iceColor = new Color(0.7f, 0.9f, 1f, 0.8f);
     [SerializeField] private bool showIceEffect = true;
     [SerializeField] private AudioClip slideSound;
+
+    [Header("Reliability")]
+    [Tooltip("Cooldown cho mỗi player để tránh trigger/collision gọi trùng trong cùng thời điểm")]
+    [SerializeField] private float reapplyCooldown = 0.15f;
+    [Tooltip("Cooldown phát âm thanh để tránh spam khi đi qua nhiều ô băng")]
+    [SerializeField] private float slideSoundCooldown = 0.1f;
     
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
+    private Collider2D ownCollider;
+    private bool usesTriggerCollider;
+    private float lastSlideSoundTime = -999f;
+    private readonly Dictionary<int, float> nextAllowedApplyTimeByPlayer = new Dictionary<int, float>();
     
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        ownCollider = GetComponent<Collider2D>();
+        usesTriggerCollider = ownCollider != null && ownCollider.isTrigger;
         
         if (spriteRenderer != null && showIceEffect)
         {
@@ -47,6 +60,8 @@ public class SlipperyFloor : MonoBehaviour
     
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (!usesTriggerCollider) return;
+
         if (collision.CompareTag("Player"))
         {
             StartSliding(collision.gameObject);
@@ -55,6 +70,8 @@ public class SlipperyFloor : MonoBehaviour
     
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (usesTriggerCollider) return;
+
         if (collision.gameObject.CompareTag("Player"))
         {
             StartSliding(collision.gameObject);
@@ -63,14 +80,22 @@ public class SlipperyFloor : MonoBehaviour
     
     private void StartSliding(GameObject player)
     {
+        int playerId = player.GetInstanceID();
+        float now = Time.time;
+        if (nextAllowedApplyTimeByPlayer.TryGetValue(playerId, out float nextAllowedTime) && now < nextAllowedTime)
+            return;
+
+        nextAllowedApplyTimeByPlayer[playerId] = now + reapplyCooldown;
+
         // Nếu player đang Dash → không bị trượt
         var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
         if (playerCtrl != null && playerCtrl.IsDashing) return;
 
         // Phát âm thanh trượt
-        if (slideSound != null)
+        if (slideSound != null && now >= lastSlideSoundTime + slideSoundCooldown)
         {
             AudioSource.PlayClipAtPoint(slideSound, transform.position);
+            lastSlideSoundTime = now;
         }
 
         // === NEW: Use Status Effect System ===
@@ -99,32 +124,34 @@ public class SlipperyFloor : MonoBehaviour
         }
         
         // Xác định hướng trượt dựa vào hướng di chuyển hiện tại
-        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
-        Vector2 slideDirection = Vector2.zero;
-        
-        if (rb != null)
-        {
-            // Lấy hướng velocity hiện tại
-            slideDirection = rb.linearVelocity.normalized;
-            
-            // Nếu đứng yên thì trượt theo hướng đang quay mặt
-            if (slideDirection.magnitude < 0.1f)
-            {
-                PlayerController2D controller = player.GetComponent<PlayerController2D>();
-                if (controller != null)
-                {
-                    // Giả sử có thuộc tính facingRight
-                    slideDirection = Vector2.right; // Mặc định
-                }
-                else
-                {
-                    slideDirection = Vector2.right;
-                }
-            }
-        }
+        if (!TryGetSlideDirection(player, out Vector2 slideDirection))
+            return;
         
         // Bắt đầu trượt
         slideController.StartSlide(slideDirection, slideForce, slideDuration, canBreakSlide);
+    }
+
+    private bool TryGetSlideDirection(GameObject player, out Vector2 direction)
+    {
+        direction = Vector2.zero;
+
+        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+        if (rb != null && rb.linearVelocity.sqrMagnitude > 0.01f)
+        {
+            direction = rb.linearVelocity.normalized;
+            return true;
+        }
+
+        PlayerController2D controller = player.GetComponent<PlayerController2D>();
+        if (controller != null)
+        {
+            direction = controller.IsFacingRight ? Vector2.right : Vector2.left;
+            return true;
+        }
+
+        // Fallback cuối cùng: theo localScale để không bị hướng 0.
+        direction = player.transform.localScale.x >= 0f ? Vector2.right : Vector2.left;
+        return true;
     }
     
     private void OnDrawGizmos()
@@ -162,9 +189,12 @@ public class PlayerSlideController : MonoBehaviour
         playerController = GetComponent<PlayerController2D>();
     }
     
-    public void StartSlide(Vector2 direction, float force, float duration, bool canBreakSlide)
+    public bool StartSlide(Vector2 direction, float force, float duration, bool canBreakSlide)
     {
-        if (isSliding) return; // Đang trượt rồi thì không trượt thêm
+        if (isSliding) return false; // Đang trượt rồi thì không trượt thêm
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return false;
         
         isSliding = true;
         slideDirection = direction.normalized;
@@ -177,6 +207,8 @@ public class PlayerSlideController : MonoBehaviour
         {
             playerController.enabled = false;
         }
+
+        return true;
     }
     
     private void FixedUpdate()

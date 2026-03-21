@@ -58,6 +58,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2a38dc0ff8ccb03479a49eb717c818e2, type: 2}
   - {fileID: 11400000, guid: a5e1c9e4c94dce9439b3b8ba94a630a2, type: 2}
   - {fileID: 11400000, guid: ad75ea85da059ef4688d6ca9728f29b3, type: 2}
+  roomTypePrefabPools:
+  - roomType: 1
+    prefabs:
+    - {fileID: 1899830273991222154, guid: 9e193a06a00d939418a9202a485e0139, type: 3}
+    - {fileID: 4466476258470180416, guid: 7d6a641946a8e5142aee06dc52f5cd36, type: 3}
+  - roomType: 2
+    prefabs:
+    - {fileID: 900997120644949915, guid: 7107e9e94abb37941a3ab4404b4a737e, type: 3}
+  - roomType: 3
+    prefabs:
+    - {fileID: 2839078991265060477, guid: 7371ace42438ca74f87ca45168fe40f4, type: 3}
+  - roomType: 4
+    prefabs:
+    - {fileID: 3423774674793753551, guid: b6896cedef5e3da4a87b68e15835698a, type: 3}
   trapDatabase:
   - {fileID: 11400000, guid: 262240ae23fc1e445b71bf7f0331d4e0, type: 2}
   - {fileID: 11400000, guid: 75b631a456fa7544c9ec2521982d6254, type: 2}

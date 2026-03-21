@@ -24,11 +24,16 @@ namespace NWO
         [Header("Effects")]
         [SerializeField] private float enemyStunDuration = 3f;
         [SerializeField] private Color trapRevealColor = new Color(1f, 0.3f, 0.3f, 0.8f);
+
+        [Header("Unlock")]
+        [SerializeField] private int fragmentsRequiredToUnlock = 3;
         
         private bool isUnlocked = false;
         private bool isOnCooldown = false;
         private bool isFlashActive = false;
         private float cooldownTimer = 0f;
+        private bool subscribedToGameManager = false;
+        private bool hasLoggedLockedReason;
         
         private Light2D playerLight;
         private float originalRadius;
@@ -42,29 +47,13 @@ namespace NWO
         
         private void Start()
         {
-            // Get player light reference
-            var lightingManager = DungeonLightingManager.Instance;
-            if (lightingManager != null)
-            {
-                playerLight = lightingManager.GetPlayerLight();
-            }
-            
-            // Subscribe to fragment collection
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.OnAllLightFragmentsCollected += OnAllFragmentsCollected;
-                
-                // Check if already collected
-                if (GameManager.Instance.LightFragmentsCollected >= GameManager.Instance.TotalLightFragments)
-                {
-                    UnlockAbility();
-                }
-            }
+            RefreshPlayerLightReference();
+            TrySubscribeGameManager();
         }
         
         private void OnDestroy()
         {
-            if (GameManager.Instance != null)
+            if (subscribedToGameManager && GameManager.Instance != null)
             {
                 GameManager.Instance.OnAllLightFragmentsCollected -= OnAllFragmentsCollected;
             }
@@ -72,6 +61,9 @@ namespace NWO
         
         private void Update()
         {
+            TrySubscribeGameManager();
+            CheckFallbackUnlock();
+
             // Update cooldown timer
             if (isOnCooldown)
             {
@@ -83,21 +75,49 @@ namespace NWO
                 }
             }
             
-            // Check for activation input
-            bool activated = false;
-            var kb = KeyBindManager.Instance;
-            if (kb != null)
-                activated = kb.WasPressedThisFrame(KeyBindManager.ACT_INTERACT);
-            else
+            // Check for activation input (using new Input System)
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
             {
-                var keyboard = Keyboard.current;
-                activated = keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+                if (CanActivate())
+                {
+                    ActivateFlash();
+                }
+                else
+                {
+                    LogActivationBlockedReason();
+                }
+            }
+        }
+
+        private void TrySubscribeGameManager()
+        {
+            if (subscribedToGameManager)
+                return;
+
+            if (GameManager.Instance == null)
+                return;
+
+            GameManager.Instance.OnAllLightFragmentsCollected += OnAllFragmentsCollected;
+            subscribedToGameManager = true;
+
+            if (GameManager.Instance.LightFragmentsCollected >= GameManager.Instance.TotalLightFragments)
+                UnlockAbility();
+        }
+
+        private void RefreshPlayerLightReference()
+        {
+            if (playerLight != null)
+                return;
+
+            var lightingManager = DungeonLightingManager.Instance;
+            if (lightingManager != null)
+            {
+                playerLight = lightingManager.GetPlayerLight();
             }
 
-            if (activated && CanActivate())
-            {
-                ActivateFlash();
-            }
+            if (playerLight == null)
+                playerLight = GetComponentInChildren<Light2D>(true);
         }
         
         private void OnAllFragmentsCollected()
@@ -108,6 +128,50 @@ namespace NWO
         private void UnlockAbility()
         {
             isUnlocked = true;
+            hasLoggedLockedReason = false;
+            Debug.Log("[FlashOfTruth] Ability unlocked.");
+        }
+
+        private void CheckFallbackUnlock()
+        {
+            if (isUnlocked)
+                return;
+
+            int collected = 0;
+            if (GameManager.Instance != null)
+                collected = GameManager.Instance.LightFragmentsCollected;
+            else if (DungeonLightingManager.Instance != null)
+                collected = DungeonLightingManager.Instance.CollectedFragments;
+
+            if (collected >= fragmentsRequiredToUnlock)
+                UnlockAbility();
+        }
+
+        private void LogActivationBlockedReason()
+        {
+            if (isOnCooldown)
+            {
+                Debug.Log($"[FlashOfTruth] On cooldown: {cooldownTimer:0.0}s remaining.");
+                return;
+            }
+
+            if (isFlashActive)
+            {
+                Debug.Log("[FlashOfTruth] Already active.");
+                return;
+            }
+
+            if (!isUnlocked && !hasLoggedLockedReason)
+            {
+                int collected = 0;
+                if (GameManager.Instance != null)
+                    collected = GameManager.Instance.LightFragmentsCollected;
+                else if (DungeonLightingManager.Instance != null)
+                    collected = DungeonLightingManager.Instance.CollectedFragments;
+
+                Debug.Log($"[FlashOfTruth] Locked: {collected}/{fragmentsRequiredToUnlock} fragments.");
+                hasLoggedLockedReason = true;
+            }
         }
         
         private bool CanActivate()
@@ -117,6 +181,7 @@ namespace NWO
         
         private void ActivateFlash()
         {
+            RefreshPlayerLightReference();
             StartCoroutine(FlashSequence());
         }
         

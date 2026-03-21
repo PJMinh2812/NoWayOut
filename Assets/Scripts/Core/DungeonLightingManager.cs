@@ -14,34 +14,53 @@ namespace NWO
     public class DungeonLightingManager : MonoBehaviour
     {
         public static DungeonLightingManager Instance { get; private set; }
+        public int CollectedFragments => fragmentsCollected;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void AutoBootstrap()
+        {
+            if (FindFirstObjectByType<DungeonLightingManager>() != null)
+                return;
+
+            var managerObj = new GameObject("DungeonLightingManager");
+            managerObj.AddComponent<DungeonLightingManager>();
+        }
         
         [Header("Global Darkness")]
         [Tooltip("Ambient light gần 0 → dungeon tối hoàn toàn, kinh dị")]
-        [SerializeField] private float globalLightIntensity = 0.005f;
+        [SerializeField] private float globalLightIntensity = 0.075f;
         [SerializeField] private Color globalLightColor = new Color(0.05f, 0.05f, 0.1f); // Gần đen hoàn toàn
         
         [Header("Player Light")]
         [Tooltip("Radius ánh sáng player — rất nhỏ, sát người, kinh dị")]
-        [SerializeField] private float playerDefaultLightRadius = 10f;
+        [SerializeField] private float playerDefaultLightRadius = 2f;
         [Tooltip("Radius tăng thêm mỗi lần nhặt Fragment")]
-        [SerializeField] private float radiusPerFragment = 1.25f;
+        [SerializeField] private float radiusPerFragment = 1f;
         [Tooltip("Radius tối đa sau khi nhặt đủ 3 Fragment")]
-        [SerializeField] private float playerMaxLightRadius = 6.5f;
-        [SerializeField] private float playerLightIntensity = 0.8f;
+        [SerializeField] private float playerMaxLightRadius = 5f;
+        [SerializeField] private float playerLightIntensity = 1.1f;
         [SerializeField] private Color playerLightColor = new Color(0.9f, 0.85f, 0.7f); // Vàng nhạt yếu
         
         [Header("Start Room Light")]
         [Tooltip("Intensity ánh sáng phòng Start (full sáng)")]
-        [SerializeField] private float startRoomLightIntensity = 1.2f;
+        [SerializeField] private float startRoomLightIntensity = 1f;
         [SerializeField] private Color startRoomLightColor = Color.white;
         
         [Header("References (auto-find)")]
         [SerializeField] private Light2D globalLight;
         [SerializeField] private Light2D playerLight;
+
+        [Header("Runtime Recovery")]
+        [Tooltip("Tu dong khoi phuc PlayerLight neu bi mat sau transition/respawn")]
+        [SerializeField] private bool autoRecoverPlayerLight = true;
+        [SerializeField] private float playerLightRecoveryInterval = 0.5f;
         
         private GameObject playerObj;
         private int fragmentsCollected = 0;
-        private bool startRoomLightCreated = false;
+        private int lastAppliedFragmentCount = -1;
+        private float nextPlayerLightRecoverTime;
+        private const string PlayerLightObjectName = "PlayerLight";
+        private bool subscribedToGameManager;
         
         private void Awake()
         {
@@ -64,11 +83,7 @@ namespace NWO
             // Convert tất cả sprites sang Lit material để phản ứng với ánh sáng
             StartCoroutine(ConvertSpritesToLitMaterial());
             
-            // Đăng ký event nhặt fragment
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.OnLightFragmentCollected += OnFragmentCollected;
-            }
+            TrySubscribeToGameManager();
             
             // Ensure player has FlashOfTruth component
             if (playerObj != null && playerObj.GetComponent<FlashOfTruth>() == null)
@@ -79,10 +94,38 @@ namespace NWO
         
         private void OnDestroy()
         {
-            if (GameManager.Instance != null)
+            if (subscribedToGameManager && GameManager.Instance != null)
             {
                 GameManager.Instance.OnLightFragmentCollected -= OnFragmentCollected;
             }
+        }
+
+        private void Update()
+        {
+            TrySubscribeToGameManager();
+
+            if (!autoRecoverPlayerLight)
+                return;
+
+            if (Time.time < nextPlayerLightRecoverTime)
+                return;
+
+            nextPlayerLightRecoverTime = Time.time + Mathf.Max(0.1f, playerLightRecoveryInterval);
+            EnsurePlayerLightAlive();
+        }
+
+        private void TrySubscribeToGameManager()
+        {
+            if (subscribedToGameManager)
+                return;
+
+            if (GameManager.Instance == null)
+                return;
+
+            GameManager.Instance.OnLightFragmentCollected += OnFragmentCollected;
+            subscribedToGameManager = true;
+
+            ApplyFragmentProgress(GameManager.Instance.LightFragmentsCollected);
         }
         
         #region Global Light Setup
@@ -155,27 +198,102 @@ namespace NWO
                 }
             }
             
-            // Kiểm tra đã có Light2D chưa
-            playerLight = playerObj.GetComponentInChildren<Light2D>();
+            // Luon uu tien den chuyen dung PlayerLight de tranh lay nham light khac.
+            playerLight = FindDedicatedPlayerLight();
             
             if (playerLight == null)
             {
                 // Tạo child object cho light
-                var lightObj = new GameObject("PlayerLight");
+                var lightObj = new GameObject(PlayerLightObjectName);
                 lightObj.transform.SetParent(playerObj.transform);
                 lightObj.transform.localPosition = Vector3.zero;
                 
                 playerLight = lightObj.AddComponent<Light2D>();
                 playerLight.lightType = Light2D.LightType.Point;
             }
+            else if (playerLight.transform.parent != playerObj.transform)
+            {
+                playerLight.transform.SetParent(playerObj.transform, true);
+            }
             
             // Setup ánh sáng player — cực nhỏ, sát người, horror feel
+            playerLight.enabled = true;
             playerLight.pointLightOuterRadius = playerDefaultLightRadius;
             playerLight.pointLightInnerRadius = playerDefaultLightRadius * 0.2f; // Lõi sáng rất nhỏ
             playerLight.intensity = playerLightIntensity;
             playerLight.color = playerLightColor;
             playerLight.shadowIntensity = 0.9f; // Bóng đậm
             playerLight.falloffIntensity = 0.8f; // Tắt rất nhanh ở rìa
+        }
+
+        private void EnsurePlayerLightAlive()
+        {
+            if (playerObj == null)
+            {
+                playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj == null)
+                    return;
+            }
+
+            if (playerObj.GetComponent<FlashOfTruth>() == null)
+                playerObj.AddComponent<FlashOfTruth>();
+
+            if (playerLight == null)
+            {
+                playerLight = FindDedicatedPlayerLight();
+                if (playerLight == null)
+                {
+                    CreatePlayerLight();
+                    Debug.Log("[DungeonLighting] PlayerLight recreated at runtime.");
+                    return;
+                }
+            }
+
+            if (!playerLight.enabled)
+                playerLight.enabled = true;
+
+            if (!playerLight.gameObject.activeSelf)
+                playerLight.gameObject.SetActive(true);
+
+            if (playerLight.transform.parent != playerObj.transform)
+                playerLight.transform.SetParent(playerObj.transform, true);
+
+            if (playerLight.transform.localPosition != Vector3.zero)
+                playerLight.transform.localPosition = Vector3.zero;
+
+            if (playerLight.lightType != Light2D.LightType.Point)
+                playerLight.lightType = Light2D.LightType.Point;
+
+            if (playerLight.intensity < 0.01f)
+            {
+                playerLight.intensity = playerLightIntensity;
+                Debug.Log("[DungeonLighting] PlayerLight intensity recovered.");
+            }
+
+            if (playerLight.pointLightOuterRadius < 0.5f)
+            {
+                playerLight.pointLightOuterRadius = playerDefaultLightRadius;
+                Debug.Log("[DungeonLighting] PlayerLight radius recovered.");
+            }
+
+            if (playerLight.pointLightInnerRadius < 0.1f)
+                playerLight.pointLightInnerRadius = playerDefaultLightRadius * 0.2f;
+        }
+
+        private Light2D FindDedicatedPlayerLight()
+        {
+            if (playerObj == null)
+                return null;
+
+            Transform dedicated = playerObj.transform.Find(PlayerLightObjectName);
+            if (dedicated != null)
+            {
+                Light2D dedicatedLight = dedicated.GetComponent<Light2D>();
+                if (dedicatedLight != null)
+                    return dedicatedLight;
+            }
+
+            return null;
         }
         
         private System.Collections.IEnumerator RetrySetupPlayerLight()
@@ -214,7 +332,6 @@ namespace NWO
             {
                 if (TrySetupStartRoomLight())
                 {
-                    startRoomLightCreated = true;
                     yield break;
                 }
                 
@@ -303,15 +420,30 @@ namespace NWO
         
         /// <summary>
         /// Khi nhặt fragment → tăng radius ánh sáng player
-        /// 0 fragment: 6 units (≈1 ô quanh player)
-        /// 1 fragment: 10 units (≈2 ô)
-        /// 2 fragment: 14 units (≈2.5 ô)
-        /// 3 fragment: 18 units (≈3 ô)
+        /// 0 fragment: 3x3 ô
+        /// +1 fragment: 4x4 ô
+        /// +2 fragment: 5x5 ô
+        /// +3 fragment: 6x6 ô
         /// </summary>
         private void OnFragmentCollected(int current, int total)
         {
-            fragmentsCollected = current;
+            ApplyFragmentProgress(current);
+        }
+
+        public void ApplyFragmentProgress(int current)
+        {
+            int clamped = Mathf.Max(0, current);
+            if (clamped == lastAppliedFragmentCount)
+                return;
+
+            fragmentsCollected = clamped;
+            lastAppliedFragmentCount = clamped;
             ExpandPlayerLight();
+        }
+
+        public void NotifyFragmentCollectedFallback()
+        {
+            ApplyFragmentProgress(fragmentsCollected + 1);
         }
         
         /// <summary>

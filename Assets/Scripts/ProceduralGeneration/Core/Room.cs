@@ -30,15 +30,17 @@ namespace ProceduralGeneration.Core
 
         // Prefab mode flag
         private bool usingPrefab;
+        private readonly GameObject prefabOverride;
         
         /// <summary>
         /// Constructor
         /// </summary>
-        public Room(RoomData data, Vector2Int position, Vector2Int? overrideSize = null)
+        public Room(RoomData data, Vector2Int position, Vector2Int? overrideSize = null, GameObject prefabOverride = null)
         {
             roomData = data;
             gridPosition = position;
             actualSize = overrideSize ?? data.size; // Sử dụng override hoặc default
+            this.prefabOverride = prefabOverride;
             connectedRooms = new Dictionary<DoorDirection, Room>();
             distanceFromStart = 0;
             dangerLevel = 0;
@@ -125,11 +127,12 @@ namespace ProceduralGeneration.Core
         {
             this.worldScale = worldScale;
             Vector3 worldPosition = new Vector3(gridPosition.x * worldScale, gridPosition.y * worldScale, 0);
+            GameObject selectedPrefab = prefabOverride != null ? prefabOverride : roomData.roomPrefab;
 
-            if (roomData.roomPrefab != null)
+            if (selectedPrefab != null)
             {
                 // ===== CHẾ ĐỘ PREFAB: Dùng phòng đã decor sẵn =====
-                roomInstance = Object.Instantiate(roomData.roomPrefab, parent);
+                roomInstance = Object.Instantiate(selectedPrefab, parent);
                 roomInstance.name = $"Room_{roomData.roomType}_{gridPosition.x}_{gridPosition.y}";
                 roomInstance.transform.position = worldPosition;
 
@@ -189,7 +192,9 @@ namespace ProceduralGeneration.Core
             UnityEngine.Tilemaps.TileBase botL, UnityEngine.Tilemaps.TileBase botR,
             UnityEngine.Tilemaps.TileBase top, UnityEngine.Tilemaps.TileBase bottom,
             UnityEngine.Tilemaps.TileBase left, UnityEngine.Tilemaps.TileBase right,
-            GameObject door, Data.TrapData[] traps)
+            GameObject door, Data.TrapData[] traps,
+            UnityEngine.Tilemaps.TileBase fillTop = null, UnityEngine.Tilemaps.TileBase fillBottom = null,
+            UnityEngine.Tilemaps.TileBase fillLeft = null, UnityEngine.Tilemaps.TileBase fillRight = null)
         {
             if (roomInstance == null) return;
             
@@ -197,7 +202,8 @@ namespace ProceduralGeneration.Core
             if (visualGen != null)
             {
                 visualGen.ConfigureTiles(autoFill, floors, center, topL, topR, botL, botR,
-                    top, bottom, left, right, door, traps);
+                    top, bottom, left, right, door, traps,
+                    fillTop, fillBottom, fillLeft, fillRight);
             }
         }
         

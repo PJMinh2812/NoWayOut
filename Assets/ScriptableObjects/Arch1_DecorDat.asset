@@ -12,7 +12,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ca74019df939d34baf4ae5502498ba2, type: 3}
   m_Name: Arch1_DecorDat
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.DecorData
-  items: []
+  items:
+  - prefab: {fileID: 1277740607812641918, guid: 916177bd12aef644185a67058bac7c45, type: 3}
+    weight: 3
+    size: {x: 1, y: 1}
+    blocksMovement: 0
+    sortingOrderOffset: 5
+    placement: 1
+    allowRandomFlip: 1
+    allowRandomRotation: 0
+  - prefab: {fileID: 8338880749770760714, guid: 85bdb802fa6a32648a8f3f89b29aa6b8, type: 3}
+    weight: 2
+    size: {x: 1, y: 1}
+    blocksMovement: 1
+    sortingOrderOffset: 1
+    placement: 0
+    allowRandomFlip: 1
+    allowRandomRotation: 0
+  - prefab: {fileID: 6891977859003464148, guid: d654d7adcce6d71499f78ad1bc068158, type: 3}
+    weight: 1
+    size: {x: 1, y: 1}
+    blocksMovement: 0
+    sortingOrderOffset: 5
+    placement: 1
+    allowRandomFlip: 0
+    allowRandomRotation: 0
+  - prefab: {fileID: 6879425046291853372, guid: 3e7c44438ba353f46a9b9a6deec9108a, type: 3}
+    weight: 1
+    size: {x: 1, y: 1}
+    blocksMovement: 0
+    sortingOrderOffset: 5
+    placement: 1
+    allowRandomFlip: 0
+    allowRandomRotation: 0
   density: 0.15
   minSpacing: 2
   doorClearance: 3

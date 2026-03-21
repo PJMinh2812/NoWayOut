@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4f69dac71153eca4da217f026ef0ed55, type: 3}
-  m_Name: Room_Boss
+  m_Name: Room_Goal
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Data.RoomData
-  roomPrefab: {fileID: 8131951533042220629, guid: e96087b92354db74b95aab3428ad4cd3, type: 3}
-  roomType: 4
+  roomPrefab: {fileID: 0}
+  roomType: 5
   size: {x: 1, y: 1}
   doorAnchors:
   - direction: 0
@@ -32,6 +32,6 @@ MonoBehaviour:
     localPosition: {x: -5, y: 0, z: 0}
     doorObject: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
     wallObject: {fileID: 0}
-  maxTrapSpawnPoints: 3
+  maxTrapSpawnPoints: 0
   enemySpawnRate: 0.5
   editorColor: {r: 1, g: 1, b: 1, a: 1}

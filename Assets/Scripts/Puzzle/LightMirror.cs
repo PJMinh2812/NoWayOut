@@ -10,7 +10,6 @@ namespace NWO.Puzzle
     public class LightMirror : MonoBehaviour
     {
         [Header("Mirror Settings")]
-        [SerializeField] private float reflectionAngle = 45f; // Angle to reflect light
         [SerializeField] private float maxReflectionDistance = 15f;
         [SerializeField] private float detectionRadius = 8f; // Range to detect player light
         [SerializeField] private LayerMask obstacleLayer; // Walls that block light

@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using ProceduralGeneration.Data;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine.Rendering;
+#endif
 
 namespace ProceduralGeneration.Components
 {
@@ -17,6 +21,7 @@ namespace ProceduralGeneration.Components
         [Header("Tile Settings")]
         [SerializeField] private float tileSize = 1f; // 1 grid cell = 1 world unit
         [SerializeField] private float wallThickness = 0.15f; // Thin for door markers
+        [SerializeField, Min(1)] private int activeDoorOpeningDepth = 3; // Số ô mở vào trong cho cửa đang dùng
         
         [Header("Auto-Fill Tiles")]
         [Tooltip("Bật auto-fill tiles (nếu tắt sẽ tạo placeholder để vẽ manual)")]
@@ -36,6 +41,16 @@ namespace ProceduralGeneration.Components
         [SerializeField] private TileBase wallLeft; // Tường trái (vertical)
         [SerializeField] private TileBase wallRight; // Tường phải (vertical)
         
+        [Header("Wall Fill Tiles (trám tường không có cửa, theo hướng)")]
+        [Tooltip("Tile trám tường TRÊN. Nếu null sẽ dùng wallTop.")]
+        [SerializeField] private TileBase wallFillTop;
+        [Tooltip("Tile trám tường DƯỚI. Nếu null sẽ dùng wallBottom.")]
+        [SerializeField] private TileBase wallFillBottom;
+        [Tooltip("Tile trám tường TRÁI. Nếu null sẽ dùng wallLeft.")]
+        [SerializeField] private TileBase wallFillLeft;
+        [Tooltip("Tile trám tường PHẢI. Nếu null sẽ dùng wallRight.")]
+        [SerializeField] private TileBase wallFillRight;
+        
         [Header("Door Prefab")]
         [SerializeField] private GameObject doorPrefab; // Prefab có animation mở/đóng
         
@@ -48,6 +63,35 @@ namespace ProceduralGeneration.Components
         private System.Collections.Generic.HashSet<DoorDirection> activeDirections; // Hướng có room kế bên
         private Core.Room currentRoom; // Room hiện tại (for DoorTrigger)
         private System.Collections.Generic.Dictionary<DoorDirection, Core.Room> connectedRooms; // Rooms kế bên
+        private int cachedTilesX; // Cache tile dimensions for consistent door/wall alignment
+        private int cachedTilesY;
+
+        private void OnEnable()
+        {
+            // Auto-fix materials khi prefab được load (scene load, edit prefab, instantiate, etc.)
+            NormalizeTilemapMaterials();
+        }
+
+        /// <summary>
+        /// Normalize (fix pink material) cho toàn bộ TilemapRenderer khi load từ prefab
+        /// (Gọi OnEnable để auto-fix khi prefab instantiate hoặc edit prefab)
+        /// </summary>
+        private void NormalizeTilemapMaterials()
+        {
+            #if UNITY_EDITOR
+            foreach (var renderer in GetComponentsInChildren<TilemapRenderer>(true))
+            {
+                if (renderer.sharedMaterial == null || renderer.sharedMaterial.shader == null)
+                {
+                    Material spriteDefault = GetSpriteDefaultMaterial();
+                    if (spriteDefault != null)
+                    {
+                        renderer.sharedMaterial = spriteDefault;
+                    }
+                }
+            }
+            #endif
+        }
         
         /// <summary>
         /// Configure tiles từ DungeonManager (vì component được add runtime)
@@ -55,7 +99,9 @@ namespace ProceduralGeneration.Components
         public void ConfigureTiles(bool autoFill, TileBase[] floors, TileBase center,
             TileBase topL, TileBase topR, TileBase botL, TileBase botR,
             TileBase top, TileBase bottom, TileBase left, TileBase right,
-            GameObject door, Data.TrapData[] traps)
+            GameObject door, Data.TrapData[] traps,
+            TileBase fillTop = null, TileBase fillBottom = null,
+            TileBase fillLeft = null, TileBase fillRight = null)
         {
             autoFillTiles = autoFill;
             floorTiles = floors;
@@ -70,6 +116,10 @@ namespace ProceduralGeneration.Components
             wallRight = right;
             doorPrefab = door;
             trapTypes = traps;
+            if (fillTop != null) wallFillTop = fillTop;
+            if (fillBottom != null) wallFillBottom = fillBottom;
+            if (fillLeft != null) wallFillLeft = fillLeft;
+            if (fillRight != null) wallFillRight = fillRight;
         }
         
         /// <summary>
@@ -78,6 +128,52 @@ namespace ProceduralGeneration.Components
         public void SetCurrentRoom(Core.Room room)
         {
             currentRoom = room;
+        }
+        
+        /// <summary>
+        /// Force Sprites-Default material trên tất cả TilemapRenderer (dùng trong editor để fix pink preview)
+        /// </summary>
+        public void ForceSpriteDefaultMaterial()
+        {
+            #if UNITY_EDITOR
+            Material spriteDefault = GetSpriteDefaultMaterial();
+            if (spriteDefault == null)
+            {
+                // Fallback: set material = null để dùng default
+                foreach (var renderer in GetComponentsInChildren<TilemapRenderer>(true))
+                {
+                    renderer.sharedMaterial = null;
+                }
+                return;
+            }
+
+            foreach (var renderer in GetComponentsInChildren<TilemapRenderer>(true))
+            {
+                renderer.sharedMaterial = spriteDefault;
+            }
+            #endif
+        }
+
+        /// <summary>
+        /// Get material an toàn cho Sprite/Tilemap theo render pipeline hiện tại.
+        /// </summary>
+        private Material GetSpriteDefaultMaterial()
+        {
+            #if UNITY_EDITOR
+            // URP 2D: ưu tiên Sprite-Unlit-Default để tránh magenta do shader mismatch.
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Material urpSpriteMat = AssetDatabase.LoadAssetAtPath<Material>(
+                    "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat");
+                if (urpSpriteMat != null)
+                    return urpSpriteMat;
+            }
+
+            // Built-in fallback.
+            return AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
+            #else
+            return null;
+            #endif
         }
         
         
@@ -153,8 +249,8 @@ namespace ProceduralGeneration.Components
                     activeDirections.Add(kvp.Key);
             }
 
-            // Xóa visual cũ từ prefab (Background/Walls/Doors thừa tại gốc toạ độ)
-            foreach (string n in new[] { "Background", "Walls", "Doors" })
+            // Xóa door cũ để regenerate theo connections hiện tại.
+            foreach (string n in new[] { "Doors", "DoorMarkers" })
             {
                 Transform old = transform.Find(n);
                 if (old != null)
@@ -164,28 +260,42 @@ namespace ProceduralGeneration.Components
                 }
             }
 
-            // Tạo container cho toàn bộ visuals (floor, walls, doors)
-            GameObject visualContainer = new GameObject("Visuals");
-            visualContainer.transform.SetParent(transform);
-            visualContainer.transform.localPosition = Vector3.zero;
+            // Nếu prefab đã có visuals thì giữ nguyên, chỉ thêm doors.
+            bool hasExistingVisuals = HasExistingVisuals();
+            Transform visualContainer = transform.Find("Visuals");
+            if (visualContainer == null)
+            {
+                GameObject newContainer = new GameObject("Visuals");
+                newContainer.transform.SetParent(transform);
+                newContainer.transform.localPosition = Vector3.zero;
+                visualContainer = newContainer.transform;
+            }
 
-            // Tạo Floor Tilemap
-            if (autoFillTiles && floorTiles != null && floorTiles.Length > 0)
-                CreateAutoFilledFloor(visualContainer.transform);
-            else
-                CreateEmptyTilemap(visualContainer.transform, "Floor", -10);
+            if (!hasExistingVisuals)
+            {
+                // Prefab không có visuals: fallback về auto-generate như trước.
+                if (autoFillTiles && floorTiles != null && floorTiles.Length > 0)
+                    CreateAutoFilledFloor(visualContainer);
+                else
+                    CreateEmptyTilemap(visualContainer, "Floor", -10);
 
-            // Tạo Walls Tilemap
-            if (autoFillTiles && wallCenter != null)
-                CreateAutoFilledWalls(visualContainer.transform);
+                if (autoFillTiles && wallCenter != null)
+                    CreateAutoFilledWalls(visualContainer);
+                else
+                    CreateEmptyTilemap(visualContainer, "Walls", 0);
+            }
             else
-                CreateEmptyTilemap(visualContainer.transform, "Walls", 0);
+            {
+                // Prefab có visuals sẵn: đồng bộ trạng thái lỗ cửa trên wall tilemap.
+                // Hướng có kết nối thì mở, hướng không có kết nối thì trám lại bằng wall tile.
+                SyncDoorGapsOnExistingWalls();
+            }
 
             // Tạo Doors
             if (doorPrefab != null)
-                GenerateDoorPrefabs(visualContainer.transform);
+                GenerateDoorPrefabs(visualContainer);
             else
-                GenerateDoorMarkers(visualContainer.transform);
+                GenerateDoorMarkers(visualContainer);
         }
 
         
@@ -214,6 +324,11 @@ namespace ProceduralGeneration.Components
             tilemapRenderer.sortingOrder = sortingOrder;
             tilemapRenderer.sortingLayerName = "Default";
             tilemapRenderer.detectChunkCullingBounds = TilemapRenderer.DetectChunkCullingBounds.Auto;
+            
+            // Set material immediately to prevent pink preview
+            Material spriteDefault = GetSpriteDefaultMaterial();
+            if (spriteDefault != null)
+                tilemapRenderer.sharedMaterial = spriteDefault;
             
             // Pre-fill với placeholder tiles để show bounds
             CreateSquareSprite();
@@ -250,8 +365,9 @@ namespace ProceduralGeneration.Components
             doorContainer.transform.SetParent(parent);
             doorContainer.transform.localPosition = Vector3.zero;
             
-            float roomWidth = currentRoom.actualSize.x * tileSize;
-            float roomHeight = currentRoom.actualSize.y * tileSize;
+            GetDoorPlacementRect(out float minX, out float maxX, out float minY, out float maxY);
+            float roomWidth = maxX - minX;
+            float roomHeight = maxY - minY;
             
             // Scale door markers theo worldScale
             float doorSize = 1.5f * currentRoom.worldScale;
@@ -275,19 +391,19 @@ namespace ProceduralGeneration.Components
                 switch (door.direction)
                 {
                     case DoorDirection.Top:
-                        doorPos = new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, roomHeight - doorInset, -0.1f);
+                        doorPos = new Vector3(minX + roomWidth / 2f + door.localPosition.x * tileSize, maxY - doorInset, -0.1f);
                         doorScale = new Vector3(doorSize, scaledWallThickness, 1);
                         break;
                     case DoorDirection.Bottom:
-                        doorPos = new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, doorInset, -0.1f);
+                        doorPos = new Vector3(minX + roomWidth / 2f + door.localPosition.x * tileSize, minY + doorInset, -0.1f);
                         doorScale = new Vector3(doorSize, scaledWallThickness, 1);
                         break;
                     case DoorDirection.Left:
-                        doorPos = new Vector3(doorInset, roomHeight / 2f + door.localPosition.y * tileSize, -0.1f);
+                        doorPos = new Vector3(minX + doorInset, minY + roomHeight / 2f + door.localPosition.y * tileSize, -0.1f);
                         doorScale = new Vector3(scaledWallThickness, doorSize, 1);
                         break;
                     case DoorDirection.Right:
-                        doorPos = new Vector3(roomWidth - doorInset, roomHeight / 2f + door.localPosition.y * tileSize, -0.1f);
+                        doorPos = new Vector3(maxX - doorInset, minY + roomHeight / 2f + door.localPosition.y * tileSize, -0.1f);
                         doorScale = new Vector3(scaledWallThickness, doorSize, 1);
                         break;
                 }
@@ -315,6 +431,19 @@ namespace ProceduralGeneration.Components
             Grid grid = gridObj.AddComponent<Grid>();
             grid.cellSize = new Vector3(1f, 1f, 0);
             grid.cellLayout = GridLayout.CellLayout.Rectangle;
+
+            // Base floor tilemap: luôn fill kín cell để sprite không full ô vẫn không lộ nền.
+            GameObject baseTilemapObj = new GameObject("FloorBaseTilemap");
+            baseTilemapObj.transform.SetParent(gridObj.transform);
+            baseTilemapObj.transform.localPosition = Vector3.zero;
+
+            Tilemap baseTilemap = baseTilemapObj.AddComponent<Tilemap>();
+            TilemapRenderer baseRenderer = baseTilemapObj.AddComponent<TilemapRenderer>();
+            baseRenderer.sortingOrder = -11;
+
+            Material baseSpriteDefault = GetSpriteDefaultMaterial();
+            if (baseSpriteDefault != null)
+                baseRenderer.sharedMaterial = baseSpriteDefault;
             
             GameObject tilemapObj = new GameObject("FloorTilemap");
             tilemapObj.transform.SetParent(gridObj.transform);
@@ -324,14 +453,22 @@ namespace ProceduralGeneration.Components
             TilemapRenderer renderer = tilemapObj.AddComponent<TilemapRenderer>();
             renderer.sortingOrder = -10;
             
+            // Set material immediately to prevent pink preview
+            Material spriteDefault = GetSpriteDefaultMaterial();
+            if (spriteDefault != null)
+                renderer.sharedMaterial = spriteDefault;
+            
             int tilesX = currentRoom.actualSize.x * (int)tileSize;
             int tilesY = currentRoom.actualSize.y * (int)tileSize;
+
+            Tile floorBaseTile = CreateSolidColorTile(floorColor);
             
             // Fill sàn CHỈ interior (bỏ edges vì đó là chỗ có wall)
             for (int x = 1; x < tilesX - 1; x++)
             {
                 for (int y = 1; y < tilesY - 1; y++)
                 {
+                    baseTilemap.SetTile(new Vector3Int(x, y, 0), floorBaseTile);
                     TileBase randomTile = floorTiles[Random.Range(0, floorTiles.Length)];
                     tilemap.SetTile(new Vector3Int(x, y, 0), randomTile);
                 }
@@ -350,6 +487,19 @@ namespace ProceduralGeneration.Components
             Grid grid = gridObj.AddComponent<Grid>();
             grid.cellSize = new Vector3(1f, 1f, 0);
             grid.cellLayout = GridLayout.CellLayout.Rectangle;
+
+            // Base wall tilemap: fill nền màu tường dưới sprite tường để tránh lộ nền.
+            GameObject baseTilemapObj = new GameObject("WallsBaseTilemap");
+            baseTilemapObj.transform.SetParent(gridObj.transform);
+            baseTilemapObj.transform.localPosition = Vector3.zero;
+
+            Tilemap baseTilemap = baseTilemapObj.AddComponent<Tilemap>();
+            TilemapRenderer baseRenderer = baseTilemapObj.AddComponent<TilemapRenderer>();
+            baseRenderer.sortingOrder = -1;
+
+            Material baseSpriteDefault = GetSpriteDefaultMaterial();
+            if (baseSpriteDefault != null)
+                baseRenderer.sharedMaterial = baseSpriteDefault;
             
             GameObject tilemapObj = new GameObject("WallsTilemap");
             tilemapObj.transform.SetParent(gridObj.transform);
@@ -358,6 +508,11 @@ namespace ProceduralGeneration.Components
             Tilemap tilemap = tilemapObj.AddComponent<Tilemap>();
             TilemapRenderer renderer = tilemapObj.AddComponent<TilemapRenderer>();
             renderer.sortingOrder = 0;
+            
+            // Set material immediately to prevent pink preview
+            Material spriteDefault = GetSpriteDefaultMaterial();
+            if (spriteDefault != null)
+                renderer.sharedMaterial = spriteDefault;
             
             // Add collision for walls
             TilemapCollider2D tilemapCollider = tilemapObj.AddComponent<TilemapCollider2D>();
@@ -369,6 +524,9 @@ namespace ProceduralGeneration.Components
             
             int tilesX = currentRoom.actualSize.x * (int)tileSize;
             int tilesY = currentRoom.actualSize.y * (int)tileSize;
+            cachedTilesX = tilesX;
+            cachedTilesY = tilesY;
+            Tile wallBaseTile = CreateSolidColorTile(wallColor);
             
             // Tính door tile positions - xóa CHỈ 1 tile tại vị trí door (cả edge lẫn inner layer)
             var doorTilePositions = new System.Collections.Generic.HashSet<Vector2Int>();
@@ -377,38 +535,11 @@ namespace ProceduralGeneration.Components
             {
                 if (activeDirections != null && !activeDirections.Contains(door.direction))
                     continue;
-                
-                switch (door.direction)
-                {
-                    case DoorDirection.Top:
-                    {
-                        int cx = tilesX / 2 + (int)(door.localPosition.x);
-                        doorTilePositions.Add(new Vector2Int(cx, tilesY - 1)); // Edge tile
-                        doorTilePositions.Add(new Vector2Int(cx, tilesY - 2)); // Inner tile
-                        break;
-                    }
-                    case DoorDirection.Bottom:
-                    {
-                        int cx = tilesX / 2 + (int)(door.localPosition.x);
-                        doorTilePositions.Add(new Vector2Int(cx, 0));  // Edge tile
-                        doorTilePositions.Add(new Vector2Int(cx, 1));  // Inner tile
-                        break;
-                    }
-                    case DoorDirection.Left:
-                    {
-                        int cy = tilesY / 2 + (int)(door.localPosition.y);
-                        doorTilePositions.Add(new Vector2Int(0, cy));  // Edge tile
-                        doorTilePositions.Add(new Vector2Int(1, cy));  // Inner tile
-                        break;
-                    }
-                    case DoorDirection.Right:
-                    {
-                        int cy = tilesY / 2 + (int)(door.localPosition.y);
-                        doorTilePositions.Add(new Vector2Int(tilesX - 1, cy)); // Edge tile
-                        doorTilePositions.Add(new Vector2Int(tilesX - 2, cy)); // Inner tile
-                        break;
-                    }
-                }
+
+                Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
+
+                foreach (var openingCell in GetDoorOpeningCells(door.direction, doorCell, tilesX, tilesY, GetActiveOpeningDepth()))
+                    doorTilePositions.Add(openingCell);
             }
             
             // Fill walls với proper tiles dựa vào vị trí
@@ -431,14 +562,26 @@ namespace ProceduralGeneration.Components
                     TileBase wallTileToUse = GetWallTileForPosition(x, y, tilesX, tilesY);
                     if (wallTileToUse != null)
                     {
+                        baseTilemap.SetTile(new Vector3Int(x, y, 0), wallBaseTile);
                         tilemap.SetTile(new Vector3Int(x, y, 0), wallTileToUse);
                     }
                 }
             }
+            
+            // KEEP DOOR GAPS OPEN: do not auto-fill door cells back with wall tiles.
+        }
+
+        private Tile CreateSolidColorTile(Color color)
+        {
+            CreateSquareSprite();
+            Tile tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = squareSprite;
+            tile.color = color;
+            return tile;
         }
 
         /// <summary>
-        /// Chọn wall tilephù hợp dựa vào vị trí
+        /// Chọn wall tile phù hợp dựa vào vị trí
         /// </summary>
         private TileBase GetWallTileForPosition(int x, int y, int maxX, int maxY)
         {
@@ -461,6 +604,21 @@ namespace ProceduralGeneration.Components
             
             return wallCenter;
         }
+
+        /// <summary>
+        /// Lấy wall fill tile theo hướng, fallback về wall tile của hướng đó, rồi wallCenter
+        /// </summary>
+        private TileBase GetWallFillTileForDirection(DoorDirection direction)
+        {
+            switch (direction)
+            {
+                case DoorDirection.Top:    return wallFillTop ?? wallTop ?? wallCenter;
+                case DoorDirection.Bottom: return wallFillBottom ?? wallBottom ?? wallCenter;
+                case DoorDirection.Left:   return wallFillLeft ?? wallLeft ?? wallCenter;
+                case DoorDirection.Right:  return wallFillRight ?? wallRight ?? wallCenter;
+                default:                   return wallCenter;
+            }
+        }
         
         /// <summary>
         /// Tạo door prefabs (với animation) thay vì markers
@@ -474,8 +632,7 @@ namespace ProceduralGeneration.Components
             doorContainer.transform.SetParent(parent);
             doorContainer.transform.localPosition = Vector3.zero;
             
-            float roomWidth = currentRoom.actualSize.x * tileSize;
-            float roomHeight = currentRoom.actualSize.y * tileSize;
+            GetDoorPlacementRect(out float minX, out float maxX, out float minY, out float maxY);
             
             foreach (var door in roomData.doorAnchors)
             {
@@ -486,7 +643,7 @@ namespace ProceduralGeneration.Components
                 GameObject doorObj = Instantiate(doorPrefab, doorContainer.transform);
                 doorObj.name = $"Door_{door.direction}";
                 
-                Vector3 doorPos = GetDoorPosition(door, roomWidth, roomHeight);
+                Vector3 doorPos = GetDoorPosition(door, minX, maxX, minY, maxY);
                 Quaternion doorRot = GetDoorRotation(door.direction);
                 Vector3 doorScale = GetDoorScale(door.direction);
                 
@@ -540,29 +697,358 @@ namespace ProceduralGeneration.Components
         /// <summary>
         /// Tính position cho door - door nằm ngay trên center của wall tile
         /// </summary>
-        private Vector3 GetDoorPosition(DoorAnchor door, float roomWidth, float roomHeight)
+        private Vector3 GetDoorPosition(DoorAnchor door, float minX, float maxX, float minY, float maxY)
         {
-            // Door nằm ngay trên wall edge (center của wall tile đầu tiên/cuối)
-            // tileSize/2 để đặt vào center của wall tile
-            float wallCenterOffset = tileSize / 2f;
+            if (TryGetDoorPositionFromWallTilemap(door, out Vector3 alignedPos))
+                return alignedPos;
+
+            float roomWidth = maxX - minX;
+            float roomHeight = maxY - minY;
+            // Dùng cached dimensions nếu có để đồng bộ với wall cutout
+            int tilesX = cachedTilesX > 0 ? cachedTilesX : Mathf.Max(1, Mathf.RoundToInt(roomWidth / tileSize));
+            int tilesY = cachedTilesY > 0 ? cachedTilesY : Mathf.Max(1, Mathf.RoundToInt(roomHeight / tileSize));
+            Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
+            float centerX = minX + (doorCell.x + 0.5f) * tileSize;
+            float centerY = minY + (doorCell.y + 0.5f) * tileSize;
             
             switch (door.direction)
             {
                 case DoorDirection.Top:
-                    // Top wall: y = roomHeight - tileSize/2 (center của top wall tile row)
-                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, roomHeight - wallCenterOffset, 0);
+                    return new Vector3(centerX, maxY - tileSize * 0.5f, 0);
                 case DoorDirection.Bottom:
-                    // Bottom wall: y = tileSize/2 (center của bottom wall tile row)
-                    return new Vector3(roomWidth / 2f + door.localPosition.x * tileSize, wallCenterOffset, 0);
+                    return new Vector3(centerX, minY + tileSize * 0.5f, 0);
                 case DoorDirection.Left:
-                    // Left wall: x = tileSize/2 (center của left wall tile column)
-                    return new Vector3(wallCenterOffset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
+                    return new Vector3(minX + tileSize * 0.5f, centerY, 0);
                 case DoorDirection.Right:
-                    // Right wall: x = roomWidth - tileSize/2 (center của right wall tile column)
-                    return new Vector3(roomWidth - wallCenterOffset, roomHeight / 2f + door.localPosition.y * tileSize, 0);
+                    return new Vector3(maxX - tileSize * 0.5f, centerY, 0);
                 default:
                     return Vector3.zero;
             }
+        }
+
+        private bool TryGetDoorPositionFromWallTilemap(DoorAnchor door, out Vector3 localPosition)
+        {
+            localPosition = Vector3.zero;
+
+            if (!TryGetWallTilemaps(out var wallTilemaps, out _))
+                return false;
+
+            Tilemap wallTilemap = GetReferenceWallTilemap(wallTilemaps);
+            if (wallTilemap == null)
+                return false;
+
+            BoundsInt bounds = wallTilemap.cellBounds;
+            if (bounds.size.x <= 0 || bounds.size.y <= 0)
+                return false;
+
+            int tilesX = bounds.size.x;
+            int tilesY = bounds.size.y;
+            Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
+
+            Vector2Int edgeCell = door.direction switch
+            {
+                DoorDirection.Top => new Vector2Int(doorCell.x, tilesY - 1),
+                DoorDirection.Bottom => new Vector2Int(doorCell.x, 0),
+                DoorDirection.Left => new Vector2Int(0, doorCell.y),
+                DoorDirection.Right => new Vector2Int(tilesX - 1, doorCell.y),
+                _ => doorCell
+            };
+
+            Vector3Int mapCell = new Vector3Int(bounds.xMin + edgeCell.x, bounds.yMin + edgeCell.y, 0);
+            Vector3 wallLocal = wallTilemap.GetCellCenterLocal(mapCell);
+            Vector3 world = wallTilemap.transform.TransformPoint(wallLocal);
+            localPosition = transform.InverseTransformPoint(world);
+            return true;
+        }
+
+        private Vector2Int GetDoorCenterCell(DoorAnchor door, int tilesX, int tilesY)
+        {
+            Vector2 snappedOffset = GetSnappedDoorOffset(door);
+
+            int cx = Mathf.Clamp(tilesX / 2 + Mathf.RoundToInt(snappedOffset.x), 0, tilesX - 1);
+            int cy = Mathf.Clamp(tilesY / 2 + Mathf.RoundToInt(snappedOffset.y), 0, tilesY - 1);
+
+            switch (door.direction)
+            {
+                case DoorDirection.Top:
+                    return new Vector2Int(cx, tilesY - 1);
+                case DoorDirection.Bottom:
+                    return new Vector2Int(cx, 0);
+                case DoorDirection.Left:
+                    return new Vector2Int(0, cy);
+                case DoorDirection.Right:
+                    return new Vector2Int(tilesX - 1, cy);
+                default:
+                    return new Vector2Int(cx, cy);
+            }
+        }
+
+        private Vector2 GetSnappedDoorOffset(DoorAnchor door)
+        {
+            // Đồng bộ offset giữa wall cutout và door placement để tránh lệch theo nửa ô.
+            return new Vector2(
+                Mathf.Round(door.localPosition.x),
+                Mathf.Round(door.localPosition.y)
+            );
+        }
+
+        private void SyncDoorGapsOnExistingWalls()
+        {
+            if (roomData == null || roomData.doorAnchors == null || roomData.doorAnchors.Count == 0)
+                return;
+
+            if (!TryGetWallTilemaps(out var wallTilemaps, out Tilemap baseWallTilemap))
+                return;
+
+            Tilemap referenceWallTilemap = GetReferenceWallTilemap(wallTilemaps);
+            if (referenceWallTilemap == null)
+                return;
+
+            BoundsInt bounds = referenceWallTilemap.cellBounds;
+            if (bounds.size.x <= 0 || bounds.size.y <= 0)
+                return;
+
+            int tilesX = bounds.size.x;
+            int tilesY = bounds.size.y;
+            foreach (var door in roomData.doorAnchors)
+            {
+                Vector2Int doorCell = GetDoorCenterCell(door, tilesX, tilesY);
+                int openingDepth = GetActiveOpeningDepth();
+
+                foreach (var localCell in GetDoorOpeningCells(door.direction, doorCell, tilesX, tilesY, openingDepth))
+                {
+                    Vector3Int cell = new Vector3Int(bounds.xMin + localCell.x, bounds.yMin + localCell.y, 0);
+
+                    foreach (var wallTilemap in wallTilemaps)
+                        wallTilemap.SetTile(cell, null);
+
+                    if (baseWallTilemap != null)
+                        baseWallTilemap.SetTile(cell, null);
+                }
+            }
+        }
+
+        private System.Collections.Generic.List<Vector2Int> GetDoorOpeningCells(DoorDirection direction, Vector2Int doorCell, int tilesX, int tilesY, int openingDepth)
+        {
+            var cells = new System.Collections.Generic.List<Vector2Int>(Mathf.Max(1, openingDepth));
+            openingDepth = Mathf.Max(1, openingDepth);
+
+            Vector2Int edgeCell;
+            Vector2Int inward;
+
+            switch (direction)
+            {
+                case DoorDirection.Top:
+                    edgeCell = new Vector2Int(doorCell.x, tilesY - 1);
+                    inward = Vector2Int.down;
+                    break;
+                case DoorDirection.Bottom:
+                    edgeCell = new Vector2Int(doorCell.x, 0);
+                    inward = Vector2Int.up;
+                    break;
+                case DoorDirection.Left:
+                    edgeCell = new Vector2Int(0, doorCell.y);
+                    inward = Vector2Int.right;
+                    break;
+                case DoorDirection.Right:
+                    edgeCell = new Vector2Int(tilesX - 1, doorCell.y);
+                    inward = Vector2Int.left;
+                    break;
+                default:
+                    return cells;
+            }
+
+            for (int i = 0; i < openingDepth; i++)
+            {
+                Vector2Int c = edgeCell + inward * i;
+                if (c.x < 0 || c.x >= tilesX || c.y < 0 || c.y >= tilesY)
+                    break;
+                cells.Add(c);
+            }
+
+            return cells;
+        }
+
+        private int GetActiveOpeningDepth()
+        {
+            return Mathf.Max(2, activeDoorOpeningDepth);
+        }
+
+        private Tilemap GetReferenceWallTilemap(System.Collections.Generic.List<Tilemap> wallTilemaps)
+        {
+            if (wallTilemaps == null || wallTilemaps.Count == 0)
+                return null;
+
+            Tilemap withCollider = wallTilemaps.Find(t => t != null && t.GetComponent<TilemapCollider2D>() != null);
+            if (withCollider != null)
+                return withCollider;
+
+            Tilemap selected = null;
+            int bestArea = -1;
+            foreach (var tilemap in wallTilemaps)
+            {
+                if (tilemap == null) continue;
+                BoundsInt b = tilemap.cellBounds;
+                int area = b.size.x * b.size.y;
+                if (area > bestArea)
+                {
+                    bestArea = area;
+                    selected = tilemap;
+                }
+            }
+
+            return selected;
+        }
+
+        private bool TryGetWallTilemaps(out System.Collections.Generic.List<Tilemap> wallTilemaps, out Tilemap baseWallTilemap)
+        {
+            wallTilemaps = new System.Collections.Generic.List<Tilemap>();
+            baseWallTilemap = null;
+
+            foreach (var tilemap in GetComponentsInChildren<Tilemap>(true))
+            {
+                if (tilemap == null) continue;
+
+                string n = tilemap.gameObject.name;
+                if (!n.Contains("Wall"))
+                    continue;
+
+                if (n.Contains("Base"))
+                {
+                    if (baseWallTilemap == null)
+                        baseWallTilemap = tilemap;
+                    continue;
+                }
+
+                wallTilemaps.Add(tilemap);
+            }
+
+            return wallTilemaps.Count > 0;
+        }
+
+        private bool TryGetPrimaryWallTilemaps(out Tilemap wallTilemap, out Tilemap baseWallTilemap)
+        {
+            wallTilemap = null;
+            if (!TryGetWallTilemaps(out var wallTilemaps, out baseWallTilemap))
+                return false;
+
+            wallTilemap = GetReferenceWallTilemap(wallTilemaps);
+            return wallTilemap != null;
+        }
+
+        private bool HasExistingVisuals()
+        {
+            foreach (var tilemap in GetComponentsInChildren<Tilemap>(true))
+            {
+                if (tilemap != null)
+                    return true;
+            }
+
+            foreach (var spriteRenderer in GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (spriteRenderer == null) continue;
+                if (spriteRenderer.gameObject.name.StartsWith("Door")) continue;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void GetDoorPlacementRect(out float minX, out float maxX, out float minY, out float maxY)
+        {
+            minX = 0f;
+            minY = 0f;
+            maxX = currentRoom.actualSize.x * tileSize;
+            maxY = currentRoom.actualSize.y * tileSize;
+
+            if (TryGetRoomRectFromTilemaps(out Bounds localBounds) || TryGetLocalVisualBounds(out localBounds))
+            {
+                minX = localBounds.min.x;
+                minY = localBounds.min.y;
+                maxX = localBounds.max.x;
+                maxY = localBounds.max.y;
+            }
+        }
+
+        private bool TryGetRoomRectFromTilemaps(out Bounds localBounds)
+        {
+            bool hasBounds = false;
+            localBounds = new Bounds();
+
+            foreach (var tilemap in GetComponentsInChildren<Tilemap>(true))
+            {
+                if (tilemap == null) continue;
+
+                string n = tilemap.gameObject.name;
+                bool isStructural = n.Contains("Wall") || n.Contains("Floor");
+                if (!isStructural) continue;
+
+                BoundsInt cells = tilemap.cellBounds;
+                if (cells.size.x <= 0 || cells.size.y <= 0) continue;
+
+                Vector3 localMinOnTilemap = tilemap.CellToLocalInterpolated((Vector3)cells.min);
+                Vector3 localMaxOnTilemap = tilemap.CellToLocalInterpolated((Vector3)cells.max);
+
+                Vector3 worldMin = tilemap.transform.TransformPoint(localMinOnTilemap);
+                Vector3 worldMax = tilemap.transform.TransformPoint(localMaxOnTilemap);
+
+                Vector3 roomLocalMin = transform.InverseTransformPoint(worldMin);
+                Vector3 roomLocalMax = transform.InverseTransformPoint(worldMax);
+
+                Vector3 min = Vector3.Min(roomLocalMin, roomLocalMax);
+                Vector3 max = Vector3.Max(roomLocalMin, roomLocalMax);
+
+                if (!hasBounds)
+                {
+                    localBounds = new Bounds((min + max) * 0.5f, max - min);
+                    hasBounds = true;
+                }
+                else
+                {
+                    localBounds.Encapsulate(min);
+                    localBounds.Encapsulate(max);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private bool TryGetLocalVisualBounds(out Bounds localBounds)
+        {
+            bool hasBounds = false;
+            localBounds = new Bounds();
+
+            foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null) continue;
+                string n = renderer.gameObject.name;
+                if (n.StartsWith("Door")) continue;
+
+                Bounds wb = renderer.bounds;
+                Vector3[] corners = new Vector3[]
+                {
+                    new Vector3(wb.min.x, wb.min.y, wb.center.z),
+                    new Vector3(wb.min.x, wb.max.y, wb.center.z),
+                    new Vector3(wb.max.x, wb.min.y, wb.center.z),
+                    new Vector3(wb.max.x, wb.max.y, wb.center.z),
+                };
+
+                foreach (var corner in corners)
+                {
+                    Vector3 local = transform.InverseTransformPoint(corner);
+                    if (!hasBounds)
+                    {
+                        localBounds = new Bounds(local, Vector3.zero);
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        localBounds.Encapsulate(local);
+                    }
+                }
+            }
+
+            return hasBounds;
         }
         
         /// <summary>
