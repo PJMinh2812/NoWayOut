@@ -33,6 +33,10 @@ namespace NWO
         private PlayerStatusEffects _statusEffects;
         private PlayerMeleeController _meleeController;
 
+        // Cached animator hashes
+        private static readonly int HashSpellType = Animator.StringToHash("SpellType");
+        private static readonly int HashCastSpell = Animator.StringToHash("CastSpell");
+
         private float _spell01CooldownRemaining;
         private float _spell02CooldownRemaining;
         private float _spell03CooldownRemaining;
@@ -57,7 +61,7 @@ namespace NWO
 
         private void Start()
         {
-            _animator.SetInteger("SpellType", 0);
+            _animator.SetInteger(HashSpellType, 0);
         }
 
         private void Update()
@@ -97,29 +101,35 @@ namespace NWO
 
         private void HandleSpellSwitch()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-
             // Không xử lý input khi game đang paused
             if (NWO.PauseMenuUI.GameIsPaused) return;
 
-            // 0: Idle, ESC không dùng ở đây nữa (dành cho PauseMenu)
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+            {
+                if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL0))
+                    SwitchToSpell(0);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL1))
+                    SwitchToSpell(1);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL2))
+                    SwitchToSpell(2);
+                else if (kb.WasPressedThisFrame(KeyBindManager.ACT_SPELL3))
+                    SwitchToSpell(3);
+                return;
+            }
+
+            // Fallback
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+
             if (keyboard.digit0Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(0);
-            }
             else if (keyboard.digit1Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(1);
-            }
             else if (keyboard.digit2Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(2);
-            }
             else if (keyboard.digit3Key.wasPressedThisFrame)
-            {
                 SwitchToSpell(3);
-            }
         }
 
         private void SwitchToSpell(int spellNumber)
@@ -128,7 +138,7 @@ namespace NWO
 
             _currentSpell = spellNumber;
             _spellBeforeDamage = spellNumber;
-            _animator.SetInteger("SpellType", spellNumber);
+            _animator.SetInteger(HashSpellType, spellNumber);
 
             if (_isCasting)
                 _isCasting = false;
@@ -139,8 +149,14 @@ namespace NWO
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            bool castInput = mouse.leftButton.wasPressedThisFrame
-                          || Keyboard.current.qKey.wasPressedThisFrame;
+            bool castInput = mouse.leftButton.wasPressedThisFrame;
+
+            // Also check keybind for Attack/Cast
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+                castInput = castInput || kb.WasPressedThisFrame(KeyBindManager.ACT_ATTACK);
+            else if (Keyboard.current != null)
+                castInput = castInput || Keyboard.current.qKey.wasPressedThisFrame;
 
             if (!castInput) return;
             if (_currentSpell == 0) return;
@@ -164,7 +180,7 @@ namespace NWO
             if (_stamina != null && !_stamina.TryConsumeSpell(_currentSpell))
                 return;
 
-            _animator.SetTrigger("CastSpell");
+            _animator.SetTrigger(HashCastSpell);
             _isCasting = true;
             _castingTime = 0f;
 
@@ -262,7 +278,7 @@ namespace NWO
             if (_spellBeforeDamage > 0 && _spellBeforeDamage != _currentSpell)
             {
                 _currentSpell = _spellBeforeDamage;
-                _animator.SetInteger("SpellType", _spellBeforeDamage);
+                _animator.SetInteger(HashSpellType, _spellBeforeDamage);
             }
         }
 

@@ -28,6 +28,12 @@ namespace NWO
         private PlayerController2D _player;
         private PlayerHealth2D _playerHealth;
         private UI.Enemy2DHealthBarController _healthBarController;
+        private BossManager _bossManager;
+
+        // Cached WaitForSeconds to avoid GC allocation each coroutine call
+        private WaitForSeconds _waitAttackHalf;
+        private WaitForSeconds _waitAttackCooldown;
+        private WaitForSeconds _waitDeathAnim;
 
         [Header("Animation")]
         [SerializeField] private Animator animator;
@@ -51,6 +57,12 @@ namespace NWO
         private bool _isAttacking = false;
         private bool _isDead = false;
 
+        // Cached animator hashes
+        private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
+        private static readonly int HashIsAttacking = Animator.StringToHash("isAttacking");
+        private static readonly int HashDeath = Animator.StringToHash("Death");
+        private static readonly int HashIsDead = Animator.StringToHash("isDead");
+
         public int GetCurrentHealth() => _currentHealth;
         public int GetMaxHealth() => maxHealth;
 
@@ -65,6 +77,14 @@ namespace NWO
             }
             
             _currentHealth = maxHealth;
+            
+            // Cache WaitForSeconds (reusable, zero GC per coroutine)
+            _waitAttackHalf = new WaitForSeconds(attackAnimDuration * 0.5f);
+            _waitAttackCooldown = new WaitForSeconds(attackCooldown);
+            _waitDeathAnim = new WaitForSeconds(deathAnimDuration);
+
+            // Cache BossManager once instead of FindFirstObjectByType in Die()
+            _bossManager = FindFirstObjectByType<BossManager>();
             
             // Spawn health bar if prefab assigned
             if (healthBarPrefab != null)
@@ -98,7 +118,7 @@ namespace NWO
 
             if (_player == null)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 return;
             }
 
@@ -107,7 +127,7 @@ namespace NWO
             
             if (dist > aggroRadius)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 return;
             }
 
@@ -120,7 +140,7 @@ namespace NWO
             // Don't move during attack - stop and play attack animation
             if (_isAttacking)
             {
-                if (animator != null) animator.SetBool("isMoving", false);
+                if (animator != null) animator.SetBool(HashIsMoving, false);
                 _rb.linearVelocity = Vector2.zero;
                 
                 // Flip sprite to face player during attack
@@ -150,7 +170,7 @@ namespace NWO
             if (animator != null)
             {
                 bool isMoving = _rb.linearVelocity.magnitude > 0.1f;
-                animator.SetBool("isMoving", isMoving);
+                animator.SetBool(HashIsMoving, isMoving);
             }
 
             // Flip sprite to face movement/player
@@ -180,6 +200,9 @@ namespace NWO
             // Notify health bar immediately on damage (don't wait for next LateUpdate poll)
             _healthBarController?.OnHealthChanged(_currentHealth, maxHealth);
 
+            // Show floating damage number
+            UI.DamagePopup.Spawn(transform.position, amount);
+
             if (_currentHealth <= 0)
             {
                 Die();
@@ -191,14 +214,18 @@ namespace NWO
             if (_isDead) return;
             _isDead = true;
 
+            // Drop coin vật lý khi chết
+            if (CoinManager.Instance != null)
+                CoinManager.Instance.SpawnCoinsFromEnemy(transform.position);
+
             // Hide health bar immediately when enemy dies
             _healthBarController?.OnEnemyDied();
 
             // Play death animation - use Trigger to avoid re-triggering from Any State
             if (animator != null)
             {
-                animator.SetTrigger("Death"); // Use Trigger instead of Bool
-                animator.SetBool("isDead", true); // Optional: can be used for conditions
+                animator.SetTrigger(HashDeath);
+                animator.SetBool(HashIsDead, true);
             }
 
             // disable physics and collisions
@@ -207,11 +234,10 @@ namespace NWO
             _rb.linearVelocity = Vector2.zero;
             _rb.bodyType = RigidbodyType2D.Kinematic;
 
-            // Check if this is a boss and notify BossManager
-            BossManager bossManager = FindFirstObjectByType<BossManager>();
-            if (bossManager != null)
+            // Check if this is a boss and notify BossManager (cached in Awake)
+            if (_bossManager != null)
             {
-                bossManager.OnBossDefeated();
+                _bossManager.OnBossDefeated();
             }
 
             // Delay destroy so death animation can play
@@ -220,7 +246,7 @@ namespace NWO
 
         private IEnumerator DelayedDestroy(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            yield return _waitDeathAnim;
             Destroy(gameObject);
         }
 
@@ -237,11 +263,11 @@ namespace NWO
             // Start attack animation
             if (animator != null)
             {
-                animator.SetBool("isAttacking", true);
+                animator.SetBool(HashIsAttacking, true);
             }
 
             // Wait for attack animation to reach hit frame (deal damage halfway through animation)
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
 
             // Deal damage only after animation has progressed
             if (_player != null && _playerHealth != null)
@@ -259,17 +285,17 @@ namespace NWO
             }
 
             // Wait for rest of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
 
             // Reset attack animation
             if (animator != null)
             {
-                animator.SetBool("isAttacking", false);
+                animator.SetBool(HashIsAttacking, false);
             }
             _isAttacking = false;
 
             // Start cooldown before next attack
-            yield return new WaitForSeconds(attackCooldown);
+            yield return _waitAttackCooldown;
             _canAttack = true;
         }
 

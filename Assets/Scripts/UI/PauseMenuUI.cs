@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Utilities;
 using System.Collections.Generic;
 
 namespace NWO
@@ -57,12 +56,6 @@ namespace NWO
         [SerializeField] private string musicVolumeParam = "MusicVolume";
         [SerializeField] private string sfxVolumeParam = "SFXVolume";
 
-        [Header("Settings (keybinds)")]
-        [Tooltip("Input Actions asset that contains the Player action map.")]
-        [SerializeField] private InputActionAsset inputActions;
-        [SerializeField] private string playerMapName = "Player";
-        [SerializeField] private string rebindPrefsKey = "InputRebindsJson";
-
         [Header("Settings")]
         [SerializeField] private string mainMenuSceneName = "MainMenu";
 
@@ -70,7 +63,6 @@ namespace NWO
 
         private GameObject _settingsPanel;
         private Button _settingsButton;
-        private InputActionRebindingExtensions.RebindingOperation _rebindOp;
         private GameObject _mainPanelRoot;
         private readonly List<GameObject> _upgradeSlots = new();
         private GameObject _upgradeRowGo;
@@ -115,9 +107,11 @@ namespace NWO
 
             if (_settingsButton != null)
                 _settingsButton.onClick.AddListener(ToggleSettings);
-
-            ApplySavedRebinds();
         }
+
+        private string _rebindActionName;
+        private TextMeshProUGUI _rebindBindingText;
+        private bool _isRebinding;
 
         private void Update()
         {
@@ -127,6 +121,42 @@ namespace NWO
 
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
+
+            // If rebinding, capture the next key press instead of normal ESC handling
+            if (_isRebinding)
+            {
+                // Cancel on Escape
+                if (keyboard.escapeKey.wasPressedThisFrame)
+                {
+                    _isRebinding = false;
+                    if (_rebindBindingText != null)
+                        _rebindBindingText.text = GetBindingDisplay(_rebindActionName);
+                    return;
+                }
+
+                // Check all keys
+                foreach (Key key in System.Enum.GetValues(typeof(Key)))
+                {
+                    if (key == Key.None || key == Key.IMESelected) continue;
+                    try
+                    {
+                        if (keyboard[key].wasPressedThisFrame)
+                        {
+                            var kb = KeyBindManager.Instance;
+                            if (kb != null)
+                                kb.SetKey(_rebindActionName, key);
+
+                            if (_rebindBindingText != null)
+                                _rebindBindingText.text = GetBindingDisplay(_rebindActionName);
+
+                            _isRebinding = false;
+                            return;
+                        }
+                    }
+                    catch { /* Some Key enum values may not be valid */ }
+                }
+                return;
+            }
 
             // wasPressedThisFrame vẫn hoạt động khi Time.timeScale=0
             // vì Input System update theo real time
@@ -214,9 +244,6 @@ namespace NWO
 
             if (_settingsButton != null)
                 _settingsButton.onClick.RemoveListener(ToggleSettings);
-
-            _rebindOp?.Dispose();
-            _rebindOp = null;
         }
 
         private void ToggleSettings()
@@ -230,30 +257,6 @@ namespace NWO
             if (_settingsPanel == null) return;
             if (_mainPanelRoot != null) _mainPanelRoot.SetActive(!show);
             _settingsPanel.SetActive(show);
-        }
-
-        private void ApplySavedRebinds()
-        {
-            if (inputActions == null) return;
-            var json = PlayerPrefs.GetString(rebindPrefsKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(json)) return;
-
-            try
-            {
-                inputActions.LoadBindingOverridesFromJson(json);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[PauseMenuUI] Failed to load rebinds: {ex.Message}");
-            }
-        }
-
-        private void SaveRebinds()
-        {
-            if (inputActions == null) return;
-            var json = inputActions.SaveBindingOverridesAsJson();
-            PlayerPrefs.SetString(rebindPrefsKey, json);
-            PlayerPrefs.Save();
         }
 
         private void BuildUi()
@@ -520,13 +523,34 @@ namespace NWO
             closeTxt.alignment = TextAlignmentOptions.Center;
             StretchToFull(closeTxt.rectTransform);
 
-            // Content
+            // ScrollView for content (many rows)
+            var scrollGo = new GameObject("ScrollView");
+            scrollGo.transform.SetParent(panelGo.transform, false);
+            var scrollRt = scrollGo.AddComponent<RectTransform>();
+            scrollRt.anchorMin = new Vector2(0.06f, 0.06f);
+            scrollRt.anchorMax = new Vector2(0.94f, 0.84f);
+            scrollRt.pivot = new Vector2(0.5f, 0.5f);
+            scrollRt.offsetMin = Vector2.zero;
+            scrollRt.offsetMax = Vector2.zero;
+
+            var scrollRect = scrollGo.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 40f;
+
+            // Mask so content clips properly (alpha must be >0 for mask to work)
+            var maskImg = scrollGo.AddComponent<Image>();
+            maskImg.color = Color.white;
+            scrollGo.AddComponent<Mask>().showMaskGraphic = false;
+
+            // Content container (inside scroll)
             var content = new GameObject("Content");
-            content.transform.SetParent(panelGo.transform, false);
+            content.transform.SetParent(scrollGo.transform, false);
             var contentRt = content.AddComponent<RectTransform>();
-            contentRt.anchorMin = new Vector2(0.06f, 0.06f);
-            contentRt.anchorMax = new Vector2(0.94f, 0.84f);
-            contentRt.pivot = new Vector2(0.5f, 0.5f);
+            contentRt.anchorMin = new Vector2(0f, 1f);
+            contentRt.anchorMax = new Vector2(1f, 1f);
+            contentRt.pivot = new Vector2(0.5f, 1f);
             contentRt.offsetMin = Vector2.zero;
             contentRt.offsetMax = Vector2.zero;
 
@@ -535,6 +559,11 @@ namespace NWO
             v.spacing = 18f;
             v.childForceExpandWidth = true;
             v.childForceExpandHeight = false;
+
+            var fitter = content.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            scrollRect.content = contentRt;
 
             // Audio section
             BuildAudioRow(content.transform, "Master", "MasterVolume", masterVolumeParam);
@@ -546,11 +575,18 @@ namespace NWO
             divider.AddComponent<LayoutElement>().preferredHeight = 12f;
             divider.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 3f);
 
-            // Keybinds
-            BuildRebindRow(content.transform, "Attack", $"{playerMapName}/Attack");
-            BuildRebindRow(content.transform, "Interact", $"{playerMapName}/Interact");
-            BuildRebindRow(content.transform, "Jump", $"{playerMapName}/Jump");
-            BuildRebindRow(content.transform, "Crouch", $"{playerMapName}/Crouch");
+            // Keybinds — uses KeyBindManager (real rebinding)
+            string[] rebindActions = {
+                KeyBindManager.ACT_MOVE_UP, KeyBindManager.ACT_MOVE_DOWN,
+                KeyBindManager.ACT_MOVE_LEFT, KeyBindManager.ACT_MOVE_RIGHT,
+                KeyBindManager.ACT_DASH, KeyBindManager.ACT_ATTACK,
+                KeyBindManager.ACT_SPELL1, KeyBindManager.ACT_SPELL2, KeyBindManager.ACT_SPELL3,
+                KeyBindManager.ACT_INTERACT
+            };
+            foreach (var action in rebindActions)
+            {
+                BuildRebindRow(content.transform, KeyBindManager.GetActionLabel(action), action);
+            }
 
             return strokeGo;
         }
@@ -611,7 +647,7 @@ namespace NWO
             Apply(slider.value);
         }
 
-        private void BuildRebindRow(Transform parent, string label, string actionPath)
+        private void BuildRebindRow(Transform parent, string label, string actionName)
         {
             var row = new GameObject($"Rebind_{label}");
             row.transform.SetParent(parent, false);
@@ -625,16 +661,16 @@ namespace NWO
             h.childForceExpandHeight = true;
             h.childForceExpandWidth = false;
 
-            var t = NewTmpText("Label", row.transform, label.ToUpperInvariant(), 34, new Color(0.98f, 0.96f, 0.92f, 0.95f));
+            var t = NewTmpText("Label", row.transform, label, 34, new Color(0.98f, 0.96f, 0.92f, 0.95f));
             t.alignment = TextAlignmentOptions.Left;
-            t.rectTransform.sizeDelta = new Vector2(220f, 0f);
+            t.rectTransform.sizeDelta = new Vector2(260f, 0f);
 
-            var bindingText = NewTmpText("Binding", row.transform, GetBindingDisplay(actionPath), 32, new Color(0.75f, 0.86f, 1f, 0.95f));
+            var bindingText = NewTmpText("Binding", row.transform, GetBindingDisplay(actionName), 32, new Color(0.75f, 0.86f, 1f, 0.95f));
             bindingText.alignment = TextAlignmentOptions.Left;
-            bindingText.rectTransform.sizeDelta = new Vector2(420f, 0f);
+            bindingText.rectTransform.sizeDelta = new Vector2(300f, 0f);
 
             var btn = NewSmallButton(row.transform, "REBIND");
-            btn.onClick.AddListener(() => StartRebind(actionPath, bindingText));
+            btn.onClick.AddListener(() => StartRebind(actionName, bindingText));
         }
 
         private Button NewSmallButton(Transform parent, string text)
@@ -657,67 +693,24 @@ namespace NWO
             return btn;
         }
 
-        private string GetBindingDisplay(string actionPath)
+        private string GetBindingDisplay(string actionName)
         {
-            if (inputActions == null) return "-";
-            var action = inputActions.FindAction(actionPath, throwIfNotFound: false);
-            if (action == null) return "-";
-
-            for (int i = 0; i < action.bindings.Count; i++)
-            {
-                var b = action.bindings[i];
-                if (b.isComposite || b.isPartOfComposite) continue;
-                if (!string.IsNullOrWhiteSpace(b.effectivePath) && b.effectivePath.StartsWith("<Keyboard>", System.StringComparison.OrdinalIgnoreCase))
-                    return action.GetBindingDisplayString(i, out _, out _);
-            }
-
-            return action.bindings.Count > 0 ? action.GetBindingDisplayString(0, out _, out _) : "-";
+            var kb = KeyBindManager.Instance;
+            if (kb == null) return KeyBindManager.GetKeyDisplayName(KeyBindManager.GetDefault(actionName));
+            return KeyBindManager.GetKeyDisplayName(kb.GetKey(actionName));
         }
 
-        private void StartRebind(string actionPath, TextMeshProUGUI bindingText)
+        private void StartRebind(string actionName, TextMeshProUGUI bindingText)
         {
-            if (inputActions == null) return;
-            var action = inputActions.FindAction(actionPath, throwIfNotFound: false);
-            if (action == null) return;
+            var kb = KeyBindManager.Instance;
+            if (kb == null) return;
 
-            int bindingIndex = 0;
-            for (int i = 0; i < action.bindings.Count; i++)
-            {
-                var b = action.bindings[i];
-                if (b.isComposite || b.isPartOfComposite) continue;
-                if (!string.IsNullOrWhiteSpace(b.effectivePath) && b.effectivePath.StartsWith("<Keyboard>", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    bindingIndex = i;
-                    break;
-                }
-            }
+            bindingText.text = "Nhấn phím...";
 
-            _rebindOp?.Dispose();
-            _rebindOp = null;
-
-            bindingText.text = "Press a key...";
-
-            action.Disable();
-            _rebindOp = action.PerformInteractiveRebinding(bindingIndex)
-                .WithControlsExcluding("Mouse")
-                .WithCancelingThrough("<Keyboard>/escape")
-                .OnComplete(op =>
-                {
-                    op.Dispose();
-                    _rebindOp = null;
-                    action.Enable();
-                    bindingText.text = GetBindingDisplay(actionPath);
-                    SaveRebinds();
-                })
-                .OnCancel(op =>
-                {
-                    op.Dispose();
-                    _rebindOp = null;
-                    action.Enable();
-                    bindingText.text = GetBindingDisplay(actionPath);
-                });
-
-            _rebindOp.Start();
+            // Listen for any key press next frame
+            _rebindActionName = actionName;
+            _rebindBindingText = bindingText;
+            _isRebinding = true;
         }
 
         private Button NewBigButton(Transform parent, string name, string glyph, Sprite sprite)

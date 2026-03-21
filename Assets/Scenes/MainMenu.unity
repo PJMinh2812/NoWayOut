@@ -1591,6 +1591,8 @@ MonoBehaviour:
   quitButton: {fileID: 863470166}
   backButton: {fileID: 1317344408}
   gameSceneName: Level_01_TheAwakening
+  menuMusic: {fileID: 8300000, guid: c8b193769a4382845b8003b8a20bf0ea, type: 3}
+  menuMusicVolume: 0.6
 --- !u!1 &765448119
 GameObject:
   m_ObjectHideFlags: 0

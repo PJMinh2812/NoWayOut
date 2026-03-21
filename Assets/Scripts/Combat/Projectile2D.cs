@@ -12,6 +12,7 @@ namespace NWO
 
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
+        private Collider2D _collider;
         private float _t;
         private bool _isFading = false;
         private bool _isDestroyed = false;
@@ -36,6 +37,7 @@ namespace NWO
         {
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
+            _collider = GetComponent<Collider2D>();
             if (_spriteRenderer != null)
             {
                 _originalColor = _spriteRenderer.color;
@@ -54,9 +56,7 @@ namespace NWO
             {
                 _isFading = true;
                 _fadeTimer = 0f;
-                // Tắt collider để không gây damage trong lúc tan biến
-                var col = GetComponent<Collider2D>();
-                if (col != null) col.enabled = false;
+                if (_collider != null) _collider.enabled = false;
             }
 
             // Xử lý fade-out (tan biến dần)
@@ -112,6 +112,26 @@ namespace NWO
                 return;
             }
 
+            // Check for GoatManBoss
+            if (other.TryGetComponent<GoatManBoss>(out var goatBoss))
+            {
+                var dir = (Vector2)goatBoss.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit GoatManBoss! Dealing {damage} damage");
+                goatBoss.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                DestroyImmediate();
+                return;
+            }
+
+            // Check for NightBonesBoss
+            if (other.TryGetComponent<NightBonesBoss>(out var nightBonesBoss))
+            {
+                var dir = (Vector2)nightBonesBoss.transform.position - (Vector2)transform.position;
+                Debug.Log($"[Projectile] Hit NightBonesBoss! Dealing {damage} damage");
+                nightBonesBoss.TakeDamage(Mathf.RoundToInt(damage), dir, 4f);
+                DestroyImmediate();
+                return;
+            }
+
             // Destroy on any other collision (wall, etc) - va chạm vật thể -> hủy ngay
             if (!other.CompareTag("Player"))
             {
@@ -126,8 +146,7 @@ namespace NWO
         {
             if (_isDestroyed) return;
             _isDestroyed = true;
-            var col = GetComponent<Collider2D>();
-            if (col != null) col.enabled = false;
+            if (_collider != null) _collider.enabled = false;
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
             Destroy(gameObject);
         }

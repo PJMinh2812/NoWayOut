@@ -110,6 +110,22 @@ namespace NWO.UI
             ResetBar();
         }
 
+        /// <summary>Liên kết boss loại GoatManBoss với health bar này.</summary>
+        public void AttachBoss(GoatManBoss boss)
+        {
+            _getHealth    = () => boss.GetCurrentHealth();
+            _getMaxHealth = () => boss.GetMaxHealth();
+            ResetBar();
+        }
+
+        /// <summary>Liên kết boss loại NightBonesBoss với health bar này.</summary>
+        public void AttachBoss(NightBonesBoss boss)
+        {
+            _getHealth    = () => boss.GetCurrentHealth();
+            _getMaxHealth = () => boss.GetMaxHealth();
+            ResetBar();
+        }
+
         /// <summary>Hiển thị health bar với hiệu ứng fade-in.</summary>
         public void Show(string displayName = "")
         {

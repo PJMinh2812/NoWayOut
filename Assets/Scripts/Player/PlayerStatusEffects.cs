@@ -101,18 +101,25 @@ namespace NWO
         public bool HasShield => HasEffect(StatusEffectType.Shield);
         public bool IsInvincible => HasEffect(StatusEffectType.Invincible);
 
-        // Calculated modifiers
-        public float MoveSpeedMultiplier => CalculateMoveSpeedMultiplier();
-        public float DamageMultiplier => CalculateDamageMultiplier();
-        public float StaminaRegenMultiplier => CalculateStaminaRegenMultiplier();
+        // Calculated modifiers (cached, only recalculated when effects change)
+        public float MoveSpeedMultiplier { get { if (_effectsDirty) RecalculateModifiers(); return _cachedMoveSpeedMultiplier; } }
+        public float DamageMultiplier { get { if (_effectsDirty) RecalculateModifiers(); return _cachedDamageMultiplier; } }
+        public float StaminaRegenMultiplier { get { if (_effectsDirty) RecalculateModifiers(); return _cachedStaminaRegenMultiplier; } }
 
         // Internal
         private List<ActiveStatusEffect> _activeEffects = new List<ActiveStatusEffect>();
+        private HashSet<StatusEffectType> _activeTypes = new HashSet<StatusEffectType>();
+        private bool _effectsDirty = true; // marks when effect list changes
         private PlayerHealth2D _health;
         private PlayerStamina _stamina;
         private AudioSource _audioSource;
         private Color _originalColor = Color.white;
         private bool _colorCached = false;
+
+        // Cached multipliers - recalculated only when effects change
+        private float _cachedMoveSpeedMultiplier = 1f;
+        private float _cachedDamageMultiplier = 1f;
+        private float _cachedStaminaRegenMultiplier = 1f;
 
         private void Awake()
         {
@@ -178,6 +185,7 @@ namespace NWO
             };
 
             _activeEffects.Add(newEffect);
+            RebuildActiveTypes();
             
             PlayApplySound(type);
             OnEffectApplied?.Invoke(type, duration);
@@ -208,6 +216,7 @@ namespace NWO
 
             // DoT có thể stack
             _activeEffects.Add(effect);
+            RebuildActiveTypes();
             PlayApplySound(type);
             OnEffectApplied?.Invoke(type, duration);
             
@@ -222,6 +231,7 @@ namespace NWO
             int removed = _activeEffects.RemoveAll(e => e.Type == type);
             if (removed > 0)
             {
+                RebuildActiveTypes();
                 OnEffectExpired?.Invoke(type);
                 PlayExpireSound();
                 Debug.Log($"[StatusEffects] Removed {removed} instance(s) of {type}");
@@ -242,6 +252,7 @@ namespace NWO
             
             if (debuffs.Count > 0)
             {
+                RebuildActiveTypes();
                 PlayExpireSound();
                 Debug.Log($"[StatusEffects] Cleared {debuffs.Count} debuffs");
             }
@@ -257,15 +268,17 @@ namespace NWO
                 OnEffectExpired?.Invoke(effect.Type);
             }
             _activeEffects.Clear();
+            _activeTypes.Clear();
+            _effectsDirty = true;
             Debug.Log("[StatusEffects] Cleared all effects");
         }
 
         /// <summary>
-        /// Kiểm tra có effect cụ thể không
+        /// Kiểm tra có effect cụ thể không (O(1) via HashSet)
         /// </summary>
         public bool HasEffect(StatusEffectType type)
         {
-            return _activeEffects.Exists(e => e.Type == type);
+            return _activeTypes.Contains(type);
         }
 
         /// <summary>
@@ -334,6 +347,7 @@ namespace NWO
 
         private void UpdateEffects()
         {
+            bool anyExpired = false;
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
             {
                 var effect = _activeEffects[i];
@@ -358,8 +372,14 @@ namespace NWO
                     OnEffectExpired?.Invoke(effect.Type);
                     PlayExpireSound();
                     _activeEffects.RemoveAt(i);
+                    anyExpired = true;
                     Debug.Log($"[StatusEffects] {effect.Type} expired");
                 }
+            }
+
+            if (anyExpired)
+            {
+                RebuildActiveTypes();
             }
         }
 
@@ -391,6 +411,14 @@ namespace NWO
         {
             if (playerSprite == null) return;
 
+            // Skip expensive color lerp when no effects are active and color is already original
+            if (_activeTypes.Count == 0)
+            {
+                if (playerSprite.color != _originalColor)
+                    playerSprite.color = Color.Lerp(playerSprite.color, _originalColor, Time.deltaTime * 5f);
+                return;
+            }
+
             // Priority: Freeze > Stun > Burn > Poison > Confusion > Slow > Buff
             Color targetColor = _originalColor;
 
@@ -398,21 +426,45 @@ namespace NWO
                 targetColor = freezeColor;
             else if (IsStunned)
                 targetColor = Color.gray;
-            else if (HasEffect(StatusEffectType.Burn))
+            else if (_activeTypes.Contains(StatusEffectType.Burn))
                 targetColor = burnColor;
-            else if (HasEffect(StatusEffectType.Poison))
+            else if (_activeTypes.Contains(StatusEffectType.Poison))
                 targetColor = poisonColor;
             else if (IsConfused)
                 targetColor = confusionColor;
             else if (IsSlowed || IsSlippery)
                 targetColor = slowColor;
-            else if (HasEffect(StatusEffectType.SpeedBoost))
+            else if (_activeTypes.Contains(StatusEffectType.SpeedBoost))
                 targetColor = speedBoostColor;
             else if (HasShield)
                 targetColor = shieldColor;
 
             // Smooth transition
             playerSprite.color = Color.Lerp(playerSprite.color, targetColor, Time.deltaTime * 5f);
+        }
+
+        /// <summary>
+        /// Rebuild the O(1) type lookup set and mark modifiers as dirty
+        /// </summary>
+        private void RebuildActiveTypes()
+        {
+            _activeTypes.Clear();
+            for (int i = 0; i < _activeEffects.Count; i++)
+            {
+                _activeTypes.Add(_activeEffects[i].Type);
+            }
+            _effectsDirty = true;
+        }
+
+        /// <summary>
+        /// Recalculate cached modifier values
+        /// </summary>
+        private void RecalculateModifiers()
+        {
+            _cachedMoveSpeedMultiplier = CalculateMoveSpeedMultiplier();
+            _cachedDamageMultiplier = CalculateDamageMultiplier();
+            _cachedStaminaRegenMultiplier = CalculateStaminaRegenMultiplier();
+            _effectsDirty = false;
         }
 
         private float CalculateMoveSpeedMultiplier()

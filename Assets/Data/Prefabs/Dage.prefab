@@ -35,7 +35,7 @@ Transform:
   m_GameObject: {fileID: 1296187675758871721}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 5.5, y: 5.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -179,14 +179,23 @@ MonoBehaviour:
   moveAcceleration: 45
   maxMoveSpeed: 5
   linearDrag: 8
-  rollSpeed: 10
-  rollDuration: 0.2
-  rollCooldown: 0.5
+  dashSpeed: 14
+  dashMinDuration: 0.2
+  dashMaxDuration: 0.6
+  dashCooldown: 1
+  dashExtendStaminaPerSec: 25
+  afterImageRate: 15
+  dashAfterImageColor: {r: 0.3, g: 0.8, b: 1, a: 0.6}
+  afterImageLifetime: 0.25
   worldCamera: {fileID: 0}
   spriteRenderer: {fileID: 0}
   flipByMovement: 1
   flipByAim: 1
   flipThreshold: 0.1
+  autoCreateFallbackLight: 1
+  fallbackLightRadius: 1.5
+  fallbackLightIntensity: 1.1
+  fallbackLightColor: {r: 0.95, g: 0.9, b: 0.75, a: 1}
 --- !u!61 &8020047373847308342
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -248,7 +257,7 @@ MonoBehaviour:
   spell01Cooldown: 1
   spell02Cooldown: 2
   spell03Cooldown: 5
-  spell01Damage: 10
+  spell01Damage: 5
   spell02Damage: 20
   spell03Damage: 35
   spell01Range: 5

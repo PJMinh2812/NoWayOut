@@ -76,6 +76,9 @@ namespace NWO
         [SerializeField] private GameObject[] lootDrops; // Các item rơi ra khi chết
         [SerializeField] private int minDrops = 1;
         [SerializeField] private int maxDrops = 3;
+
+        [Header("Hit Reaction")]
+        [SerializeField] private float hurtTriggerMinInterval = 0.25f;
         
         // Components
         private Rigidbody2D rb;
@@ -103,6 +106,30 @@ namespace NWO
 
         // Flash red coroutine tracking
         private Coroutine _flashCoroutine;
+        private float _lastHurtTriggerTime = -999f;
+
+        // Cached WaitForSeconds to avoid GC allocation each coroutine call
+        private WaitForSeconds _waitFireballCooldown;
+        private WaitForSeconds _waitWindup;
+        private WaitForSeconds _waitRainInterval;
+        private WaitForSeconds _waitAttackHalf;
+        private WaitForSeconds _waitAttackCooldown;
+        private WaitForSeconds _waitFlashRed;
+        private BossManager _cachedBossManager;
+
+        // Cached animator hashes
+        private static readonly int HashIsSleeping = Animator.StringToHash("isSleeping");
+        private static readonly int HashIsAwakeAnim = Animator.StringToHash("isAwake");
+        private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
+        private static readonly int HashWakeUp = Animator.StringToHash("wakeUp");
+        private static readonly int HashIsAttacking = Animator.StringToHash("isAttacking");
+        private static readonly int HashHurt = Animator.StringToHash("hurt");
+        private static readonly int HashDeath = Animator.StringToHash("Death");
+        private static readonly int HashIsDead = Animator.StringToHash("isDead");
+
+        // Cached set of valid animator parameter hashes for safe setting
+        private System.Collections.Generic.HashSet<int> _validBoolParams;
+        private System.Collections.Generic.HashSet<int> _validTriggerParams;
         
         private void Awake()
         {
@@ -123,12 +150,26 @@ namespace NWO
             if (!isAwake)
             {
                 rb.bodyType = RigidbodyType2D.Kinematic;
-                Debug.Log($"[RatMiniBoss] Awake - Position: {transform.position}, BodyType: Kinematic (ngủ)");
             }
             
             currentHealth = maxHealth;
             originalColor = spriteRenderer.color;
             startPosition = transform.position;
+
+            // Cache valid animator parameters for O(1) lookup instead of iterating every call
+            _validBoolParams = new System.Collections.Generic.HashSet<int>();
+            _validTriggerParams = new System.Collections.Generic.HashSet<int>();
+            if (animator != null)
+            {
+                foreach (var param in animator.parameters)
+                {
+                    int hash = Animator.StringToHash(param.name);
+                    if (param.type == AnimatorControllerParameterType.Bool)
+                        _validBoolParams.Add(hash);
+                    else if (param.type == AnimatorControllerParameterType.Trigger)
+                        _validTriggerParams.Add(hash);
+                }
+            }
             
             // Spawn health bar (giống Enemy2D)
             if (healthBarPrefab != null)
@@ -140,6 +181,15 @@ namespace NWO
                     _healthBarController.SetTarget(this);
                 }
             }
+
+            // Cache WaitForSeconds (reusable, zero GC per coroutine)
+            _waitFireballCooldown = new WaitForSeconds(fireballCooldown);
+            _waitWindup = new WaitForSeconds(0.2f);
+            _waitRainInterval = new WaitForSeconds(0.18f);
+            _waitAttackHalf = new WaitForSeconds(0.2f); // attackAnimDuration * 0.5f
+            _waitAttackCooldown = new WaitForSeconds(attackCooldown);
+            _waitFlashRed = new WaitForSeconds(0.15f);
+            _cachedBossManager = FindFirstObjectByType<BossManager>();
         }
         
         private void Start()
@@ -149,7 +199,6 @@ namespace NWO
             if (player != null)
             {
                 playerHealth = player.GetComponent<PlayerHealth2D>();
-                Debug.Log($"[RatMiniBoss] Found Player: {player.name}");
             }
             else
             {
@@ -165,12 +214,11 @@ namespace NWO
                 spriteRenderer.color = sleepingTint;
                 
                 // Set animator parameters (nếu có)
-                SafeSetBool("isSleeping", true);
-                SafeSetBool("isAwake", false);
-                SafeSetBool("isMoving", false); // Đảm bảo không di chuyển khi ngủ
+                SafeSetBool(HashIsSleeping, true);
+                SafeSetBool(HashIsAwakeAnim, false);
+                SafeSetBool(HashIsMoving, false); // Đảm bảo không di chuyển khi ngủ
             }
             
-            Debug.Log($"[RatMiniBoss] Setup complete. Awake: {isAwake}, Dead: {isDead}");
         }
         
         private void Update()
@@ -195,13 +243,13 @@ namespace NWO
             
             if (!isAwake)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 return;
             }
             
             if (player == null)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 return;
             }
             
@@ -225,7 +273,7 @@ namespace NWO
             // Đứng yên khi đang tấn công cận chiến hoặc đang bắn
             if (_isAttacking || _isShooting)
             {
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
                 rb.linearVelocity = Vector2.zero;
 
                 // Flip sprite về phía player
@@ -245,7 +293,7 @@ namespace NWO
             {
                 // Nếu player chạy xa quá, dừng lại
                 rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.fixedDeltaTime * 5f);
-                SafeSetBool("isMoving", false);
+                SafeSetBool(HashIsMoving, false);
             }
         }
         
@@ -260,14 +308,13 @@ namespace NWO
             if (rb != null)
             {
                 rb.bodyType = RigidbodyType2D.Dynamic;
-                Debug.Log($"[RatMiniBoss] Wake Up! Position: {transform.position}, BodyType: Dynamic");
             }
             
             // Animation - thức giấc nhưng vẫn idle trước
-            SafeSetBool("isSleeping", false);
-            SafeSetBool("isAwake", true);
-            SafeSetBool("isMoving", false);
-            SafeSetTrigger("wakeUp");
+            SafeSetBool(HashIsSleeping, false);
+            SafeSetBool(HashIsAwakeAnim, true);
+            SafeSetBool(HashIsMoving, false);
+            SafeSetTrigger(HashWakeUp);
             
             // Sound effect
             if (wakeUpSound != null && audioSource != null)
@@ -281,7 +328,6 @@ namespace NWO
                 wakeUpEffect.Play();
             }
             
-            Debug.Log("[RatMiniBoss] CON CHUỘT ĐÃ THỨC GIẤC! 🐭");
         }
         
         private void ChasePlayer(float distance)
@@ -306,7 +352,7 @@ namespace NWO
             if (animator != null)
             {
                 bool isMoving = rb.linearVelocity.magnitude > 0.1f;
-                SafeSetBool("isMoving", isMoving);
+                SafeSetBool(HashIsMoving, isMoving);
             }
             
             // Flip sprite to face movement/player (giống Enemy2D)
@@ -344,7 +390,6 @@ namespace NWO
                 spriteRenderer.flipX = (player.transform.position.x - transform.position.x) < 0f;
 
             int pattern = Random.Range(0, 4); // 0-3
-            Debug.Log($"[RatMiniBoss] Fireball pattern: {pattern}");
 
             switch (pattern)
             {
@@ -357,21 +402,21 @@ namespace NWO
             _isShooting = false;
 
             // Hồi chiêu
-            yield return new WaitForSeconds(fireballCooldown);
+            yield return _waitFireballCooldown;
             _canShoot = true;
         }
 
         /// <summary>Pattern 0 – Single: một viên thẳng vào player.</summary>
         private System.Collections.IEnumerator FireSingle()
         {
-            yield return new WaitForSeconds(0.2f); // windup
+            yield return _waitWindup;
             SpawnFireball(GetDirectionToPlayer());
         }
 
         /// <summary>Pattern 1 – Triple: 3 viên toả ra góc ±tripleSpreadAngle.</summary>
         private System.Collections.IEnumerator FireTriple()
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return _waitWindup;
             Vector2 baseDir = GetDirectionToPlayer();
             SpawnFireball(Rotate(baseDir, -tripleSpreadAngle));
             SpawnFireball(baseDir);
@@ -381,7 +426,7 @@ namespace NWO
         /// <summary>Pattern 2 – Circle: bắn đều circleCount viên quanh 360°.</summary>
         private System.Collections.IEnumerator FireCircle()
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return _waitWindup;
             float step = 360f / circleCount;
             for (int i = 0; i < circleCount; i++)
             {
@@ -406,7 +451,7 @@ namespace NWO
                 Vector2 target   = (Vector2)player.transform.position + offset;
                 Vector2 dir      = (target - (Vector2)transform.position).normalized;
                 SpawnFireball(dir);
-                yield return new WaitForSeconds(0.18f);
+                yield return _waitRainInterval;
             }
         }
 
@@ -470,7 +515,7 @@ namespace NWO
             _canAttack = false;
             
             // Start attack animation
-            SafeSetBool("isAttacking", true);
+            SafeSetBool(HashIsAttacking, true);
             
             // Sound
             if (attackSound != null && audioSource != null)
@@ -480,7 +525,7 @@ namespace NWO
             
             // Wait for attack animation to reach hit frame (deal damage halfway through)
             float attackAnimDuration = 0.4f; // Duration of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
             
             // Deal damage only after animation has progressed
             if (player != null && playerHealth != null)
@@ -497,20 +542,18 @@ namespace NWO
                     {
                         attackEffect.Play();
                     }
-                    
-                    Debug.Log($"[RatMiniBoss] CHUỘT TẤN CÔNG! Gây {attackDamage} damage cho Player");
                 }
             }
             
             // Wait for rest of attack animation
-            yield return new WaitForSeconds(attackAnimDuration * 0.5f);
+            yield return _waitAttackHalf;
             
             // Reset attack animation
-            SafeSetBool("isAttacking", false);
+            SafeSetBool(HashIsAttacking, false);
             _isAttacking = false;
             
             // Start cooldown before next attack
-            yield return new WaitForSeconds(attackCooldown);
+            yield return _waitAttackCooldown;
             _canAttack = true;
         }
         
@@ -528,13 +571,14 @@ namespace NWO
         {
             if (isDead) return;
             
-            Debug.Log($"[RatMiniBoss] TakeDamage called! Damage: {damage}, HP before: {currentHealth}");
-            
             currentHealth -= damage;
             currentHealth = Mathf.Max(0, currentHealth);
 
             // Cập nhật health bar ngay lập tức (giống Enemy2D)
             _healthBarController?.OnHealthChanged(currentHealth, maxHealth);
+
+            // Show floating damage number
+            UI.DamagePopup.Spawn(transform.position, damage);
             
             // Knockback
             rb.AddForce(hitDirection.normalized * knockbackPower, ForceMode2D.Impulse);
@@ -554,9 +598,7 @@ namespace NWO
             }
             
             // Animation
-            SafeSetTrigger("hurt");
-            
-            Debug.Log($"[RatMiniBoss] Nhận {damage} damage! HP: {currentHealth}/{maxHealth}");
+            TryTriggerHurt();
             
             // Chết nếu hết máu
             if (currentHealth <= 0)
@@ -579,12 +621,16 @@ namespace NWO
 
             isDead = true;
 
+            // Drop coin boss vật lý khi chết
+            if (CoinManager.Instance != null)
+                CoinManager.Instance.SpawnCoinsFromBoss(transform.position);
+
             // Ẩn health bar ngay khi chết (giống Enemy2D)
             _healthBarController?.OnEnemyDied();
 
             // Animation - use Trigger to avoid re-triggering from Any State (giống Enemy2D)
-            SafeSetTrigger("Death"); // Use Trigger instead of "die"
-            SafeSetBool("isDead", true); // Optional: can be used for conditions
+            SafeSetTrigger(HashDeath); // Use Trigger instead of "die"
+            SafeSetBool(HashIsDead, true); // Optional: can be used for conditions
             
             // Sound
             if (deathSound != null && audioSource != null)
@@ -602,14 +648,11 @@ namespace NWO
                 col.enabled = false;
             }
             
-            // Thông báo boss manager (nếu có)
-            BossManager bossManager = FindFirstObjectByType<BossManager>();
-            if (bossManager != null)
+            // Thông báo boss manager (cached in Awake)
+            if (_cachedBossManager != null)
             {
-                bossManager.OnBossDefeated();
+                _cachedBossManager.OnBossDefeated();
             }
-            
-            Debug.Log("[RatMiniBoss] CHUỘT ĐÃ CHẾT! ☠️");
             
             // Rơi loot
             DropLoot();
@@ -621,40 +664,35 @@ namespace NWO
         private System.Collections.IEnumerator FlashRed()
         {
             spriteRenderer.color = Color.red;
-            yield return new WaitForSeconds(0.15f);
-            spriteRenderer.color = originalColor; // dùng field originalColor đã lưu trong Awake
+            yield return _waitFlashRed;
+            spriteRenderer.color = originalColor;
             _flashCoroutine = null;
         }
         
         /// <summary>
-        /// Helper: Set animator parameter an toàn (kiểm tra tồn tại trước)
+        /// Helper: Set animator parameter an toàn (kiểm tra tồn tại trước) - O(1) with cached HashSet
         /// </summary>
-        private void SafeSetBool(string paramName, bool value)
+        private void SafeSetBool(int paramHash, bool value)
         {
-            if (animator == null) return;
-            
-            foreach (var param in animator.parameters)
-            {
-                if (param.name == paramName && param.type == AnimatorControllerParameterType.Bool)
-                {
-                    animator.SetBool(paramName, value);
-                    return;
-                }
-            }
+            if (animator == null || _validBoolParams == null) return;
+            if (_validBoolParams.Contains(paramHash))
+                animator.SetBool(paramHash, value);
         }
         
-        private void SafeSetTrigger(string paramName)
+        private void SafeSetTrigger(int paramHash)
         {
-            if (animator == null) return;
-            
-            foreach (var param in animator.parameters)
-            {
-                if (param.name == paramName && param.type == AnimatorControllerParameterType.Trigger)
-                {
-                    animator.SetTrigger(paramName);
-                    return;
-                }
-            }
+            if (animator == null || _validTriggerParams == null) return;
+            if (_validTriggerParams.Contains(paramHash))
+                animator.SetTrigger(paramHash);
+        }
+
+        private void TryTriggerHurt()
+        {
+            if (Time.time - _lastHurtTriggerTime < hurtTriggerMinInterval)
+                return;
+
+            _lastHurtTriggerTime = Time.time;
+            SafeSetTrigger(HashHurt);
         }
         
         /// <summary>

@@ -93,6 +93,8 @@ namespace NWO
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
             _originalLayer = gameObject.layer;
 
+            // Warm afterimage pool for zero-alloc dash visuals
+            DashAfterImage.WarmPool();
             EnsureFallbackPlayerLight();
         }
 
@@ -329,20 +331,17 @@ namespace NWO
         {
             if (spriteRenderer == null || spriteRenderer.sprite == null) return;
 
-            var ghost = new GameObject("DashAfterImage");
-            ghost.transform.position = transform.position;
-            ghost.transform.rotation = transform.rotation;
-            ghost.transform.localScale = transform.localScale;
-
-            var sr = ghost.AddComponent<SpriteRenderer>();
-            sr.sprite = spriteRenderer.sprite;
-            sr.color = dashAfterImageColor;
-            sr.flipX = spriteRenderer.flipX;
-            sr.sortingLayerID = spriteRenderer.sortingLayerID;
-            sr.sortingOrder = spriteRenderer.sortingOrder - 1;
-
-            var fader = ghost.AddComponent<DashAfterImage>();
-            fader.Init(afterImageLifetime, dashAfterImageColor);
+            DashAfterImage.GetFromPool(
+                transform.position,
+                transform.rotation,
+                transform.localScale,
+                spriteRenderer.sprite,
+                dashAfterImageColor,
+                spriteRenderer.flipX,
+                spriteRenderer.sortingLayerID,
+                spriteRenderer.sortingOrder - 1,
+                afterImageLifetime
+            );
         }
 
         private void UpdateFlip()
@@ -393,18 +392,31 @@ namespace NWO
 
         private static Vector2 GetMoveInput()
         {
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+            {
+                var x = 0f;
+                var y = 0f;
+                if (kb.IsPressed(KeyBindManager.ACT_MOVE_LEFT))  x -= 1f;
+                if (kb.IsPressed(KeyBindManager.ACT_MOVE_RIGHT)) x += 1f;
+                if (kb.IsPressed(KeyBindManager.ACT_MOVE_UP))    y += 1f;
+                if (kb.IsPressed(KeyBindManager.ACT_MOVE_DOWN))  y -= 1f;
+                return new Vector2(x, y);
+            }
+
+            // Fallback if KeyBindManager not ready
             var keyboard = Keyboard.current;
             if (keyboard == null) return Vector2.zero;
 
-            var x = 0f;
-            var y = 0f;
+            var fx = 0f;
+            var fy = 0f;
 
-            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) x -= 1f;
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) x += 1f;
-            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
-            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) fx -= 1f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) fx += 1f;
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) fy += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) fy -= 1f;
 
-            return new Vector2(x, y);
+            return new Vector2(fx, fy);
         }
 
         private Vector2 GetMoveInputWithEffects()
@@ -420,6 +432,10 @@ namespace NWO
 
         private static bool GetDashPressed()
         {
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+                return kb.WasPressedThisFrame(KeyBindManager.ACT_DASH);
+
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
 
@@ -430,6 +446,10 @@ namespace NWO
 
         private static bool GetDashHeld()
         {
+            var kb = KeyBindManager.Instance;
+            if (kb != null)
+                return kb.IsPressed(KeyBindManager.ACT_DASH);
+
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
 
