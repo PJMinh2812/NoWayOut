@@ -77,7 +77,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &1488929116106641332
 Rigidbody2D:
@@ -274,7 +274,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &7962236365496574409
 Rigidbody2D:
@@ -359,6 +359,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 9048995121200009523}
+  triggerSize: 1
   spikesTransform: {fileID: 2269246292606269700}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -367,6 +368,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &2581940788630376813
 Animator:
   serializedVersion: 7
@@ -504,6 +509,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 4108706729294945712}
+  triggerSize: 1
   spikesTransform: {fileID: 8179492657977728878}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -512,6 +518,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &6833040244230356773
 Animator:
   serializedVersion: 7
@@ -988,7 +998,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &6756799539350560123
 Rigidbody2D:
@@ -1094,7 +1104,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &3833655248849312957
 Rigidbody2D:
@@ -1179,6 +1189,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 1541438530496851931}
+  triggerSize: 1
   spikesTransform: {fileID: 336025840182609140}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -1187,6 +1198,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &3235322524731592098
 Animator:
   serializedVersion: 7
@@ -1436,7 +1451,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &1104344771609333005
 Rigidbody2D:
@@ -1521,6 +1536,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 2334771480219343758}
+  triggerSize: 1
   spikesTransform: {fileID: 4972967583931839443}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -1529,6 +1545,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &998549310082325625
 Animator:
   serializedVersion: 7
@@ -1687,7 +1707,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &7126937392435549141
 Rigidbody2D:
@@ -1828,7 +1848,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &8144465880259892239
 Rigidbody2D:
@@ -1913,6 +1933,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 3361100602914495412}
+  triggerSize: 1
   spikesTransform: {fileID: 255928941533204652}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -1921,6 +1942,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &9044988381607241822
 Animator:
   serializedVersion: 7
@@ -2079,7 +2104,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &6466247955988226044
 Rigidbody2D:
@@ -2185,7 +2210,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5970345853468453614
 Rigidbody2D:
@@ -4759,6 +4784,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 7442462788170978430}
+  triggerSize: 1
   spikesTransform: {fileID: 2723085664853549234}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -4767,6 +4793,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &6840932620913842102
 Animator:
   serializedVersion: 7
@@ -4904,6 +4934,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 6969534275650448750}
+  triggerSize: 1
   spikesTransform: {fileID: 1305894002770030575}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -4912,6 +4943,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &1749879403822092111
 Animator:
   serializedVersion: 7
@@ -5070,7 +5105,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5343235530430103619
 Rigidbody2D:
@@ -5246,6 +5281,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 6766180211316658153}
+  triggerSize: 1
   spikesTransform: {fileID: 1933718864970328385}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -5254,6 +5290,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &234721138135311947
 Animator:
   serializedVersion: 7
@@ -11040,7 +11080,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &3495000864605372197
 Rigidbody2D:
@@ -11237,7 +11277,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &6898525690193389344
 Rigidbody2D:
@@ -11434,7 +11474,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &1530514522132550398
 Rigidbody2D:
@@ -11519,6 +11559,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 2712872134266524563}
+  triggerSize: 1
   spikesTransform: {fileID: 9083151106975178576}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -11527,6 +11568,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &1438902848248676221
 Animator:
   serializedVersion: 7
@@ -11664,6 +11709,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 2487958514149315914}
+  triggerSize: 1
   spikesTransform: {fileID: 5470013510405898102}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -11672,6 +11718,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &3916519885191360105
 Animator:
   serializedVersion: 7
@@ -11878,6 +11928,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 6590786637960271079}
+  triggerSize: 1
   spikesTransform: {fileID: 7570533079289449225}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -11886,6 +11937,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &478098242435770829
 Animator:
   serializedVersion: 7
@@ -12023,6 +12078,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 3134260951357929216}
+  triggerSize: 1
   spikesTransform: {fileID: 3168066207920440550}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -12031,6 +12087,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &265659068828692451
 Animator:
   serializedVersion: 7
@@ -12189,7 +12249,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5889888110068334814
 Rigidbody2D:
@@ -12295,7 +12355,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &4547426969895483654
 Rigidbody2D:
@@ -12583,7 +12643,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &7445835411692158862
 Rigidbody2D:
@@ -12689,7 +12749,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &9080545883244925925
 Rigidbody2D:
@@ -12774,6 +12834,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 4373645670815656409}
+  triggerSize: 1
   spikesTransform: {fileID: 4471212928026430628}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -12782,6 +12843,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &6149568020940321985
 Animator:
   serializedVersion: 7
@@ -12919,6 +12984,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 7439394358313296420}
+  triggerSize: 1
   spikesTransform: {fileID: 757149657474532028}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -12927,6 +12993,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &1605511105942773637
 Animator:
   serializedVersion: 7
@@ -13246,6 +13316,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 6285020695020729215}
+  triggerSize: 1
   spikesTransform: {fileID: 7285471572178020581}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -13254,6 +13325,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &7387271918985581769
 Animator:
   serializedVersion: 7
@@ -13412,7 +13487,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &3248430781536701819
 Rigidbody2D:
@@ -13497,6 +13572,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 1854105152707712702}
+  triggerSize: 1
   spikesTransform: {fileID: 8264701979108200196}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -13505,6 +13581,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &7318607099351785826
 Animator:
   serializedVersion: 7
@@ -13642,6 +13722,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 1106680841132543222}
+  triggerSize: 1
   spikesTransform: {fileID: 889131340949297743}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -13650,6 +13731,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &7367742502718646176
 Animator:
   serializedVersion: 7
@@ -13990,7 +14075,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5445342886623117715
 Rigidbody2D:
@@ -14166,6 +14251,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 4908261065240577847}
+  triggerSize: 1
   spikesTransform: {fileID: 1423556383520924153}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -14174,6 +14260,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &1713139477813127600
 Animator:
   serializedVersion: 7
@@ -14402,6 +14492,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 3111723435085733381}
+  triggerSize: 1
   spikesTransform: {fileID: 7579685141557286525}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -14410,6 +14501,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &6136615843581209168
 Animator:
   serializedVersion: 7
@@ -14547,6 +14642,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 5897830593941438917}
+  triggerSize: 1
   spikesTransform: {fileID: 6042881063563866188}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -14555,6 +14651,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &3354319586439740766
 Animator:
   serializedVersion: 7
@@ -14804,7 +14904,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &4661316082437550647
 Rigidbody2D:
@@ -14965,7 +15065,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &2196926465268710410
 Rigidbody2D:
@@ -15071,7 +15171,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5420614128007593666
 Rigidbody2D:
@@ -15177,7 +15277,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &5136532435808514876
 Rigidbody2D:
@@ -15647,7 +15747,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.04, y: 0.03846154}
   m_EdgeRadius: 0
 --- !u!50 &235554186394280620
 Rigidbody2D:
@@ -15823,6 +15923,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 569066857555939792}
+  triggerSize: 1
   spikesTransform: {fileID: 5816947339800514661}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -15831,6 +15932,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &4463134478946679172
 Animator:
   serializedVersion: 7
@@ -15968,6 +16073,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 7258374603401955134}
+  triggerSize: 1
   spikesTransform: {fileID: 8684029654236204491}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -15976,6 +16082,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &617081528429632222
 Animator:
   serializedVersion: 7
@@ -16113,6 +16223,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 1053442566598820371}
+  triggerSize: 1
   spikesTransform: {fileID: 7793365157314922643}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -16121,6 +16232,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &4539776241231188032
 Animator:
   serializedVersion: 7
@@ -16258,6 +16373,7 @@ MonoBehaviour:
   damage: 10
   instantKill: 0
   triggerZone: {fileID: 4694588036217266812}
+  triggerSize: 1
   spikesTransform: {fileID: 5522649814459411912}
   spikeRiseSound: {fileID: 0}
   spikeHitSound: {fileID: 0}
@@ -16266,6 +16382,10 @@ MonoBehaviour:
   activeBoolParameter: isOpen
   useAnimatorMovement: 1
   damageOnlyWhenFullyRaised: 1
+  continuousAnimation: 0
+  continuousAnimationDealsDamage: 1
+  continuousStartDelayMax: 0.75
+  continuousCycleInterval: 0.2
 --- !u!95 &4966532560512019835
 Animator:
   serializedVersion: 7

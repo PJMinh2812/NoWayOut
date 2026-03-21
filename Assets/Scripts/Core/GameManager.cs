@@ -21,6 +21,12 @@ namespace NWO
         [Header("References")]
         [SerializeField] private GameObject gameOverUI; // GameOverPanel hoặc GameOverCanvas
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip gameplayMusic;
+        [SerializeField, Range(0f, 1f)] private float gameplayMusicVolume = 0.5f;
+
+        private AudioSource gameplayMusicSource;
+
         public bool IsGameOver => isGameOver;
         public bool IsPaused => isPaused;
         public int LightFragmentsCollected => lightFragmentsCollected;
@@ -46,6 +52,8 @@ namespace NWO
             {
                 gameOverUI.SetActive(false);
             }
+
+            SetupGameplayMusic();
             
             // Auto-create LightFragmentUI nếu chưa có
             if (FindFirstObjectByType<LightFragmentUI>() == null)
@@ -124,6 +132,25 @@ namespace NWO
                 var preloaderObj = new GameObject("AnimationPreloader");
                 preloaderObj.AddComponent<AnimationPreloader>();
             }
+        }
+
+        private void SetupGameplayMusic()
+        {
+            if (gameplayMusic == null)
+                return;
+
+            gameplayMusicSource = GetComponent<AudioSource>();
+            if (gameplayMusicSource == null)
+                gameplayMusicSource = gameObject.AddComponent<AudioSource>();
+
+            gameplayMusicSource.clip = gameplayMusic;
+            gameplayMusicSource.playOnAwake = false;
+            gameplayMusicSource.loop = true;
+            gameplayMusicSource.spatialBlend = 0f;
+            gameplayMusicSource.volume = Mathf.Clamp01(gameplayMusicVolume);
+
+            if (!gameplayMusicSource.isPlaying)
+                gameplayMusicSource.Play();
         }
 
 

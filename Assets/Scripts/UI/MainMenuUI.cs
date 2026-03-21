@@ -20,6 +20,12 @@ public class MainMenuUI : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string gameSceneName = "Level_01_TheAwakening";
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip menuMusic;
+    [SerializeField, Range(0f, 1f)] private float menuMusicVolume = 0.6f;
+
+    private AudioSource menuMusicSource;
+
     private void Start()
     {
         // Setup button listeners
@@ -46,6 +52,27 @@ public class MainMenuUI : MonoBehaviour
 
         // Show main menu panel by default
         ShowMainMenu();
+
+        SetupMenuMusic();
+    }
+
+    private void SetupMenuMusic()
+    {
+        if (menuMusic == null)
+            return;
+
+        menuMusicSource = GetComponent<AudioSource>();
+        if (menuMusicSource == null)
+            menuMusicSource = gameObject.AddComponent<AudioSource>();
+
+        menuMusicSource.clip = menuMusic;
+        menuMusicSource.playOnAwake = false;
+        menuMusicSource.loop = true;
+        menuMusicSource.spatialBlend = 0f;
+        menuMusicSource.volume = Mathf.Clamp01(menuMusicVolume);
+
+        if (!menuMusicSource.isPlaying)
+            menuMusicSource.Play();
     }
 
     private void UpdateContinueButton()
