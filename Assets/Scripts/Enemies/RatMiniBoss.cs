@@ -76,6 +76,9 @@ namespace NWO
         [SerializeField] private GameObject[] lootDrops; // Các item rơi ra khi chết
         [SerializeField] private int minDrops = 1;
         [SerializeField] private int maxDrops = 3;
+
+        [Header("Hit Reaction")]
+        [SerializeField] private float hurtTriggerMinInterval = 0.25f;
         
         // Components
         private Rigidbody2D rb;
@@ -103,6 +106,7 @@ namespace NWO
 
         // Flash red coroutine tracking
         private Coroutine _flashCoroutine;
+        private float _lastHurtTriggerTime = -999f;
 
         // Cached WaitForSeconds to avoid GC allocation each coroutine call
         private WaitForSeconds _waitFireballCooldown;
@@ -594,7 +598,7 @@ namespace NWO
             }
             
             // Animation
-            SafeSetTrigger(HashHurt);
+            TryTriggerHurt();
             
             // Chết nếu hết máu
             if (currentHealth <= 0)
@@ -680,6 +684,15 @@ namespace NWO
             if (animator == null || _validTriggerParams == null) return;
             if (_validTriggerParams.Contains(paramHash))
                 animator.SetTrigger(paramHash);
+        }
+
+        private void TryTriggerHurt()
+        {
+            if (Time.time - _lastHurtTriggerTime < hurtTriggerMinInterval)
+                return;
+
+            _lastHurtTriggerTime = Time.time;
+            SafeSetTrigger(HashHurt);
         }
         
         /// <summary>

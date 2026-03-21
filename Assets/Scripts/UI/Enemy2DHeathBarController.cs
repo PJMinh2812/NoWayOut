@@ -57,6 +57,11 @@ namespace NWO.UI
             InitBar(boss.transform);
         }
 
+        public void SetTarget(NWO.NightBonesBoss boss)
+        {
+            InitBar(boss.transform);
+        }
+
         private void InitBar(Transform target)
         {
             _targetTransform = target;

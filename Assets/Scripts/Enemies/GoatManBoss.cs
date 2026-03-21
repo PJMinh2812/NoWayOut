@@ -53,11 +53,29 @@ namespace NWO
         [SerializeField] private float chargeHitRange = 1.15f;
         [SerializeField] private int chargeDamage = 2;
         [SerializeField] private float chargeKnockbackForce = 8f;
+        [SerializeField] private float chargeStunDuration = 1.2f;
+
+        [Header("Fireball (Phase 2: <= 50% HP)")]
+        [Tooltip("Prefab BossFireball để spawn (cần gắn component BossFireball)")]
+        [SerializeField] private GameObject fireballPrefab;
+        [Tooltip("Khoảng cách tối đa để bắn fireball")]
+        [SerializeField] private float fireballShootRange = 11f;
+        [Tooltip("Thời gian hồi chiêu giữa các lần bắn (giây)")]
+        [SerializeField] private float fireballCooldown = 3f;
+        [Tooltip("Damage mỗi viên fireball")]
+        [SerializeField] private int fireballDamage = 8;
+        [Tooltip("Tốc độ bay của fireball")]
+        [SerializeField] private float fireballSpeed = 6f;
+        [Tooltip("Số lượng viên trong pattern Circle (mặc định 8)")]
+        [SerializeField] private int circleCount = 8;
+        [Tooltip("Góc toả của Triple shot (độ)")]
+        [SerializeField] private float tripleSpreadAngle = 30f;
 
         [Header("Audio")]
         [SerializeField] private AudioClip wakeUpSound;
         [SerializeField] private AudioClip rageSound;
         [SerializeField] private AudioClip chargeSound;
+        [SerializeField] private AudioClip fireballSound;
         [SerializeField] private AudioClip attackSound;
         [SerializeField] private AudioClip hurtSound;
         [SerializeField] private AudioClip deathSound;
@@ -83,17 +101,20 @@ namespace NWO
         [SerializeField] private SpriteRenderer spriteRenderer;
         [Tooltip("Enable if the sprite originally faces LEFT instead of right")]
         [SerializeField] private bool facingLeftByDefault = false;
+        [SerializeField] private float hurtTriggerMinInterval = 0.25f;
 
         private AudioSource audioSource;
         private UI.Enemy2DHealthBarController _healthBarController;
 
         private PlayerController2D player;
         private PlayerHealth2D playerHealth;
+        private PlayerStatusEffects playerStatusEffects;
 
         private float lastAttackTime;
         private Color originalColor;
         private Vector2 startPosition;
         private Coroutine _flashCoroutine;
+        private float _lastHurtTriggerTime = -999f;
 
         // Combat flags (theo style RatMiniBoss)
         private bool _canAttack = true;
@@ -101,6 +122,8 @@ namespace NWO
         private bool _canCharge = true;
         private bool _isRaging = false;
         private bool _isCharging = false;
+        private bool _canShoot = true;
+        private bool _isShooting = false;
 
         private int _lastSpellHitFrame = -1;
 
@@ -177,6 +200,7 @@ namespace NWO
             if (player != null)
             {
                 playerHealth = player.GetComponent<PlayerHealth2D>();
+                playerStatusEffects = player.GetComponent<PlayerStatusEffects>();
             }
             else
             {
@@ -222,12 +246,25 @@ namespace NWO
             }
 
             float distanceToPlayer = Vector2.Distance(transform.position, player.transform.position);
+            bool isPhaseTwo = currentHealth <= Mathf.CeilToInt(maxHealth * 0.5f);
 
             // Cận chiến khi gần
             if (distanceToPlayer <= maceAttackRange
-                && _canAttack && !_isAttacking && !_isRaging && !_isCharging)
+                && _canAttack && !_isAttacking && !_isRaging && !_isCharging && !_isShooting)
             {
                 StartCoroutine(PerformMaceAttack());
+                return;
+            }
+
+            // Bắn fireball khi vào phase 2 (<= 50% HP), không ở quá gần
+            if (isPhaseTwo
+                && fireballPrefab != null
+                && distanceToPlayer > maceAttackRange
+                && distanceToPlayer <= fireballShootRange
+                && _canShoot && !_isShooting
+                && !_isAttacking && !_isRaging && !_isCharging)
+            {
+                StartCoroutine(ShootFireball());
                 return;
             }
 
@@ -235,14 +272,14 @@ namespace NWO
             if (distanceToPlayer > maceAttackRange
                 && distanceToPlayer >= chargeMinDistance
                 && distanceToPlayer <= chargeMaxDistance
-                && _canCharge && !_isAttacking && !_isRaging && !_isCharging)
+                && _canCharge && !_isAttacking && !_isRaging && !_isCharging && !_isShooting)
             {
                 StartCoroutine(PerformChargeAttack());
                 return;
             }
 
             // Đứng yên khi đang tấn công cận chiến / đang rage
-            if (_isAttacking || _isRaging)
+            if (_isAttacking || _isRaging || _isShooting)
             {
                 SafeSetBool(HashIsMoving, false);
                 rb.linearVelocity = Vector2.zero;
@@ -329,7 +366,7 @@ namespace NWO
             FacePlayer();
             PlaySound(attackSound);
 
-            yield return new WaitForSeconds(maceAttackAnimDuration * 0.5f);
+            yield return new WaitForSeconds(maceAttackAnimDuration);
 
             if (!isDead && player != null && playerHealth != null)
             {
@@ -343,8 +380,6 @@ namespace NWO
                         attackEffect.Play();
                 }
             }
-
-            yield return new WaitForSeconds(maceAttackAnimDuration * 0.5f);
 
             SafeSetBool(HashIsAttacking, false);
             _isAttacking = false;
@@ -405,6 +440,12 @@ namespace NWO
                     {
                         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
                         playerHealth.TakeDamage(chargeDamage, chargeDirection * chargeKnockbackForce, playerRb);
+
+                        if (playerStatusEffects != null && chargeStunDuration > 0f)
+                        {
+                            playerStatusEffects.ApplyEffect(StatusEffectType.Stun, chargeStunDuration, 1f, this);
+                        }
+
                         if (attackEffect != null)
                             attackEffect.Play();
                         hasHitPlayer = true;
@@ -420,6 +461,129 @@ namespace NWO
 
             yield return new WaitForSeconds(chargeCooldown);
             _canCharge = true;
+        }
+
+        // ============================================================
+        //  FIREBALL SHOOTING (Phase 2)
+        // ============================================================
+
+        /// <summary>
+        /// Chọn ngẫu nhiên một trong 4 pattern và thực hiện bắn.
+        /// 0 = Single | 1 = Triple | 2 = Circle | 3 = Rain
+        /// </summary>
+        private System.Collections.IEnumerator ShootFireball()
+        {
+            if (isDead || player == null || fireballPrefab == null) yield break;
+
+            _isShooting = true;
+            _canShoot = false;
+
+            FacePlayer();
+
+            int pattern = Random.Range(0, 4); // 0-3
+
+            switch (pattern)
+            {
+                case 0: yield return StartCoroutine(FireSingle()); break;
+                case 1: yield return StartCoroutine(FireTriple()); break;
+                case 2: yield return StartCoroutine(FireCircle()); break;
+                case 3: yield return StartCoroutine(FireRain()); break;
+            }
+
+            _isShooting = false;
+
+            yield return new WaitForSeconds(fireballCooldown);
+            _canShoot = true;
+        }
+
+        /// <summary>Pattern 0 – Single: một viên thẳng vào player.</summary>
+        private System.Collections.IEnumerator FireSingle()
+        {
+            yield return new WaitForSeconds(0.2f);
+            SpawnFireball(GetDirectionToPlayer());
+        }
+
+        /// <summary>Pattern 1 – Triple: 3 viên toả ra góc ±tripleSpreadAngle.</summary>
+        private System.Collections.IEnumerator FireTriple()
+        {
+            yield return new WaitForSeconds(0.2f);
+            Vector2 baseDir = GetDirectionToPlayer();
+            SpawnFireball(Rotate(baseDir, -tripleSpreadAngle));
+            SpawnFireball(baseDir);
+            SpawnFireball(Rotate(baseDir, tripleSpreadAngle));
+        }
+
+        /// <summary>Pattern 2 – Circle: bắn đều circleCount viên quanh 360°.</summary>
+        private System.Collections.IEnumerator FireCircle()
+        {
+            yield return new WaitForSeconds(0.2f);
+            float step = 360f / circleCount;
+            for (int i = 0; i < circleCount; i++)
+            {
+                Vector2 dir = Rotate(Vector2.right, step * i);
+                SpawnFireball(dir);
+            }
+        }
+
+        /// <summary>
+        /// Pattern 3 – Rain: bắn 6 viên lần lượt, xen kẽ 0.18 giây, mỗi viên
+        /// ngắm vào vị trí player có offset ngẫu nhiên nhỏ.
+        /// </summary>
+        private System.Collections.IEnumerator FireRain()
+        {
+            int rainCount = 6;
+            float spreadRadius = 1.5f;
+
+            for (int i = 0; i < rainCount; i++)
+            {
+                if (isDead || player == null) yield break;
+
+                Vector2 offset = Random.insideUnitCircle * spreadRadius;
+                Vector2 target = (Vector2)player.transform.position + offset;
+                Vector2 dir = (target - (Vector2)transform.position).normalized;
+                SpawnFireball(dir);
+
+                yield return new WaitForSeconds(0.18f);
+            }
+        }
+
+        private void SpawnFireball(Vector2 direction)
+        {
+            if (fireballPrefab == null) return;
+
+            GameObject fb = Instantiate(fireballPrefab, transform.position, Quaternion.identity);
+            BossFireball bossFireball = fb.GetComponent<BossFireball>();
+            if (bossFireball != null)
+            {
+                bossFireball.Fire(direction, fireballSpeed, fireballDamage);
+            }
+            else
+            {
+                // Fallback nếu prefab không có BossFireball
+                SpellProjectile spellProjectile = fb.GetComponent<SpellProjectile>();
+                if (spellProjectile != null)
+                {
+                    spellProjectile.SetDamage(fireballDamage);
+                    spellProjectile.Fire(direction);
+                }
+            }
+
+            PlaySound(fireballSound);
+        }
+
+        private Vector2 GetDirectionToPlayer()
+        {
+            if (player == null) return Vector2.right;
+            return ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
+        }
+
+        /// <summary>Xoay vector 2D theo góc (độ).</summary>
+        private static Vector2 Rotate(Vector2 vector, float degrees)
+        {
+            float rad = degrees * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+            return new Vector2(cos * vector.x - sin * vector.y, sin * vector.x + cos * vector.y);
         }
 
         public int GetCurrentHealth() => currentHealth;
@@ -444,7 +608,7 @@ namespace NWO
             }
 
             PlaySound(hurtSound);
-            SafeSetTrigger(HashHurt);
+            TryTriggerHurt();
 
             if (currentHealth <= 0)
             {
@@ -541,6 +705,15 @@ namespace NWO
                 animator.SetTrigger(paramHash);
         }
 
+        private void TryTriggerHurt()
+        {
+            if (Time.time - _lastHurtTriggerTime < hurtTriggerMinInterval)
+                return;
+
+            _lastHurtTriggerTime = Time.time;
+            SafeSetTrigger(HashHurt);
+        }
+
         private void FacePlayer()
         {
             if (spriteRenderer == null || player == null)
@@ -595,6 +768,9 @@ namespace NWO
 
             Gizmos.color = new Color(1f, 0.3f, 0f, 1f);
             Gizmos.DrawWireSphere(transform.position, chargeMinDistance);
+
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position, fireballShootRange);
 
             #if UNITY_EDITOR
             string status = isDead ? "DEAD" : (isAwake ? "AWAKE" : "SLEEPING");
