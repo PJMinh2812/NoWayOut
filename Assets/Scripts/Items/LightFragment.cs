@@ -113,11 +113,22 @@ public class LightFragment : MonoBehaviour
     private void CollectFragment(GameObject player)
     {
         isCollected = true;
+        bool collectedViaGameManager = false;
         
         // ThÃ´ng bÃ¡o cho GameManager
         if (GameManager.Instance != null)
         {
             GameManager.Instance.CollectLightFragment(fragmentID);
+            collectedViaGameManager = true;
+        }
+
+        // Đảm bảo ánh sáng luôn tăng ngay cả khi event hookup bị trễ.
+        if (DungeonLightingManager.Instance != null)
+        {
+            if (collectedViaGameManager && GameManager.Instance != null)
+                DungeonLightingManager.Instance.ApplyFragmentProgress(GameManager.Instance.LightFragmentsCollected);
+            else
+                DungeonLightingManager.Instance.NotifyFragmentCollectedFallback();
         }
         
         // Hiá»‡u á»©ng particle
@@ -147,11 +158,7 @@ public class LightFragment : MonoBehaviour
         // DungeonLightingManager xá»­ lÃ½ viá»‡c má»Ÿ rá»™ng Ã¡nh sÃ¡ng (vá»›i animation)
         // NÃ³ Ä‘Ã£ Ä‘Äƒng kÃ½ event OnLightFragmentCollected tá»« GameManager
         // NÃªn chá»‰ cáº§n log á»Ÿ Ä‘Ã¢y
-        if (NWO.DungeonLightingManager.Instance != null)
-        {
-
-        }
-        else
+        if (NWO.DungeonLightingManager.Instance == null)
         {
             // Fallback: tá»± tÄƒng náº¿u khÃ´ng cÃ³ manager
             var playerLight = player.GetComponentInChildren<Light2D>();
@@ -166,7 +173,7 @@ public class LightFragment : MonoBehaviour
     private void ShowCollectNotification()
     {
         // TODO: Hiá»ƒn thá»‹ UI thÃ´ng bÃ¡o "Light Fragment Collected!"
-
+        Debug.Log($"[LightFragment] Collected: {fragmentName}");
     }
     
     private System.Collections.IEnumerator CollectAnimation()

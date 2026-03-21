@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering.Universal;
 
 namespace NWO
 {
@@ -45,6 +46,12 @@ namespace NWO
         [SerializeField] private bool flipByAim = true;
         [SerializeField] private float flipThreshold = 0.1f;
 
+        [Header("Fallback Light")]
+        [SerializeField] private bool autoCreateFallbackLight = true;
+        [SerializeField] private float fallbackLightRadius = 1.5f;
+        [SerializeField] private float fallbackLightIntensity = 1.1f;
+        [SerializeField] private Color fallbackLightColor = new Color(0.95f, 0.9f, 0.75f);
+
         public float AimAngleDeg { get; private set; }
         public PlayerMoveState CurrentState { get; private set; } = PlayerMoveState.Normal;
         public bool IsDashing => CurrentState == PlayerMoveState.Dashing;
@@ -68,6 +75,7 @@ namespace NWO
 
         private int _originalLayer;
         private static int _dashLayer = -1;
+        private Light2D _fallbackPlayerLight;
 
         /// <summary>Tăng tốc độ di chuyển tối đa (upgrade system)</summary>
         public void AddMaxMoveSpeed(float amount) => maxMoveSpeed += amount;
@@ -84,6 +92,65 @@ namespace NWO
             if (worldCamera == null) worldCamera = Camera.main;
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
             _originalLayer = gameObject.layer;
+
+            EnsureFallbackPlayerLight();
+        }
+
+        private void LateUpdate()
+        {
+            if (!autoCreateFallbackLight)
+                return;
+
+            if (_fallbackPlayerLight == null)
+            {
+                EnsureFallbackPlayerLight();
+            }
+            else if (!_fallbackPlayerLight.enabled)
+            {
+                _fallbackPlayerLight.enabled = true;
+            }
+
+            if (DungeonLightingManager.Instance == null && _fallbackPlayerLight != null)
+            {
+                if (_fallbackPlayerLight.pointLightOuterRadius > fallbackLightRadius)
+                    _fallbackPlayerLight.pointLightOuterRadius = fallbackLightRadius;
+
+                if (_fallbackPlayerLight.pointLightInnerRadius > fallbackLightRadius * 0.25f)
+                    _fallbackPlayerLight.pointLightInnerRadius = fallbackLightRadius * 0.25f;
+            }
+        }
+
+        private void EnsureFallbackPlayerLight()
+        {
+            if (!autoCreateFallbackLight)
+                return;
+
+            // If DungeonLightingManager exists, let it own the light setup.
+            if (DungeonLightingManager.Instance != null)
+                return;
+
+            Transform existing = transform.Find("PlayerLight");
+            if (existing != null)
+            {
+                _fallbackPlayerLight = existing.GetComponent<Light2D>();
+            }
+
+            if (_fallbackPlayerLight == null)
+            {
+                GameObject lightObj = new GameObject("PlayerLight");
+                lightObj.transform.SetParent(transform);
+                lightObj.transform.localPosition = Vector3.zero;
+
+                _fallbackPlayerLight = lightObj.AddComponent<Light2D>();
+                _fallbackPlayerLight.lightType = Light2D.LightType.Point;
+            }
+
+            _fallbackPlayerLight.enabled = true;
+            _fallbackPlayerLight.pointLightOuterRadius = fallbackLightRadius;
+            _fallbackPlayerLight.pointLightInnerRadius = fallbackLightRadius * 0.25f;
+            _fallbackPlayerLight.intensity = fallbackLightIntensity;
+            _fallbackPlayerLight.color = fallbackLightColor;
+            _fallbackPlayerLight.shadowIntensity = 0.25f;
         }
 
         private void Update()

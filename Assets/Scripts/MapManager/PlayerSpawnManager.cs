@@ -121,6 +121,8 @@ namespace NWO
         /// </summary>
         public void RespawnPlayer()
         {
+            Debug.Log($"[PlayerSpawnManager] Respawn requested (configured delay={respawnDelay:0.00}s, currently instant).");
+
             if (SpawnedPlayer == null)
             {
                 // Player bị destroy, spawn lại
