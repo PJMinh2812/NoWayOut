@@ -31,6 +31,16 @@ public class LightFragment : MonoBehaviour
     
     private Vector3 startPosition;
     private bool isCollected = false;
+
+    /// <summary>
+    /// Cho phép spawner gán ID/tên runtime để đảm bảo tracking nhất quán.
+    /// </summary>
+    public void Configure(int id, string displayName = null)
+    {
+        fragmentID = id;
+        if (!string.IsNullOrEmpty(displayName))
+            fragmentName = displayName;
+    }
     
     private void Awake()
     {

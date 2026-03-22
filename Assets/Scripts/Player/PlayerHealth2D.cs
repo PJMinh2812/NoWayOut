@@ -108,7 +108,10 @@ namespace NWO
             }
 
             _invincibleTimer = invincibleDuration;
+            int healthBeforeDamage = CurrentHealth;
             CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+            int damageApplied = Mathf.Max(0, healthBeforeDamage - CurrentHealth);
+            RunAIDirectorTelemetry.RecordPlayerDamageTaken(damageApplied);
 
 
 
@@ -193,6 +196,7 @@ namespace NWO
         {
             if (IsDead) return;
             IsDead = true;
+            RunAIDirectorTelemetry.RecordPlayerDeath();
 
 
             if (animator != null)

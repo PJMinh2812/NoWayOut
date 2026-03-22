@@ -96,6 +96,7 @@ public class FakeFloor : MonoBehaviour
     {
 
         isTriggered = true;
+        RunAIDirectorTelemetry.RecordTrapTriggered(this);
         
         // PhÃ¡t Ã¢m thanh ná»©t
         if (crackSound != null)

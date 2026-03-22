@@ -381,9 +381,7 @@ namespace NWO
             bool isProceduralRunActive =
                 FindFirstObjectByType<ProceduralGeneration.Integration.DungeonRunProgressionManager>() != null;
 
-            Vector3 savedPosition = data.hasCheckpoint
-                ? new Vector3(data.checkpointPositionX, data.checkpointPositionY, 0f)
-                : new Vector3(data.playerPositionX, data.playerPositionY, 0f);
+            Vector3 savedPosition = ResolveSavedPlayerPosition(data);
 
             // Activate the correct room FIRST (before setting player position)
             bool roomActivated = false;
@@ -404,11 +402,24 @@ namespace NWO
                 Debug.Log($"[GameManager] Restored room by grid ({data.currentRoomGridX},{data.currentRoomGridY}): {roomActivated}");
             }
 
+            // If saved grid points to the wrong room (commonly stale Start room), prefer room containing saved player position.
+            if (roomActivated && restoredRoom != null && !IsRoomContainingPosition(restoredRoom, savedPosition))
+            {
+                Room positionRoom = ActivateProceduralRoomAtPosition(savedPosition);
+                if (positionRoom != null)
+                {
+                    restoredRoom = positionRoom;
+                    roomActivated = true;
+                    Debug.Log($"[GameManager] Grid-restored room did not contain saved position. Overrode by position to room ({positionRoom.gridPosition.x},{positionRoom.gridPosition.y}).");
+                }
+            }
+
             // Restore player position
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                player.transform.position = savedPosition;
+                ApplyPlayerPosition(player, savedPosition, "ApplySaveData-initial");
+                UpdateRespawnPointToSavedPosition(savedPosition);
 
                 // Fallback: if room wasn't activated by grid, try by position
                 if (!roomActivated && isProceduralRunActive)
@@ -472,6 +483,16 @@ namespace NWO
 
                         if (activatedByGrid)
                             activeRoom = FindRoomByGridPosition(dungeonManager, data.currentRoomGridX, data.currentRoomGridY);
+
+                        if (activatedByGrid && activeRoom != null && !IsRoomContainingPosition(activeRoom, savedPosition))
+                        {
+                            Room positionRoom = ActivateProceduralRoomAtPosition(savedPosition);
+                            if (positionRoom != null)
+                            {
+                                activeRoom = positionRoom;
+                                activatedByGrid = true;
+                            }
+                        }
                     }
 
                     if (!activatedByGrid)
@@ -483,6 +504,13 @@ namespace NWO
 
                     if (activeRoom != null || activatedByGrid)
                     {
+                        var playerObj = GameObject.FindGameObjectWithTag("Player");
+                        if (playerObj != null)
+                        {
+                            ApplyPlayerPosition(playerObj, savedPosition, $"EnsureRoomRestoreAfterLoad-attempt-{attempt + 1}");
+                        }
+                        UpdateRespawnPointToSavedPosition(savedPosition);
+
                         SyncRoomTransitionManager(activeRoom, savedPosition);
                         LogRoomRestoreState($"EnsureRoomRestoreAfterLoad-success-attempt-{attempt + 1}", data, savedPosition);
 
@@ -497,6 +525,36 @@ namespace NWO
             }
 
             LogRoomRestoreState("EnsureRoomRestoreAfterLoad-failed", data, savedPosition);
+        }
+
+        private void ApplyPlayerPosition(GameObject player, Vector3 position, string phase)
+        {
+            if (player == null)
+                return;
+
+            Vector3 before = player.transform.position;
+            Debug.Log($"[ContinueDebug] {phase} | ApplyPlayerPosition BEFORE={before} TARGET={position}");
+
+            player.transform.position = position;
+
+            var rb = player.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+
+            Vector3 after = player.transform.position;
+            Debug.Log($"[ContinueDebug] {phase} | ApplyPlayerPosition AFTER={after}");
+        }
+
+        private void UpdateRespawnPointToSavedPosition(Vector3 position)
+        {
+            GameObject respawnPoint = GameObject.Find("Respawn_Point");
+            if (respawnPoint == null)
+                respawnPoint = new GameObject("Respawn_Point");
+
+            respawnPoint.transform.position = position;
         }
 
         private Room FindRoomByGridPosition(DungeonManager dungeonManager, int gridX, int gridY)
@@ -515,6 +573,30 @@ namespace NWO
             }
 
             return null;
+        }
+
+        private Vector3 ResolveSavedPlayerPosition(SaveData data)
+        {
+            // Continue should prioritize the exact player location at save-time.
+            if (data != null && data.hasPlayerPosition)
+            {
+                return new Vector3(data.playerPositionX, data.playerPositionY, 0f);
+            }
+
+            // Backward compatibility for old saves without hasPlayerPosition.
+            bool hasLegacyPlayerPosition = data != null
+                && (Mathf.Abs(data.playerPositionX) > 0.001f || Mathf.Abs(data.playerPositionY) > 0.001f);
+            if (hasLegacyPlayerPosition)
+            {
+                return new Vector3(data.playerPositionX, data.playerPositionY, 0f);
+            }
+
+            if (data != null && data.hasCheckpoint)
+            {
+                return new Vector3(data.checkpointPositionX, data.checkpointPositionY, 0f);
+            }
+
+            return Vector3.zero;
         }
 
         private Room ActivateProceduralRoomAtPosition(Vector3 worldPos)
@@ -625,6 +707,22 @@ namespace NWO
             }
 
             return null;
+        }
+
+        private bool IsRoomContainingPosition(Room room, Vector3 worldPos)
+        {
+            if (room == null || room.roomInstance == null)
+                return false;
+
+            var renderers = room.roomInstance.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return false;
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            return bounds.Contains(worldPos);
         }
 
         private bool TryActivateRoomByGridFallback(DungeonManager dungeonManager, int gridX, int gridY)

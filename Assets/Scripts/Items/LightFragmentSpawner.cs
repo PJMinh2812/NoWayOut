@@ -2,6 +2,7 @@
 using UnityEngine.Rendering.Universal;
 using ProceduralGeneration.Core;
 using ProceduralGeneration.Data;
+using System.Collections.Generic;
 
 namespace NWO
 {
@@ -27,6 +28,47 @@ namespace NWO
         [SerializeField] private float fragmentScale = 0.8f;
         
         private int fragmentIDCounter = 0;
+
+        /// <summary>
+        /// Spawn cố định cho run mới map 1-1:
+        /// - Archetype1 đầu tiên
+        /// - Archetype2 đầu tiên
+        /// - Boss
+        /// </summary>
+        public void SpawnFragmentsForRunStart(DungeonManager dungeonManager)
+        {
+            if (dungeonManager == null) return;
+
+            var allRooms = dungeonManager.GetAllRooms();
+            if (allRooms == null || allRooms.Count == 0) return;
+
+            ClearExistingFragments(dungeonManager);
+
+            var targets = new List<Room>();
+
+            Room firstArchetype1 = FindFirstRoomByType(allRooms, RoomType.Archetype1);
+            Room firstArchetype2 = FindFirstRoomByType(allRooms, RoomType.Archetype2);
+            Room bossRoom = FindFirstRoomByType(allRooms, RoomType.Boss);
+
+            if (firstArchetype1 != null) targets.Add(firstArchetype1);
+            if (firstArchetype2 != null && firstArchetype2 != firstArchetype1) targets.Add(firstArchetype2);
+            if (bossRoom != null && bossRoom != firstArchetype1 && bossRoom != firstArchetype2) targets.Add(bossRoom);
+
+            if (targets.Count == 0)
+            {
+                Debug.LogWarning("[LightFragmentSpawner] No valid target rooms for run-start fragment spawn.");
+                return;
+            }
+
+            int count = Mathf.Min(totalFragments, targets.Count);
+            fragmentIDCounter = 0;
+            for (int i = 0; i < count; i++)
+            {
+                SpawnFragmentInRoom(targets[i], i + 1);
+            }
+
+            Debug.Log($"[LightFragmentSpawner] Spawned {count} fragments for run start (A1-first, A2-first, Boss).");
+        }
         
         /// <summary>
         /// Gá»i sau khi dungeon Ä‘Ã£ generate xong Ä‘á»ƒ spawn Light Fragments
@@ -98,9 +140,10 @@ namespace NWO
         /// <summary>
         /// Spawn 1 Light Fragment á»Ÿ vá»‹ trÃ­ random trong room (interior, trÃ¡nh wall)
         /// </summary>
-        private void SpawnFragmentInRoom(Room room)
+        private void SpawnFragmentInRoom(Room room, int forcedFragmentId = -1)
         {
             fragmentIDCounter++;
+            int fragmentId = forcedFragmentId > 0 ? forcedFragmentId : fragmentIDCounter;
             
             // TÃ­nh vÃ¹ng interior cá»§a room (trÃ¡nh wall = 2 tile tá»« edge)
             Vector3 roomOrigin = room.roomInstance.transform.position;
@@ -138,14 +181,55 @@ namespace NWO
                 fragmentObj = CreateRuntimeFragment(spawnPos, room.roomInstance.transform);
             }
             
-            fragmentObj.name = $"LightFragment_{fragmentIDCounter}";
+            fragmentObj.name = $"LightFragment_{fragmentId}";
             
             // Configure LightFragment component
             var fragment = fragmentObj.GetComponent<LightFragment>();
             if (fragment == null)
                 fragment = fragmentObj.AddComponent<LightFragment>();
-            
+            fragment.Configure(fragmentId, $"Light Fragment #{fragmentId}");
 
+        }
+
+        private Room FindFirstRoomByType(List<Room> rooms, RoomType roomType)
+        {
+            Room selected = null;
+            int bestDistance = int.MaxValue;
+
+            foreach (var room in rooms)
+            {
+                if (room == null || room.roomInstance == null || room.roomData == null)
+                    continue;
+
+                if (room.roomData.roomType != roomType)
+                    continue;
+
+                if (room.distanceFromStart < bestDistance)
+                {
+                    bestDistance = room.distanceFromStart;
+                    selected = room;
+                }
+            }
+
+            return selected;
+        }
+
+        private void ClearExistingFragments(DungeonManager dungeonManager)
+        {
+            if (dungeonManager == null || dungeonManager.dungeonContainer == null)
+                return;
+
+            var existing = dungeonManager.dungeonContainer.GetComponentsInChildren<LightFragment>(true);
+            for (int i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] == null)
+                    continue;
+
+                if (Application.isPlaying)
+                    Destroy(existing[i].gameObject);
+                else
+                    DestroyImmediate(existing[i].gameObject);
+            }
         }
         
         /// <summary>
