@@ -160,6 +160,14 @@ namespace NWO
             CurrentHealth = Mathf.Clamp(value, 0, maxHealth);
         }
 
+        /// <summary>Hồi máu trực tiếp (dùng cho heart pickup)</summary>
+        public void Heal(int amount)
+        {
+            if (IsDead) return;
+            if (amount <= 0) return;
+            CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
+        }
+
         /// <summary>Tăng HP tối đa (upgrade system). Cũng hồi thêm lượng HP tương ứng.</summary>
         public void AddMaxHealth(int amount)
         {

@@ -188,6 +188,9 @@ MonoBehaviour:
   friction: 8
   aggroRadius: 8
   healthBarPrefab: {fileID: 4796563122829673568, guid: b31ee0169bc1f7c4a847be40ce54cf86, type: 3}
+  attackSound: {fileID: 8300000, guid: 3b71a847f09df7346a12711cd1197d2f, type: 3}
+  hurtSound: {fileID: 0}
+  deathSound: {fileID: 0}
   animator: {fileID: 0}
   attackAnimDuration: 0.25
   deathAnimDuration: 2

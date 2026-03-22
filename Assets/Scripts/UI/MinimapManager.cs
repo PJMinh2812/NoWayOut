@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering.Universal;
+using TMPro;
 
 namespace NWO
 {
@@ -353,7 +354,7 @@ namespace NWO
             tmp.fontSize = 8f;
             tmp.alignment = TMPro.TextAlignmentOptions.Center;
             tmp.color = new Color(0.4f, 0.5f, 0.7f, 0.5f);
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
         }
 
         private void CreateLabel(Transform parent, string text, Vector2 anchor, Vector2 offset,
@@ -374,7 +375,7 @@ namespace NWO
             tmp.fontSize = fontSize;
             tmp.alignment = TMPro.TextAlignmentOptions.Center;
             tmp.color = color;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
         }
 
         private RectTransform AnchorTopRight(GameObject obj, float width, float height, Vector2 offset)

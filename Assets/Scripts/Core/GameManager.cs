@@ -50,7 +50,11 @@ namespace NWO
             
             if (gameOverUI != null)
             {
-                gameOverUI.SetActive(false);
+                var gameOverUiComp = gameOverUI.GetComponent<GameOverUI>();
+                if (gameOverUiComp != null)
+                    gameOverUiComp.HideGameOverImmediate();
+                else
+                    gameOverUI.SetActive(false);
             }
 
             SetupGameplayMusic();
@@ -111,6 +115,14 @@ namespace NWO
                 Debug.Log("[GameManager] Auto-created CoinManager");
             }
 
+            // Auto-create HeartManager nếu chưa có
+            if (FindFirstObjectByType<HeartManager>() == null)
+            {
+                var heartObj = new GameObject("HeartManager");
+                heartObj.AddComponent<HeartManager>();
+                Debug.Log("[GameManager] Auto-created HeartManager");
+            }
+
             // Auto-create KeyBindManager nếu chưa có
             if (KeyBindManager.Instance == null && FindFirstObjectByType<KeyBindManager>() == null)
             {
@@ -161,7 +173,11 @@ namespace NWO
             if (isGameOver) return; // Already game over
 
             isGameOver = true;
+            isPaused = false;
             Time.timeScale = 0f; // Pause game
+
+            if (gameplayMusicSource != null && gameplayMusicSource.isPlaying)
+                gameplayMusicSource.Stop();
 
             if (gameOverUI != null)
             {
@@ -173,9 +189,14 @@ namespace NWO
                     canvas.gameObject.SetActive(true);
                     Debug.Log("[GameManager] Activated GameOverCanvas");
                 }
-                
-                // Active panel/UI
-                gameOverUI.SetActive(true);
+
+                // Prefer component flow so GameOverUI can run transitions/conditions
+                var gameOverUiComp = gameOverUI.GetComponent<GameOverUI>();
+                if (gameOverUiComp != null)
+                    gameOverUiComp.ShowGameOver();
+                else
+                    gameOverUI.SetActive(true);
+
                 Debug.Log("[GameManager] Game Over UI Activated!");
             }
             else
@@ -226,7 +247,11 @@ namespace NWO
             // Hide game over UI first
             if (gameOverUI != null)
             {
-                gameOverUI.SetActive(false);
+                var gameOverUiComp = gameOverUI.GetComponent<GameOverUI>();
+                if (gameOverUiComp != null)
+                    gameOverUiComp.HideGameOverImmediate();
+                else
+                    gameOverUI.SetActive(false);
             }
             
             // Reset player health

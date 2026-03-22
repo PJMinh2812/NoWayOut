@@ -23,7 +23,6 @@ namespace NWO
         
         [Header("Combo System")]
         [SerializeField] private int maxComboHits = 3;
-        [SerializeField] private float comboWindow = 0.8f; // Thời gian để nhập combo tiếp
         [SerializeField] private float attackDuration = 0.35f; // Thời gian animation mỗi đòn
         [SerializeField] private float comboResetDelay = 1.5f; // Thời gian reset combo sau khi không đánh
         
@@ -313,7 +312,10 @@ namespace NWO
                 (Vector2)attackPoint.position : 
                 (Vector2)transform.position + GetAttackDirection() * attackRange;
             
-            int hitCount = Physics2D.OverlapCircleNonAlloc(attackPos, attackRadius, _hitBuffer, enemyLayer);
+            var filter = new ContactFilter2D();
+            filter.SetLayerMask(enemyLayer);
+            filter.useTriggers = false;
+            int hitCount = Physics2D.OverlapCircle(attackPos, attackRadius, filter, _hitBuffer);
             
             int damage = GetCurrentDamage();
             Vector2 knockDir = GetAttackDirection();
