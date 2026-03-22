@@ -335,7 +335,7 @@ namespace NWO
             // Mô tả ngắn (dưới cùng)
             var descTmp = NewText("Desc", cardBg.transform, data.description, 16, descColor);
             descTmp.alignment = TextAlignmentOptions.Center;
-            descTmp.enableWordWrapping = true;
+            descTmp.textWrappingMode = TextWrappingModes.Normal;
             var descRt = descTmp.rectTransform;
             descRt.anchorMin = new Vector2(0.06f, 0.02f);
             descRt.anchorMax = new Vector2(0.94f, 0.18f);
@@ -388,7 +388,7 @@ namespace NWO
             t.fontSize = fontSize;
             t.color = color;
             t.raycastTarget = false;
-            t.enableWordWrapping = false;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
             if (TMP_Settings.defaultFontAsset != null)
                 t.font = TMP_Settings.defaultFontAsset;

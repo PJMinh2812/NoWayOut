@@ -52,6 +52,9 @@ namespace NWO
 
         [Header("Settings (audio)")]
         [SerializeField] private AudioMixer audioMixer;
+        [Tooltip("Nếu AudioMixer chưa kéo vào Inspector, thử load từ Resources (đường dẫn không có .mixer). Ví dụ: Audio/MainMixer")]
+        [SerializeField] private string mixerResourcesPath = "";
+
         [SerializeField] private string masterVolumeParam = "MasterVolume";
         [SerializeField] private string musicVolumeParam = "MusicVolume";
         [SerializeField] private string sfxVolumeParam = "SFXVolume";
@@ -70,6 +73,13 @@ namespace NWO
         private void Start()
         {
             GameIsPaused = false;
+
+            if (audioMixer == null && !string.IsNullOrWhiteSpace(mixerResourcesPath))
+            {
+                audioMixer = Resources.Load<AudioMixer>(mixerResourcesPath.Trim());
+                if (audioMixer == null)
+                    Debug.LogWarning($"[PauseMenuUI] Không tìm thấy AudioMixer tại Resources/{mixerResourcesPath}. Kéo mixer vào field Audio Mixer hoặc tạo file trong thư mục Resources.");
+            }
 
             // Many scenes already have a legacy pause menu wired in the inspector.
             // If enabled, replace it at runtime with the new "screenshot" UI.
@@ -137,7 +147,7 @@ namespace NWO
                 // Check all keys
                 foreach (Key key in System.Enum.GetValues(typeof(Key)))
                 {
-                    if (key == Key.None || key == Key.IMESelected) continue;
+                    if (key == Key.None) continue;
                     try
                     {
                         if (keyboard[key].wasPressedThisFrame)
@@ -636,10 +646,24 @@ namespace NWO
             slider.fillRect = fillRt;
             slider.targetGraphic = fill.GetComponent<Image>();
 
+            // Handle để dễ kéo slider (Unity Slider cần handleRect để drag)
+            var handleArea = new GameObject("HandleSlideArea");
+            handleArea.transform.SetParent(sliderGo.transform, false);
+            var haRt = handleArea.AddComponent<RectTransform>();
+            StretchToFull(haRt);
+            var handle = NewUiImage("Handle", handleArea.transform, new Color(1f, 1f, 1f, 0.9f));
+            var handleRt = handle.GetComponent<RectTransform>();
+            handleRt.anchorMin = new Vector2(0f, 0.5f);
+            handleRt.anchorMax = new Vector2(0f, 0.5f);
+            handleRt.pivot = new Vector2(0.5f, 0.5f);
+            handleRt.sizeDelta = new Vector2(24f, 36f);
+            handleRt.anchoredPosition = Vector2.zero;
+            slider.handleRect = handleRt;
+            slider.direction = Slider.Direction.LeftToRight;
+
             void Apply(float v)
             {
-                if (audioMixer != null && !string.IsNullOrWhiteSpace(mixerParam))
-                    audioMixer.SetFloat(mixerParam, Mathf.Log10(Mathf.Clamp(v, 0.0001f, 1f)) * 20f);
+                AudioVolumeHelper.ApplyLinearToMixer(audioMixer, mixerParam, v);
                 PlayerPrefs.SetFloat(prefsKey, v);
             }
 
@@ -779,7 +803,7 @@ namespace NWO
             t.fontSize = fontSize;
             t.color = color;
             t.raycastTarget = false;
-            t.enableWordWrapping = false;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
             if (TMP_Settings.defaultFontAsset != null)
                 t.font = TMP_Settings.defaultFontAsset;

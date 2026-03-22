@@ -56,7 +56,6 @@ namespace NWO
         private bool _listenersBound;
         private bool _actionTaken;
         private bool _buttonsUnlocked;
-        private bool _isShowing;
         private Coroutine _showRoutine;
         private bool _autoUiBuilt;
 
@@ -95,7 +94,6 @@ namespace NWO
             {
                 HideVisualState();
                 SetButtonsInteractable(false);
-                _isShowing = false;
                 _buttonsUnlocked = false;
                 _actionTaken = false;
             }
@@ -224,7 +222,6 @@ namespace NWO
 
         private IEnumerator ShowSequence()
         {
-            _isShowing = true;
             _buttonsUnlocked = false;
             _actionTaken = false;
 
@@ -284,7 +281,6 @@ namespace NWO
                 _showRoutine = null;
             }
 
-            _isShowing = false;
             _buttonsUnlocked = false;
             _actionTaken = false;
             SetButtonsInteractable(false);
@@ -523,7 +519,7 @@ namespace NWO
             t.fontSize = fontSize;
             t.color = color;
             t.raycastTarget = false;
-            t.enableWordWrapping = false;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
             if (TMP_Settings.defaultFontAsset != null)
                 t.font = TMP_Settings.defaultFontAsset;
