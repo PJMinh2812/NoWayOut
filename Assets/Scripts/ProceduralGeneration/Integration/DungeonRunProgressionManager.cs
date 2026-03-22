@@ -31,6 +31,26 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private float baseBranchProbability = 0.1f;
         [SerializeField] private float branchIncreasePerRound = 0.05f;
 
+        [Header("AI Director")]
+        [SerializeField] private bool enableAIDirector = true;
+        [SerializeField] private float targetClearTimeSeconds = 75f;
+        [SerializeField] private float clearTimeToleranceSeconds = 20f;
+        [Range(0f, 1f)]
+        [SerializeField] private float targetEndHealthRatio = 0.65f;
+        [Range(0.05f, 1f)]
+        [SerializeField] private float endHealthTolerance = 0.2f;
+        [SerializeField] private int targetDamageTaken = 20;
+        [SerializeField] private int damageTakenTolerance = 12;
+        [SerializeField] private int targetTrapTriggers = 2;
+        [SerializeField] private int trapTriggerTolerance = 2;
+        [Range(0.05f, 0.5f)]
+        [SerializeField] private float aiDifficultyStep = 0.15f;
+        [SerializeField] private float aiRoomScale = 3f;
+        [SerializeField] private float aiBranchScale = 0.18f;
+        [SerializeField] private float minAiDifficultyBias = -0.35f;
+        [SerializeField] private float maxAiDifficultyBias = 0.35f;
+        [SerializeField] private float trapIntensityScale = 0.6f;
+
         [Header("Completion")]
         [SerializeField] private bool autoCompleteWhenNoEnemiesAlive = true;
         [SerializeField] private float minAutoCompleteDelay = 2f;
@@ -70,6 +90,16 @@ namespace ProceduralGeneration.Integration
         private int openedGoalChestMask;
         private int openedGoalChestCount;
         private GameObject spawnedGoalChest;
+        private float aiDifficultyBias;
+        private float trapIntensityMultiplier = 1f;
+        private bool hasLastMapPerformance;
+        private MapPerformanceSnapshot lastMapPerformance;
+        private bool mapPerformanceFinalized;
+        private int mapStartHealth;
+        private int mapStartMaxHealth;
+        private int mapStartDamageTaken;
+        private int mapStartDeaths;
+        private int mapStartTrapTriggers;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
@@ -78,6 +108,22 @@ namespace ProceduralGeneration.Integration
         public int OpenedGoalChestMask => openedGoalChestMask;
         public int OpenedGoalChestCount => openedGoalChestCount;
         public int TotalGoalChests => Mathf.Max(1, totalGoalChests);
+        public float CurrentAIDifficultyBias => aiDifficultyBias;
+        public float CurrentTrapIntensityMultiplier => trapIntensityMultiplier;
+
+        private struct MapPerformanceSnapshot
+        {
+            public int round;
+            public int map;
+            public float clearTime;
+            public int deaths;
+            public int endHealth;
+            public int maxHealth;
+            public int damageTaken;
+            public int trapTriggers;
+
+            public float EndHealthRatio => maxHealth <= 0 ? 0f : (float)endHealth / maxHealth;
+        }
 
         private void Awake()
         {
@@ -201,9 +247,9 @@ namespace ProceduralGeneration.Integration
             if (Time.time - mapGeneratedAt < minAutoCompleteDelay)
                 return;
 
-            bool noEnemyManager = EnemySpawnManager.Instance == null;
+            // Only auto-complete if the enemy manager exists AND all spawned enemies are dead
             bool allEnemiesDead = EnemySpawnManager.Instance != null && EnemySpawnManager.Instance.AliveEnemyCount <= 0;
-            if (noEnemyManager || allEnemiesDead)
+            if (allEnemiesDead)
             {
                 MarkCurrentMapCompleted();
             }
@@ -232,6 +278,7 @@ namespace ProceduralGeneration.Integration
             if (currentMapCompleted)
                 return;
 
+            FinalizeMapPerformanceIfNeeded();
             currentMapCompleted = true;
             SpawnGoalChestAtGoalRoom();
             bool spawned = SpawnPortalAtGoalRoom();
@@ -343,6 +390,7 @@ namespace ProceduralGeneration.Integration
             int roundIndex = Mathf.Max(0, currentRound - 1);
             int roomCount = Mathf.Clamp(baseArchetypeRoomCount + roundIndex * roomIncreasePerRound, 3, 10);
             float branchProb = Mathf.Clamp01(baseBranchProbability + roundIndex * branchIncreasePerRound);
+            ApplyAIDirectorAdjustments(ref roomCount, ref branchProb);
 
             dungeonManager.archetype1RoomCount = roomCount;
             dungeonManager.archetype2RoomCount = roomCount;
@@ -390,7 +438,120 @@ namespace ProceduralGeneration.Integration
             }
 
             mapGeneratedAt = Time.time;
+            BeginMapPerformanceTracking();
             Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
+        }
+
+        private void BeginMapPerformanceTracking()
+        {
+            mapPerformanceFinalized = false;
+
+            PlayerHealth2D health = ResolvePlayerHealth();
+            mapStartHealth = health != null ? health.CurrentHealth : 0;
+            mapStartMaxHealth = health != null ? Mathf.Max(1, health.MaxHealth) : 1;
+            mapStartDamageTaken = RunAIDirectorTelemetry.TotalDamageTaken;
+            mapStartDeaths = RunAIDirectorTelemetry.TotalDeaths;
+            mapStartTrapTriggers = RunAIDirectorTelemetry.TotalTrapTriggers;
+        }
+
+        private void FinalizeMapPerformanceIfNeeded()
+        {
+            if (mapPerformanceFinalized)
+                return;
+
+            mapPerformanceFinalized = true;
+
+            PlayerHealth2D health = ResolvePlayerHealth();
+            int endHealth = health != null ? health.CurrentHealth : mapStartHealth;
+            int maxHealth = health != null ? Mathf.Max(1, health.MaxHealth) : Mathf.Max(1, mapStartMaxHealth);
+
+            MapPerformanceSnapshot snapshot = new MapPerformanceSnapshot
+            {
+                round = currentRound,
+                map = currentMap,
+                clearTime = Mathf.Max(0f, Time.time - mapGeneratedAt),
+                deaths = Mathf.Max(0, RunAIDirectorTelemetry.TotalDeaths - mapStartDeaths),
+                endHealth = endHealth,
+                maxHealth = maxHealth,
+                damageTaken = Mathf.Max(0, RunAIDirectorTelemetry.TotalDamageTaken - mapStartDamageTaken),
+                trapTriggers = Mathf.Max(0, RunAIDirectorTelemetry.TotalTrapTriggers - mapStartTrapTriggers)
+            };
+
+            lastMapPerformance = snapshot;
+            hasLastMapPerformance = true;
+
+            Debug.Log($"[RunProgression][AIDirector] Map performance R{snapshot.round}-M{snapshot.map}: clear={snapshot.clearTime:0.0}s, deaths={snapshot.deaths}, endHP={snapshot.endHealth}/{snapshot.maxHealth}, dmgTaken={snapshot.damageTaken}, trapTriggers={snapshot.trapTriggers}");
+            
+            // Reset telemetry để map kế tiếp tracked từ 0
+            RunAIDirectorTelemetry.ResetAll();
+        }
+
+        private PlayerHealth2D ResolvePlayerHealth()
+        {
+            if (player != null)
+                return player.GetComponent<PlayerHealth2D>();
+
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+                return playerObj.GetComponent<PlayerHealth2D>();
+            }
+
+            return null;
+        }
+
+        private void ApplyAIDirectorAdjustments(ref int roomCount, ref float branchProb)
+        {
+            Debug.Log($"[RunProgression][AIDirector] Called ApplyAIDirectorAdjustments: roomCount={roomCount}, branchProb={branchProb:0.00}, enableAI={enableAIDirector}, hasData={hasLastMapPerformance}");
+            
+            trapIntensityMultiplier = Mathf.Clamp(1f + aiDifficultyBias * trapIntensityScale, 0.7f, 1.4f);
+
+            if (!enableAIDirector)
+            {
+                Debug.Log($"[RunProgression][AIDirector] Skipped: enableAIDirector={enableAIDirector}");
+                return;
+            }
+
+            if (!hasLastMapPerformance)
+            {
+                Debug.Log($"[RunProgression][AIDirector] Skipped: No last map performance data (first map of run)");
+                return;
+            }
+
+            float clearTimeSignal = GetCenteredSignal(targetClearTimeSeconds, clearTimeToleranceSeconds, lastMapPerformance.clearTime, true);
+            float endHealthSignal = GetCenteredSignal(targetEndHealthRatio, endHealthTolerance, lastMapPerformance.EndHealthRatio, false);
+            float damageSignal = GetCenteredSignal(targetDamageTaken, damageTakenTolerance, lastMapPerformance.damageTaken, true);
+            float trapSignal = GetCenteredSignal(targetTrapTriggers, trapTriggerTolerance, lastMapPerformance.trapTriggers, true);
+            float deathSignal = -Mathf.Clamp01(lastMapPerformance.deaths / 2f);
+
+            float combinedSignal =
+                clearTimeSignal * 0.35f +
+                endHealthSignal * 0.25f +
+                damageSignal * 0.20f +
+                trapSignal * 0.10f +
+                deathSignal * 0.10f;
+
+            aiDifficultyBias = Mathf.Clamp(
+                aiDifficultyBias + combinedSignal * aiDifficultyStep,
+                minAiDifficultyBias,
+                maxAiDifficultyBias);
+
+            int aiRoomDelta = Mathf.RoundToInt(aiDifficultyBias * aiRoomScale);
+            float aiBranchDelta = aiDifficultyBias * aiBranchScale;
+
+            roomCount = Mathf.Clamp(roomCount + aiRoomDelta, 3, 10);
+            branchProb = Mathf.Clamp01(branchProb + aiBranchDelta);
+            trapIntensityMultiplier = Mathf.Clamp(1f + aiDifficultyBias * trapIntensityScale, 0.7f, 1.4f);
+
+            Debug.Log($"[RunProgression][AIDirector] Applied bias={aiDifficultyBias:0.000}, signals(clear={clearTimeSignal:0.00}, hp={endHealthSignal:0.00}, dmg={damageSignal:0.00}, trap={trapSignal:0.00}, death={deathSignal:0.00}), roomDelta={aiRoomDelta}, branchDelta={aiBranchDelta:0.000}, trapIntensity={trapIntensityMultiplier:0.00}");
+        }
+
+        private static float GetCenteredSignal(float target, float tolerance, float actual, bool inverted)
+        {
+            float safeTolerance = Mathf.Max(0.0001f, tolerance);
+            float normalized = Mathf.Clamp((actual - target) / safeTolerance, -1f, 1f);
+            return inverted ? -normalized : normalized;
         }
 
         private void TrySpawnRunStartFragments()
