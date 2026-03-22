@@ -45,6 +45,7 @@ namespace NWO
         public float CurrentStamina { get; private set; }
 
         public float MaxStamina => maxStamina;
+        public float RegenPerSecond => regenPerSecond;
 
         public float StaminaPercent => CurrentStamina / maxStamina;
 
