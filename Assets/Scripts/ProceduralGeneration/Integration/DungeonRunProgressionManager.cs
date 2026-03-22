@@ -53,6 +53,7 @@ namespace ProceduralGeneration.Integration
 
         [Header("Completion")]
         [SerializeField] private bool autoCompleteWhenNoEnemiesAlive = true;
+        [SerializeField] private bool autoCompleteWhenEnemyManagerMissing = false;
         [SerializeField] private float minAutoCompleteDelay = 2f;
         [SerializeField] private float portalSpawnRetryInterval = 0.5f;
         [SerializeField] private int portalSpawnMaxRetries = 6;
@@ -60,13 +61,14 @@ namespace ProceduralGeneration.Integration
         [Header("Goal Chest")]
         [SerializeField] private int totalGoalChests = 3;
         [SerializeField] private Vector2 goalChestOffsetDirection = new Vector2(1f, 0f);
-        [SerializeField] private float goalChestDistanceFromPortal = 0.6f;
+        [SerializeField] private float goalChestDistanceFromPortal = 2.5f;
         [SerializeField] private bool syncGoalChestLightWithPortal = true;
 
         [Header("Run Endings")]
         [SerializeField] private bool loadEndingSceneOnRunFinish = true;
         [SerializeField] private string goodEndingSceneName = "Ending_Good";
         [SerializeField] private string badEndingSceneName = "Ending_Bad";
+        [SerializeField] private EndingManager endingManager;
 
         [Header("Spawn Override")]
         [Tooltip("Ep player ve toa do co dinh moi khi tao map moi")]
@@ -74,6 +76,10 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private Vector2 fixedSpawnPosition = new Vector2(6f, 6f);
         [Tooltip("Neu bat, map moi se duoc tao tai vi tri hien tai cua player khi qua portal")]
         [SerializeField] private bool spawnMapAtPlayerCurrentPosition = true;
+
+        [Header("Debug")]
+        [SerializeField] private bool verboseLogs = false;
+        [SerializeField] private bool verboseAIDirectorLogs = true;
 
         private int currentRound = 1;
         private int currentMap = 1;
@@ -100,6 +106,7 @@ namespace ProceduralGeneration.Integration
         private int mapStartDamageTaken;
         private int mapStartDeaths;
         private int mapStartTrapTriggers;
+        private bool enemyManagerSeenThisMap;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
@@ -129,6 +136,9 @@ namespace ProceduralGeneration.Integration
         {
             if (dungeonManager == null)
                 dungeonManager = FindFirstObjectByType<DungeonManager>();
+
+            if (endingManager == null)
+                endingManager = FindFirstObjectByType<EndingManager>();
 
             if (player == null)
             {
@@ -170,7 +180,8 @@ namespace ProceduralGeneration.Integration
             {
                 hasPendingMapSpawnOverride = true;
                 pendingMapSpawnPosition = new Vector3(data.mapAnchorX, data.mapAnchorY, 0f);
-                Debug.Log($"[RunProgression] Restoring map anchor from save at {pendingMapSpawnPosition}");
+                if (verboseLogs)
+                    Debug.Log($"[RunProgression] Restoring map anchor from save at {pendingMapSpawnPosition}");
             }
 
             string seedSource = "none";
@@ -200,11 +211,13 @@ namespace ProceduralGeneration.Integration
             if (shouldRestoreMapCompleted)
             {
                 MarkCurrentMapCompleted();
-                Debug.Log($"[RunProgression] Restored current map completion state for {currentRound}-{currentMap}.");
+                if (verboseLogs)
+                    Debug.Log($"[RunProgression] Restored current map completion state for {currentRound}-{currentMap}.");
             }
             isRestoringMapFromSave = false;
             int generatedSeed = dungeonManager != null ? dungeonManager.GetCurrentSeed() : 0;
-            Debug.Log($"[RunProgression] Restored saved map seedSource={seedSource}, requestedSeed={requestedSeed}, generatedSeed={generatedSeed}, round={currentRound}, map={currentMap}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Restored saved map seedSource={seedSource}, requestedSeed={requestedSeed}, generatedSeed={generatedSeed}, round={currentRound}, map={currentMap}");
             return true;
         }
 
@@ -247,11 +260,17 @@ namespace ProceduralGeneration.Integration
             if (Time.time - mapGeneratedAt < minAutoCompleteDelay)
                 return;
 
-            // Only auto-complete if the enemy manager exists AND all spawned enemies are dead
-            bool allEnemiesDead = EnemySpawnManager.Instance != null && EnemySpawnManager.Instance.AliveEnemyCount <= 0;
-            if (allEnemiesDead)
+            var enemyManager = EnemySpawnManager.Instance;
+            if (enemyManager != null)
+                enemyManagerSeenThisMap = true;
+
+            bool allEnemiesDead = enemyManager != null && enemyManager.AliveEnemyCount <= 0;
+            bool canFallbackNoManager = autoCompleteWhenEnemyManagerMissing && !enemyManagerSeenThisMap;
+
+            if (allEnemiesDead || (enemyManager == null && canFallbackNoManager))
             {
                 MarkCurrentMapCompleted();
+                return;
             }
         }
 
@@ -285,7 +304,8 @@ namespace ProceduralGeneration.Integration
             if (!spawned && portalSpawnRetryCoroutine == null)
                 portalSpawnRetryCoroutine = StartCoroutine(RetrySpawnPortalAtGoalRoom());
 
-            Debug.Log($"[RunProgression] Map completed: {currentRound}-{currentMap}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Map completed: {currentRound}-{currentMap}");
         }
 
         /// <summary>
@@ -317,7 +337,8 @@ namespace ProceduralGeneration.Integration
 
                 if (!currentMapCompleted)
                 {
-                    Debug.Log("[RunProgression] Cannot advance: current map is not completed yet.");
+                    if (verboseLogs)
+                        Debug.Log("[RunProgression] Cannot advance: current map is not completed yet.");
                     return false;
                 }
             }
@@ -343,7 +364,8 @@ namespace ProceduralGeneration.Integration
                     spawnAnchorWorldPosition.Value.x,
                     spawnAnchorWorldPosition.Value.y,
                     0f);
-                Debug.Log($"[RunProgression] Captured portal spawn anchor (explicit) at {pendingMapSpawnPosition}");
+                if (verboseLogs)
+                    Debug.Log($"[RunProgression] Captured portal spawn anchor (explicit) at {pendingMapSpawnPosition}");
             }
             else
             {
@@ -428,7 +450,8 @@ namespace ProceduralGeneration.Integration
                 if (transitionManager != null)
                 {
                     transitionManager.SetCurrentRoom(startRoom);
-                    Debug.Log($"[RunProgression] Set current room to start room after map advance");
+                    if (verboseLogs)
+                        Debug.Log($"[RunProgression] Set current room to start room after map advance");
                 }
             }
 
@@ -438,8 +461,10 @@ namespace ProceduralGeneration.Integration
             }
 
             mapGeneratedAt = Time.time;
+            enemyManagerSeenThisMap = EnemySpawnManager.Instance != null;
             BeginMapPerformanceTracking();
-            Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
         }
 
         private void BeginMapPerformanceTracking()
@@ -480,7 +505,8 @@ namespace ProceduralGeneration.Integration
             lastMapPerformance = snapshot;
             hasLastMapPerformance = true;
 
-            Debug.Log($"[RunProgression][AIDirector] Map performance R{snapshot.round}-M{snapshot.map}: clear={snapshot.clearTime:0.0}s, deaths={snapshot.deaths}, endHP={snapshot.endHealth}/{snapshot.maxHealth}, dmgTaken={snapshot.damageTaken}, trapTriggers={snapshot.trapTriggers}");
+            if (verboseAIDirectorLogs)
+                Debug.Log($"[RunProgression][AIDirector] Map performance R{snapshot.round}-M{snapshot.map}: clear={snapshot.clearTime:0.0}s, deaths={snapshot.deaths}, endHP={snapshot.endHealth}/{snapshot.maxHealth}, dmgTaken={snapshot.damageTaken}, trapTriggers={snapshot.trapTriggers}");
             
             // Reset telemetry để map kế tiếp tracked từ 0
             RunAIDirectorTelemetry.ResetAll();
@@ -503,19 +529,22 @@ namespace ProceduralGeneration.Integration
 
         private void ApplyAIDirectorAdjustments(ref int roomCount, ref float branchProb)
         {
-            Debug.Log($"[RunProgression][AIDirector] Called ApplyAIDirectorAdjustments: roomCount={roomCount}, branchProb={branchProb:0.00}, enableAI={enableAIDirector}, hasData={hasLastMapPerformance}");
+            if (verboseAIDirectorLogs)
+                Debug.Log($"[RunProgression][AIDirector] Called ApplyAIDirectorAdjustments: roomCount={roomCount}, branchProb={branchProb:0.00}, enableAI={enableAIDirector}, hasData={hasLastMapPerformance}");
             
             trapIntensityMultiplier = Mathf.Clamp(1f + aiDifficultyBias * trapIntensityScale, 0.7f, 1.4f);
 
             if (!enableAIDirector)
             {
-                Debug.Log($"[RunProgression][AIDirector] Skipped: enableAIDirector={enableAIDirector}");
+                if (verboseAIDirectorLogs)
+                    Debug.Log($"[RunProgression][AIDirector] Skipped: enableAIDirector={enableAIDirector}");
                 return;
             }
 
             if (!hasLastMapPerformance)
             {
-                Debug.Log($"[RunProgression][AIDirector] Skipped: No last map performance data (first map of run)");
+                if (verboseAIDirectorLogs)
+                    Debug.Log($"[RunProgression][AIDirector] Skipped: No last map performance data (first map of run)");
                 return;
             }
 
@@ -544,7 +573,8 @@ namespace ProceduralGeneration.Integration
             branchProb = Mathf.Clamp01(branchProb + aiBranchDelta);
             trapIntensityMultiplier = Mathf.Clamp(1f + aiDifficultyBias * trapIntensityScale, 0.7f, 1.4f);
 
-            Debug.Log($"[RunProgression][AIDirector] Applied bias={aiDifficultyBias:0.000}, signals(clear={clearTimeSignal:0.00}, hp={endHealthSignal:0.00}, dmg={damageSignal:0.00}, trap={trapSignal:0.00}, death={deathSignal:0.00}), roomDelta={aiRoomDelta}, branchDelta={aiBranchDelta:0.000}, trapIntensity={trapIntensityMultiplier:0.00}");
+            if (verboseAIDirectorLogs)
+                Debug.Log($"[RunProgression][AIDirector] Applied bias={aiDifficultyBias:0.000}, signals(clear={clearTimeSignal:0.00}, hp={endHealthSignal:0.00}, dmg={damageSignal:0.00}, trap={trapSignal:0.00}, death={deathSignal:0.00}), roomDelta={aiRoomDelta}, branchDelta={aiBranchDelta:0.000}, trapIntensity={trapIntensityMultiplier:0.00}");
         }
 
         private static float GetCenteredSignal(float target, float tolerance, float actual, bool inverted)
@@ -618,7 +648,8 @@ namespace ProceduralGeneration.Integration
 
             hasPendingMapSpawnOverride = true;
             pendingMapSpawnPosition = new Vector3(player.position.x, player.position.y, 0f);
-            Debug.Log($"[RunProgression] Captured portal spawn anchor at {pendingMapSpawnPosition}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Captured portal spawn anchor at {pendingMapSpawnPosition}");
         }
 
         /// <summary>
@@ -675,7 +706,8 @@ namespace ProceduralGeneration.Integration
 
             hasPendingMapSpawnOverride = false;
 
-            Debug.Log($"[RunProgression] Aligned dungeon. desiredSpawn={desiredSpawnPosition}, previousSpawn={currentSpawnPosition}, offset={offset}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Aligned dungeon. desiredSpawn={desiredSpawnPosition}, previousSpawn={currentSpawnPosition}, offset={offset}");
         }
 
         private bool SpawnPortalAtGoalRoom()
@@ -708,7 +740,8 @@ namespace ProceduralGeneration.Integration
 
             portal.Setup(this);
             TrySyncGoalChestLightWithPortal();
-            Debug.Log($"[RunProgression] Portal spawned at goal room for map {currentRound}-{currentMap}.");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Portal spawned at goal room for map {currentRound}-{currentMap}.");
             return true;
         }
 
@@ -739,7 +772,11 @@ namespace ProceduralGeneration.Integration
             Vector2 direction = goalChestOffsetDirection.sqrMagnitude > 0.001f
                 ? goalChestOffsetDirection.normalized
                 : Vector2.right;
-            float distance = Mathf.Max(0.5f, goalChestDistanceFromPortal);
+
+            // Keep chest visually separated from portal by scaling distance with room size.
+            float configuredDistance = Mathf.Max(0.5f, goalChestDistanceFromPortal);
+            float roomBasedDistance = Mathf.Max(1.75f, Mathf.Min(goalRoom.actualSize.x, goalRoom.actualSize.y) * 0.2f);
+            float distance = Mathf.Max(configuredDistance, roomBasedDistance);
             Vector3 chestSpawnPosition = goalCenter + new Vector3(direction.x, direction.y, 0f) * distance;
 
             spawnedGoalChest = Instantiate(goalChestPrefab, chestSpawnPosition, Quaternion.identity, goalRoom.roomInstance.transform);
@@ -751,7 +788,8 @@ namespace ProceduralGeneration.Integration
 
             chest.Setup(this);
             TrySyncGoalChestLightWithPortal();
-            Debug.Log($"[RunProgression] Goal chest spawned at map {currentRound}-{currentMap}. pos={chestSpawnPosition}");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Goal chest spawned at map {currentRound}-{currentMap}. pos={chestSpawnPosition}");
             return true;
         }
 
@@ -766,7 +804,8 @@ namespace ProceduralGeneration.Integration
             Light2D[] portalLights = spawnedPortal.GetComponentsInChildren<Light2D>(true);
             if (portalLights == null || portalLights.Length == 0)
             {
-                Debug.Log("[RunProgression] Portal has no Light2D to sync for chest.");
+                if (verboseLogs)
+                    Debug.Log("[RunProgression] Portal has no Light2D to sync for chest.");
                 return;
             }
 
@@ -776,7 +815,8 @@ namespace ProceduralGeneration.Integration
                 target = spawnedGoalChest.AddComponent<Light2D>();
 
             CopyLight2D(source, target);
-            Debug.Log("[RunProgression] Synced chest Light2D from portal.");
+            if (verboseLogs)
+                Debug.Log("[RunProgression] Synced chest Light2D from portal.");
         }
 
         private static void CopyLight2D(Light2D source, Light2D target)
@@ -914,7 +954,8 @@ namespace ProceduralGeneration.Integration
             openedGoalChestMask |= 1 << (currentRound - 1);
             openedGoalChestCount = CountSetBits(openedGoalChestMask);
 
-            Debug.Log($"[RunProgression] Opened goal chest {openedGoalChestCount}/{TotalGoalChests} at map {currentRound}-{currentMap}.");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Opened goal chest {openedGoalChestCount}/{TotalGoalChests} at map {currentRound}-{currentMap}.");
             return true;
         }
 
@@ -954,7 +995,8 @@ namespace ProceduralGeneration.Integration
 
         private bool HandleRunFinished()
         {
-            Debug.Log($"[RunProgression] Completed all maps (3-5). Chests {openedGoalChestCount}/{TotalGoalChests}.");
+            if (verboseLogs)
+                Debug.Log($"[RunProgression] Completed all maps (3-5). Chests {openedGoalChestCount}/{TotalGoalChests}.");
 
             if (!loadEndingSceneOnRunFinish)
             {
@@ -962,7 +1004,8 @@ namespace ProceduralGeneration.Integration
                 return false;
             }
 
-            string endingScene = openedGoalChestCount >= TotalGoalChests
+            bool isGoodEnding = openedGoalChestCount >= TotalGoalChests;
+            string endingScene = isGoodEnding
                 ? goodEndingSceneName
                 : badEndingSceneName;
 
@@ -971,6 +1014,16 @@ namespace ProceduralGeneration.Integration
                 Debug.LogWarning("[RunProgression] Ending scene name trong. Bo qua chuyen scene ending.");
                 return false;
             }
+
+            PlayerPrefs.SetInt("RunEndingIsGood", isGoodEnding ? 1 : 0);
+            PlayerPrefs.SetInt("RunEndingChestCount", openedGoalChestCount);
+            PlayerPrefs.Save();
+
+            if (endingManager == null)
+                endingManager = FindFirstObjectByType<EndingManager>();
+
+            if (endingManager != null && endingManager.PlayEndingVideoThenLoad(isGoodEnding, endingScene))
+                return true;
 
             SceneLoader.LoadScene(endingScene);
             return true;

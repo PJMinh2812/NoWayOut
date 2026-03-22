@@ -31,11 +31,6 @@ namespace NWO
         public static void RecordTrapTriggered(Object source)
         {
             _totalTrapTriggers++;
-
-            if (source != null)
-            {
-                Debug.Log($"[AIDirectorTelemetry] Trap triggered: {source.name}");
-            }
         }
 
         public static void ResetAll()

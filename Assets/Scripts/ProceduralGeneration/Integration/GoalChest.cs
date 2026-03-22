@@ -28,7 +28,7 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private bool autoFindProgressionManager = true;
 
         [Header("Debug")]
-        [SerializeField] private bool verboseLogs = true;
+        [SerializeField] private bool verboseLogs = false;
 
         private DungeonRunProgressionManager progressionManager;
         private bool playerInTrigger;
@@ -43,8 +43,6 @@ namespace ProceduralGeneration.Integration
 
         private void Awake()
         {
-            verboseLogs = true;
-
             Collider2D col = GetComponent<Collider2D>();
             if (col == null)
             {

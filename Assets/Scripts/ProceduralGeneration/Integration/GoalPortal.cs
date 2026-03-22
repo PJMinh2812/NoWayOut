@@ -18,7 +18,7 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private bool autoFindProgressionManager = true;
 
         [Header("Debug")]
-        [SerializeField] private bool verboseLogs = true;
+        [SerializeField] private bool verboseLogs = false;
 
         private DungeonRunProgressionManager progressionManager;
         private bool playerInTrigger;
@@ -102,7 +102,7 @@ namespace ProceduralGeneration.Integration
                     Debug.Log($"[GoalPortal] Using spawn anchor {spawnAnchor}");
 
                 bool advanced = progressionManager.TryAdvanceToNextMap(spawnAnchor);
-                if (!advanced)
+                if (!advanced && verboseLogs)
                     Debug.Log("[GoalPortal] Chua the qua map tiep theo (map co the chua hoan thanh). ");
             }
         }
