@@ -21,6 +21,12 @@ namespace NWO
         [Header("References")]
         [SerializeField] private GameObject gameOverUI; // GameOverPanel hoặc GameOverCanvas
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip gameplayMusic;
+        [SerializeField, Range(0f, 1f)] private float gameplayMusicVolume = 0.5f;
+
+        private AudioSource gameplayMusicSource;
+
         public bool IsGameOver => isGameOver;
         public bool IsPaused => isPaused;
         public int LightFragmentsCollected => lightFragmentsCollected;
@@ -46,6 +52,8 @@ namespace NWO
             {
                 gameOverUI.SetActive(false);
             }
+
+            SetupGameplayMusic();
             
             // Auto-create LightFragmentUI nếu chưa có
             if (FindFirstObjectByType<LightFragmentUI>() == null)
@@ -94,6 +102,55 @@ namespace NWO
                 upgradeUIObj.AddComponent<UpgradeSelectionUI>();
                 Debug.Log("[GameManager] Auto-created UpgradeSelectionUI");
             }
+
+            // Auto-create CoinManager nếu chưa có
+            if (FindFirstObjectByType<CoinManager>() == null)
+            {
+                var coinObj = new GameObject("CoinManager");
+                coinObj.AddComponent<CoinManager>();
+                Debug.Log("[GameManager] Auto-created CoinManager");
+            }
+
+            // Auto-create KeyBindManager nếu chưa có
+            if (KeyBindManager.Instance == null && FindFirstObjectByType<KeyBindManager>() == null)
+            {
+                var kbObj = new GameObject("KeyBindManager");
+                kbObj.AddComponent<KeyBindManager>();
+            }
+
+            // Auto-create CoinUI nếu chưa có
+            if (FindFirstObjectByType<CoinUI>() == null)
+            {
+                var coinUIObj = new GameObject("CoinUI");
+                coinUIObj.AddComponent<CoinUI>();
+                Debug.Log("[GameManager] Auto-created CoinUI");
+            }
+
+            // Auto-create AnimationPreloader to pre-warm all animation clips
+            if (FindFirstObjectByType<AnimationPreloader>() == null)
+            {
+                var preloaderObj = new GameObject("AnimationPreloader");
+                preloaderObj.AddComponent<AnimationPreloader>();
+            }
+        }
+
+        private void SetupGameplayMusic()
+        {
+            if (gameplayMusic == null)
+                return;
+
+            gameplayMusicSource = GetComponent<AudioSource>();
+            if (gameplayMusicSource == null)
+                gameplayMusicSource = gameObject.AddComponent<AudioSource>();
+
+            gameplayMusicSource.clip = gameplayMusic;
+            gameplayMusicSource.playOnAwake = false;
+            gameplayMusicSource.loop = true;
+            gameplayMusicSource.spatialBlend = 0f;
+            gameplayMusicSource.volume = Mathf.Clamp01(gameplayMusicVolume);
+
+            if (!gameplayMusicSource.isPlaying)
+                gameplayMusicSource.Play();
         }
 
 
@@ -184,6 +241,15 @@ namespace NWO
             {
                 UpgradeManager.Instance.ResetUpgrades();
             }
+
+            // Reset coins
+            if (CoinManager.Instance != null)
+            {
+                CoinManager.Instance.ResetCoins();
+            }
+
+            // Allow animation preloading on next scene
+            AnimationPreloader.ResetPreloadFlag();
             
             // Try to regenerate map with new layout instead of reloading scene
             // Support both new and legacy dungeon systems

@@ -50,6 +50,7 @@ namespace NWO
 
             // Bỏ qua bản thân boss và fireball khác
             if (other.GetComponent<RatMiniBoss>() != null)  return;
+            if (other.GetComponent<GoatManBoss>() != null) return;
             if (other.GetComponent<BossFireball>()  != null) return;
 
             // Gây damage player
@@ -64,6 +65,7 @@ namespace NWO
             if (_isDestroyed) return;
 
             if (collision.collider.GetComponent<RatMiniBoss>() != null) return;
+            if (collision.collider.GetComponent<GoatManBoss>() != null) return;
             if (collision.collider.GetComponent<BossFireball>() != null) return;
 
             TryDamagePlayer(collision.collider.gameObject);

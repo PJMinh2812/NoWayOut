@@ -72,6 +72,14 @@ namespace NWO
         public bool IsAttacking => _isAttacking;
         public int CurrentCombo => _currentCombo;
         public bool CanAttack => !_isAttacking && CanAttackByStatus();
+
+        // Cached animator hashes
+        private static readonly int HashIsAttacking = Animator.StringToHash("IsAttacking");
+        private static readonly int HashMeleeAttack = Animator.StringToHash("MeleeAttack");
+        private static readonly int HashComboHit = Animator.StringToHash("ComboHit");
+
+        // Pre-allocated buffer for physics overlap (avoid GC alloc every attack)
+        private static readonly Collider2D[] _hitBuffer = new Collider2D[16];
         
         private void Awake()
         {
@@ -225,7 +233,7 @@ namespace NWO
             // because OnMeleeAnimationEnd() requires Animation Events which are not configured
             if (_animator != null)
             {
-                _animator.SetBool("IsAttacking", false);
+                _animator.SetBool(HashIsAttacking, false);
             }
             
             // Kiểm tra xem có combo đã queue không
@@ -268,7 +276,7 @@ namespace NWO
                 // Safety: ensure animator IsAttacking is reset
                 if (_animator != null)
                 {
-                    _animator.SetBool("IsAttacking", false);
+                    _animator.SetBool(HashIsAttacking, false);
                 }
                 
                 OnComboReset?.Invoke();
@@ -293,28 +301,26 @@ namespace NWO
         {
             if (_animator == null) return;
             
-            // Sử dụng trigger cho mỗi combo hit
-            _animator.SetTrigger("MeleeAttack");
-            _animator.SetInteger("ComboHit", _currentCombo);
-            
-            // Có thể set bool để animator biết đang trong trạng thái attack
-            _animator.SetBool("IsAttacking", true);
+            _animator.SetTrigger(HashMeleeAttack);
+            _animator.SetInteger(HashComboHit, _currentCombo);
+            _animator.SetBool(HashIsAttacking, true);
         }
         
         private void PerformAttack()
         {
-            // Detect enemies trong range
+            // Detect enemies trong range (NonAlloc - zero GC allocation)
             Vector2 attackPos = attackPoint != null ? 
                 (Vector2)attackPoint.position : 
                 (Vector2)transform.position + GetAttackDirection() * attackRange;
             
-            Collider2D[] hits = Physics2D.OverlapCircleAll(attackPos, attackRadius, enemyLayer);
+            int hitCount = Physics2D.OverlapCircleNonAlloc(attackPos, attackRadius, _hitBuffer, enemyLayer);
             
             int damage = GetCurrentDamage();
             Vector2 knockDir = GetAttackDirection();
             
-            foreach (var hit in hits)
+            for (int i = 0; i < hitCount; i++)
             {
+                var hit = _hitBuffer[i];
                 if (hit.TryGetComponent<Enemy2D>(out var enemy))
                 {
                     enemy.TakeDamage(damage, knockDir, knockbackForce);
@@ -397,7 +403,7 @@ namespace NWO
         {
             if (_animator != null)
             {
-                _animator.SetBool("IsAttacking", false);
+                _animator.SetBool(HashIsAttacking, false);
             }
         }
         

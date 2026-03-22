@@ -55,6 +55,19 @@ namespace NWO
         }
 
         /// <summary>
+        /// Reroll: chọn lại 3 nâng cấp ngẫu nhiên mới.
+        /// Trả về list mới hoặc null nếu không đủ coin.
+        /// </summary>
+        public List<UpgradeData> TryReroll()
+        {
+            if (CoinManager.Instance == null || !CoinManager.Instance.TryReroll())
+                return null;
+
+            var newOptions = PickRandomUpgrades(3);
+            return newOptions.Count > 0 ? newOptions : null;
+        }
+
+        /// <summary>
         /// Người chơi chọn 1 nâng cấp. Áp dụng buff + penalty lên player.
         /// </summary>
         public void SelectUpgrade(UpgradeData upgrade)

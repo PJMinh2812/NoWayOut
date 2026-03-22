@@ -24,8 +24,16 @@ namespace NWO
         [SerializeField] private Color rareBorderColor = new(0.3f, 0.5f, 1f, 1f);
         [SerializeField] private Color epicBorderColor = new(0.75f, 0.3f, 1f, 1f);
 
+        [Header("Reroll")]
+        [SerializeField] private Color rerollColor = new(1f, 0.85f, 0.2f, 1f);
+        [SerializeField] private Color rerollDisabledColor = new(0.4f, 0.4f, 0.4f, 1f);
+
         private GameObject _root;
         private bool _isShowing;
+        private Transform _cardContainer;
+        private TextMeshProUGUI _rerollText;
+        private Button _rerollBtn;
+        private List<UpgradeData> _currentOptions;
 
         private void Awake()
         {
@@ -58,6 +66,7 @@ namespace NWO
         {
             if (_isShowing) return;
             _isShowing = true;
+            _currentOptions = options;
 
             // Pause game
             Time.timeScale = 0f;
@@ -128,6 +137,7 @@ namespace NWO
             containerRt.pivot = new Vector2(0.5f, 0.5f);
             containerRt.sizeDelta = new Vector2(1100f, 420f);
             containerRt.anchoredPosition = new Vector2(0f, -20f);
+            _cardContainer = container.transform;
 
             var hLayout = container.AddComponent<HorizontalLayoutGroup>();
             hLayout.childAlignment = TextAnchor.MiddleCenter;
@@ -140,6 +150,73 @@ namespace NWO
             {
                 BuildCard(container.transform, options[i]);
             }
+
+            // Reroll button (dưới cards)
+            BuildRerollButton(overlay.transform);
+        }
+
+        private void BuildRerollButton(Transform parent)
+        {
+            int cost = CoinManager.Instance != null ? CoinManager.Instance.RerollCost : 3;
+            bool canAfford = CoinManager.Instance != null && CoinManager.Instance.CanReroll();
+
+            var btnGo = NewImg("RerollBtn", parent, canAfford ? new Color(0.2f, 0.2f, 0.2f, 0.8f) : new Color(0.15f, 0.15f, 0.15f, 0.6f));
+            var btnRt = btnGo.GetComponent<RectTransform>();
+            btnRt.anchorMin = new Vector2(0.5f, 0f);
+            btnRt.anchorMax = new Vector2(0.5f, 0f);
+            btnRt.pivot = new Vector2(0.5f, 0f);
+            btnRt.sizeDelta = new Vector2(280f, 55f);
+            btnRt.anchoredPosition = new Vector2(0f, 40f);
+
+            _rerollBtn = btnGo.AddComponent<Button>();
+            _rerollBtn.interactable = canAfford;
+            _rerollBtn.onClick.AddListener(OnRerollClicked);
+
+            var colors = _rerollBtn.colors;
+            colors.highlightedColor = new Color(1f, 0.9f, 0.3f, 0.2f);
+            colors.pressedColor = new Color(1f, 0.9f, 0.3f, 0.1f);
+            colors.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.6f);
+            _rerollBtn.colors = colors;
+
+            _rerollText = NewText("RerollText", btnGo.transform,
+                $"🔄 ĐỔI THẺ ({cost} 🪙)", 24f,
+                canAfford ? rerollColor : rerollDisabledColor);
+            _rerollText.alignment = TextAlignmentOptions.Center;
+            Stretch(_rerollText.rectTransform);
+        }
+
+        private void OnRerollClicked()
+        {
+            if (UpgradeManager.Instance == null) return;
+
+            var newOptions = UpgradeManager.Instance.TryReroll();
+            if (newOptions == null) return;
+
+            _currentOptions = newOptions;
+
+            // Xóa cards cũ và build lại
+            if (_cardContainer != null)
+            {
+                for (int i = _cardContainer.childCount - 1; i >= 0; i--)
+                    Destroy(_cardContainer.GetChild(i).gameObject);
+
+                for (int i = 0; i < newOptions.Count; i++)
+                    BuildCard(_cardContainer, newOptions[i]);
+            }
+
+            // Update reroll button
+            UpdateRerollButton();
+        }
+
+        private void UpdateRerollButton()
+        {
+            if (_rerollBtn == null || _rerollText == null) return;
+
+            int cost = CoinManager.Instance != null ? CoinManager.Instance.RerollCost : 3;
+            bool canAfford = CoinManager.Instance != null && CoinManager.Instance.CanReroll();
+            _rerollBtn.interactable = canAfford;
+            _rerollText.text = $"🔄 ĐỔI THẺ ({cost} 🪙)";
+            _rerollText.color = canAfford ? rerollColor : rerollDisabledColor;
         }
 
         private void BuildCard(Transform parent, UpgradeData data)
