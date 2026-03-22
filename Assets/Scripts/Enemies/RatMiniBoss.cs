@@ -524,7 +524,6 @@ namespace NWO
             }
             
             // Wait for attack animation to reach hit frame (deal damage halfway through)
-            float attackAnimDuration = 0.4f; // Duration of attack animation
             yield return _waitAttackHalf;
             
             // Deal damage only after animation has progressed
@@ -624,6 +623,10 @@ namespace NWO
             // Drop coin boss vật lý khi chết
             if (CoinManager.Instance != null)
                 CoinManager.Instance.SpawnCoinsFromBoss(transform.position);
+
+            // Drop heart boss vật lý khi chết
+            if (HeartManager.Instance != null)
+                HeartManager.Instance.SpawnHeartsFromBoss(transform.position);
 
             // Ẩn health bar ngay khi chết (giống Enemy2D)
             _healthBarController?.OnEnemyDied();

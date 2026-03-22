@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Audio;
 using TMPro;
+using NWO;
 
 public class SettingsMenuUI : MonoBehaviour
 {
@@ -94,25 +95,19 @@ public class SettingsMenuUI : MonoBehaviour
 
     public void SetMasterVolume(float volume)
     {
-        if (audioMixer != null)
-            audioMixer.SetFloat("MasterVolume", Mathf.Log10(volume) * 20);
-        
+        AudioVolumeHelper.ApplyLinearToMixer(audioMixer, "MasterVolume", volume);
         PlayerPrefs.SetFloat("MasterVolume", volume);
     }
 
     public void SetMusicVolume(float volume)
     {
-        if (audioMixer != null)
-            audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
-        
+        AudioVolumeHelper.ApplyLinearToMixer(audioMixer, "MusicVolume", volume);
         PlayerPrefs.SetFloat("MusicVolume", volume);
     }
 
     public void SetSFXVolume(float volume)
     {
-        if (audioMixer != null)
-            audioMixer.SetFloat("SFXVolume", Mathf.Log10(volume) * 20);
-        
+        AudioVolumeHelper.ApplyLinearToMixer(audioMixer, "SFXVolume", volume);
         PlayerPrefs.SetFloat("SFXVolume", volume);
     }
 

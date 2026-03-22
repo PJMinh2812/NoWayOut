@@ -63,7 +63,7 @@ namespace NWO.UI
             popup._textMesh.fontSize = 4f;
             popup._textMesh.fontStyle = FontStyles.Bold;
             popup._textMesh.sortingOrder = 100;
-            popup._textMesh.enableWordWrapping = false;
+            popup._textMesh.textWrappingMode = TextWrappingModes.NoWrap;
             popup._textMesh.overflowMode = TextOverflowModes.Overflow;
             popup._textMesh.raycastTarget = false;
 
