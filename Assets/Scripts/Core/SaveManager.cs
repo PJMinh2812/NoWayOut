@@ -42,6 +42,7 @@ namespace NWO
             {
                 data.playerPositionX = player.transform.position.x;
                 data.playerPositionY = player.transform.position.y;
+                data.hasPlayerPosition = true;
             }
 
             // Player health
@@ -67,6 +68,15 @@ namespace NWO
 
             // Scene name
             data.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+            // Map anchor (dungeon world offset): capture Respawn_Point so Continue can rebuild map at same place.
+            GameObject respawnPointObj = GameObject.Find("Respawn_Point");
+            if (respawnPointObj != null)
+            {
+                data.hasMapAnchor = true;
+                data.mapAnchorX = respawnPointObj.transform.position.x;
+                data.mapAnchorY = respawnPointObj.transform.position.y;
+            }
 
             // Dungeon state (để Continue giữ nguyên map)
             var dungeonManager = ResolveDungeonManager(preferWithRooms: true);
@@ -331,6 +341,7 @@ namespace NWO
     public class SaveData
     {
         // Player
+        public bool hasPlayerPosition;
         public float playerPositionX;
         public float playerPositionY;
         public int playerCurrentHealth;
@@ -344,6 +355,9 @@ namespace NWO
         // Dungeon state
         public bool hasDungeonSeed;
         public int dungeonSeed;
+        public bool hasMapAnchor;
+        public float mapAnchorX;
+        public float mapAnchorY;
         public bool hasRunProgressionState;
         public int runCurrentRound;
         public int runCurrentMap;

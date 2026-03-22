@@ -3,6 +3,7 @@ using ProceduralGeneration.Core;
 using NWO;
 using Core;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ProceduralGeneration.Integration
@@ -38,6 +39,8 @@ namespace ProceduralGeneration.Integration
         [Tooltip("Ep player ve toa do co dinh moi khi tao map moi")]
         [SerializeField] private bool forceFixedSpawnOnNewMap = true;
         [SerializeField] private Vector2 fixedSpawnPosition = new Vector2(6f, 6f);
+        [Tooltip("Neu bat, map moi se duoc tao tai vi tri hien tai cua player khi qua portal")]
+        [SerializeField] private bool spawnMapAtPlayerCurrentPosition = true;
 
         private int currentRound = 1;
         private int currentMap = 1;
@@ -48,6 +51,8 @@ namespace ProceduralGeneration.Integration
         private Coroutine movePlayerRetryCoroutine;
         private bool hasForcedSeedForCurrentGenerate;
         private int forcedSeedForCurrentGenerate;
+        private bool hasPendingMapSpawnOverride;
+        private Vector3 pendingMapSpawnPosition;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
@@ -89,6 +94,13 @@ namespace ProceduralGeneration.Integration
             {
                 currentRound = Mathf.Clamp(data.runCurrentRound, 1, Mathf.Max(1, totalRounds));
                 currentMap = Mathf.Clamp(data.runCurrentMap, 1, Mathf.Max(1, mapsPerRound));
+            }
+
+            if (data.hasMapAnchor)
+            {
+                hasPendingMapSpawnOverride = true;
+                pendingMapSpawnPosition = new Vector3(data.mapAnchorX, data.mapAnchorY, 0f);
+                Debug.Log($"[RunProgression] Restoring map anchor from save at {pendingMapSpawnPosition}");
             }
 
             string seedSource = "none";
@@ -181,6 +193,14 @@ namespace ProceduralGeneration.Integration
         /// </summary>
         public bool TryAdvanceToNextMap()
         {
+            return TryAdvanceToNextMap(null);
+        }
+
+        /// <summary>
+        /// Gọi từ portal khi player xác nhận qua map tiếp theo, có thể truyền vị trí neo spawn.
+        /// </summary>
+        public bool TryAdvanceToNextMap(Vector3? spawnAnchorWorldPosition)
+        {
             if (!currentMapCompleted)
             {
                 // Fallback: in scenes without enemy system, allow portal to complete map on confirm.
@@ -200,6 +220,20 @@ namespace ProceduralGeneration.Integration
                     Debug.Log("[RunProgression] Cannot advance: current map is not completed yet.");
                     return false;
                 }
+            }
+
+            if (spawnAnchorWorldPosition.HasValue)
+            {
+                hasPendingMapSpawnOverride = true;
+                pendingMapSpawnPosition = new Vector3(
+                    spawnAnchorWorldPosition.Value.x,
+                    spawnAnchorWorldPosition.Value.y,
+                    0f);
+                Debug.Log($"[RunProgression] Captured portal spawn anchor (explicit) at {pendingMapSpawnPosition}");
+            }
+            else
+            {
+                CaptureSpawnAnchorFromPlayer();
             }
 
             if (currentMap < mapsPerRound)
@@ -230,6 +264,8 @@ namespace ProceduralGeneration.Integration
                 Debug.LogError("[RunProgression] DungeonManager not found.");
                 return;
             }
+
+            Vector3 desiredSpawnPosition = ResolveDesiredSpawnPosition();
 
             DestroySpawnedPortal();
             currentMapCompleted = false;
@@ -272,8 +308,7 @@ namespace ProceduralGeneration.Integration
                 movePlayerRetryCoroutine = null;
             }
 
-            MovePlayerToRespawnPoint();
-            movePlayerRetryCoroutine = StartCoroutine(MovePlayerToRespawnPointReliable());
+            AlignGeneratedDungeonToSpawnPosition(desiredSpawnPosition);
 
             // Update RoomTransitionManager để biết player ở phòng start
             Room startRoom = dungeonManager.GetStartRoom();
@@ -294,6 +329,108 @@ namespace ProceduralGeneration.Integration
 
             mapGeneratedAt = Time.time;
             Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
+        }
+
+        private Vector3 ResolveDesiredSpawnPosition()
+        {
+            if (hasPendingMapSpawnOverride)
+                return pendingMapSpawnPosition;
+
+            if (player == null)
+            {
+                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    player = playerObj.transform;
+            }
+
+            if (spawnMapAtPlayerCurrentPosition && player != null)
+                return new Vector3(player.position.x, player.position.y, 0f);
+
+            if (forceFixedSpawnOnNewMap)
+                return new Vector3(fixedSpawnPosition.x, fixedSpawnPosition.y, 0f);
+
+            GameObject respawnPoint = GameObject.Find("Respawn_Point");
+            if (respawnPoint != null)
+                return respawnPoint.transform.position;
+
+            return Vector3.zero;
+        }
+
+        private void CaptureSpawnAnchorFromPlayer()
+        {
+            if (player == null)
+            {
+                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    player = playerObj.transform;
+            }
+
+            if (player == null)
+            {
+                hasPendingMapSpawnOverride = false;
+                return;
+            }
+
+            hasPendingMapSpawnOverride = true;
+            pendingMapSpawnPosition = new Vector3(player.position.x, player.position.y, 0f);
+            Debug.Log($"[RunProgression] Captured portal spawn anchor at {pendingMapSpawnPosition}");
+        }
+
+        /// <summary>
+        /// Dịch toàn bộ dungeon sao cho Respawn_Point (start room center) trùng với vị trí mong muốn.
+        /// Cách này ổn định hơn so với tự tính center bằng actualSize.
+        /// </summary>
+        private void AlignGeneratedDungeonToSpawnPosition(Vector3 desiredSpawnPosition)
+        {
+            GameObject respawnPoint = GameObject.Find("Respawn_Point");
+            if (respawnPoint == null)
+            {
+                Debug.LogWarning("[RunProgression] Respawn_Point not found after generation. Cannot align dungeon.");
+                return;
+            }
+
+            Vector3 currentSpawnPosition = respawnPoint.transform.position;
+            Vector3 offset = desiredSpawnPosition - currentSpawnPosition;
+
+            if (offset.sqrMagnitude > 0.0001f)
+            {
+                if (dungeonManager.dungeonContainer != null)
+                {
+                    dungeonManager.dungeonContainer.position += offset;
+                }
+                else
+                {
+                    List<Room> allRooms = dungeonManager.GetAllRooms();
+                    if (allRooms != null)
+                    {
+                        foreach (var room in allRooms)
+                        {
+                            if (room.roomInstance != null)
+                                room.roomInstance.transform.position += offset;
+                        }
+                    }
+                }
+            }
+
+            respawnPoint.transform.position = desiredSpawnPosition;
+
+            if (player == null)
+            {
+                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    player = playerObj.transform;
+            }
+
+            var rb = player != null ? player.GetComponent<Rigidbody2D>() : null;
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+
+            hasPendingMapSpawnOverride = false;
+
+            Debug.Log($"[RunProgression] Aligned dungeon. desiredSpawn={desiredSpawnPosition}, previousSpawn={currentSpawnPosition}, offset={offset}");
         }
 
         private bool SpawnPortalAtGoalRoom()
