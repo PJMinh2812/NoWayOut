@@ -48,7 +48,7 @@ namespace ProceduralGeneration.Integration
         }
 
         private void Start()
-        {
+    {
             if (progressionManager == null)
             {
                 TryResolveProgressionManager();

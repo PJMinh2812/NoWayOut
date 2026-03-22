@@ -1,6 +1,9 @@
 using System;
 using System.IO;
 using UnityEngine;
+using ProceduralGeneration.Core;
+using ProceduralGeneration.Data;
+using Core;
 
 namespace NWO
 {
@@ -64,6 +67,86 @@ namespace NWO
 
             // Scene name
             data.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+            // Dungeon state (để Continue giữ nguyên map)
+            var dungeonManager = ResolveDungeonManager(preferWithRooms: true);
+            if (dungeonManager != null)
+            {
+                data.dungeonSeed = dungeonManager.GetCurrentSeed();
+                data.hasDungeonSeed = data.dungeonSeed != 0;
+
+                if (!data.hasDungeonSeed)
+                {
+                    int fallbackSeed = PlayerPrefs.GetInt("LastDungeonSeed", 0);
+                    if (fallbackSeed != 0)
+                    {
+                        data.dungeonSeed = fallbackSeed;
+                        data.hasDungeonSeed = true;
+                    }
+                }
+
+                // Save current active room grid position
+                Room activeRoom = null;
+                var transitionMgr = RoomTransitionManager.Instance;
+                if (transitionMgr != null)
+                    activeRoom = transitionMgr.GetCurrentRoom();
+
+                // Fallback: find the active room from DungeonManager
+                if (activeRoom == null)
+                {
+                    var allRooms = dungeonManager.GetAllRooms();
+                    if (allRooms != null)
+                    {
+                        foreach (var room in allRooms)
+                        {
+                            if (room != null && room.roomInstance != null && room.roomInstance.activeSelf)
+                            {
+                                activeRoom = room;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (activeRoom == null)
+                {
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        activeRoom = FindRoomContainingPosition(dungeonManager, playerObj.transform.position);
+                    }
+                }
+
+                if (activeRoom != null)
+                {
+                    data.hasCurrentRoom = true;
+                    data.currentRoomGridX = activeRoom.gridPosition.x;
+                    data.currentRoomGridY = activeRoom.gridPosition.y;
+                }
+                else if (TryFindActiveRoomGridFromContainer(dungeonManager, out int activeGridX, out int activeGridY))
+                {
+                    data.hasCurrentRoom = true;
+                    data.currentRoomGridX = activeGridX;
+                    data.currentRoomGridY = activeGridY;
+                }
+            }
+            else
+            {
+                int fallbackSeed = PlayerPrefs.GetInt("LastDungeonSeed", 0);
+                if (fallbackSeed != 0)
+                {
+                    data.dungeonSeed = fallbackSeed;
+                    data.hasDungeonSeed = true;
+                }
+            }
+
+            var runProgression = FindFirstObjectByType<ProceduralGeneration.Integration.DungeonRunProgressionManager>();
+            if (runProgression != null)
+            {
+                data.hasRunProgressionState = true;
+                data.runCurrentRound = runProgression.CurrentRound;
+                data.runCurrentMap = runProgression.CurrentMap;
+            }
 
             // Checkpoint
             var spawnMgr = FindFirstObjectByType<PlayerSpawnManager>();
@@ -143,6 +226,102 @@ namespace NWO
         {
             if (Instance == this) Instance = null;
         }
+
+        private DungeonManager ResolveDungeonManager(bool preferWithRooms)
+        {
+            DungeonManager fallback = null;
+            DungeonManager bestWithRooms = null;
+
+            var managers = FindObjectsByType<DungeonManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < managers.Length; i++)
+            {
+                var manager = managers[i];
+                if (manager == null)
+                    continue;
+
+                if (fallback == null)
+                    fallback = manager;
+
+                var rooms = manager.GetAllRooms();
+                if (rooms != null && rooms.Count > 0)
+                {
+                    bestWithRooms = manager;
+                    if (manager.dungeonContainer != null)
+                        return manager;
+                }
+            }
+
+            if (preferWithRooms && bestWithRooms != null)
+                return bestWithRooms;
+
+            return fallback;
+        }
+
+        private Room FindRoomContainingPosition(DungeonManager dungeonManager, Vector3 worldPos)
+        {
+            if (dungeonManager == null)
+                return null;
+
+            var allRooms = dungeonManager.GetAllRooms();
+            if (allRooms == null)
+                return null;
+
+            foreach (var room in allRooms)
+            {
+                if (room == null || room.roomInstance == null)
+                    continue;
+
+                var renderers = room.roomInstance.GetComponentsInChildren<Renderer>(true);
+                if (renderers == null || renderers.Length == 0)
+                    continue;
+
+                Bounds bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                    bounds.Encapsulate(renderers[i].bounds);
+
+                if (bounds.Contains(worldPos))
+                    return room;
+            }
+
+            return null;
+        }
+
+        private bool TryFindActiveRoomGridFromContainer(DungeonManager dungeonManager, out int gridX, out int gridY)
+        {
+            gridX = 0;
+            gridY = 0;
+
+            if (dungeonManager == null || dungeonManager.dungeonContainer == null)
+                return false;
+
+            var container = dungeonManager.dungeonContainer;
+            for (int i = 0; i < container.childCount; i++)
+            {
+                var child = container.GetChild(i);
+                if (!child.gameObject.activeSelf)
+                    continue;
+
+                if (TryParseRoomGridFromName(child.name, out gridX, out gridY))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryParseRoomGridFromName(string roomName, out int gridX, out int gridY)
+        {
+            gridX = 0;
+            gridY = 0;
+
+            if (string.IsNullOrEmpty(roomName) || !roomName.StartsWith("Room_"))
+                return false;
+
+            string[] parts = roomName.Split('_');
+            if (parts.Length < 4)
+                return false;
+
+            return int.TryParse(parts[2], out gridX) && int.TryParse(parts[3], out gridY);
+        }
     }
 
     /// <summary>
@@ -162,10 +341,22 @@ namespace NWO
         public int lightFragmentsCollected;
         public string sceneName;
 
+        // Dungeon state
+        public bool hasDungeonSeed;
+        public int dungeonSeed;
+        public bool hasRunProgressionState;
+        public int runCurrentRound;
+        public int runCurrentMap;
+
         // Checkpoint
         public bool hasCheckpoint;
         public float checkpointPositionX;
         public float checkpointPositionY;
+
+        // Current room (để Continue spawn đúng phòng)
+        public bool hasCurrentRoom;
+        public int currentRoomGridX;
+        public int currentRoomGridY;
 
         // Meta
         public string saveTimestamp;

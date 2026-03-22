@@ -128,6 +128,7 @@ public class MainMenuUI : MonoBehaviour
         
         PlayerPrefs.SetInt("GenerateNewMap", 1);
         PlayerPrefs.SetInt("LoadFromSave", 0);
+        PlayerPrefs.SetInt("RestoreDungeonFromSave", 0);
         PlayerPrefs.Save();
 
         NWO.SceneLoader.LoadScene(gameSceneName);
@@ -151,6 +152,7 @@ public class MainMenuUI : MonoBehaviour
         // Đánh dấu load from save
         PlayerPrefs.SetInt("LoadFromSave", 1);
         PlayerPrefs.SetInt("GenerateNewMap", 0);
+        PlayerPrefs.SetInt("RestoreDungeonFromSave", 1);
         PlayerPrefs.Save();
 
         // Load scene đã save

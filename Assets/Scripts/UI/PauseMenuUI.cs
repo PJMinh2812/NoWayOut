@@ -234,7 +234,20 @@ namespace NWO
 
         private void OnQuitClicked()
         {
-            Debug.Log("[PauseMenuUI] Quitting to main menu without saving...");
+            Debug.Log("[PauseMenuUI] Quitting to main menu with auto-save...");
+
+            if (SaveManager.Instance != null)
+            {
+                SaveManager.Instance.SaveGame();
+            }
+            else
+            {
+                var saveManager = FindFirstObjectByType<SaveManager>();
+                if (saveManager != null)
+                {
+                    saveManager.SaveGame();
+                }
+            }
 
             GameIsPaused = false;
             Time.timeScale = 1f;

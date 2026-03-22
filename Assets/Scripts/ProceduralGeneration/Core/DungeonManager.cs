@@ -175,6 +175,10 @@ namespace ProceduralGeneration.Core
             // }
             
             isGenerated = true;
+
+            // Persist seed để luồng Continue có fallback ngay cả khi save cũ chưa có dungeonSeed.
+            PlayerPrefs.SetInt("LastDungeonSeed", currentSeed);
+            PlayerPrefs.Save();
             
             // Light Fragments được đặt tay trong scene (tutorial map)
             // Không auto-spawn nữa - dùng menu: GameObject > No Way Out > Light Fragment
@@ -271,6 +275,49 @@ namespace ProceduralGeneration.Core
         {
             return goalRoom;
         }
+
+        /// <summary>
+        /// Activate room theo grid position, deactivate tất cả rooms khác.
+        /// Dùng cho Continue flow để restore đúng phòng player đang đứng.
+        /// </summary>
+        public bool ActivateRoomByGridPosition(int gridX, int gridY)
+        {
+            if (allRooms == null || allRooms.Count == 0)
+                return false;
+
+            Room targetRoom = null;
+            foreach (var room in allRooms)
+            {
+                if (room.gridPosition.x == gridX && room.gridPosition.y == gridY)
+                {
+                    targetRoom = room;
+                    break;
+                }
+            }
+
+            if (targetRoom == null)
+            {
+                Debug.LogWarning($"[DungeonManager] Room at grid ({gridX},{gridY}) not found!");
+                return false;
+            }
+
+            foreach (var room in allRooms)
+            {
+                if (room.roomInstance != null)
+                    room.roomInstance.SetActive(room == targetRoom);
+            }
+
+            // Update Respawn_Point
+            if (targetRoom.roomInstance != null)
+            {
+                float cx = targetRoom.roomInstance.transform.position.x + targetRoom.actualSize.x * 0.5f;
+                float cy = targetRoom.roomInstance.transform.position.y + targetRoom.actualSize.y * 0.5f;
+                UpdateRespawnPoint(new Vector3(cx, cy, 0));
+            }
+
+            Debug.Log($"[DungeonManager] Activated room at grid ({gridX},{gridY}): {targetRoom.roomData.roomType}");
+            return true;
+        }
         
         /// <summary>
         /// Rebuild Room list từ các room GameObjects có sẵn trong scene (khi enter Play Mode)
@@ -328,50 +375,67 @@ namespace ProceduralGeneration.Core
             // Rebuild connected rooms từ door prefabs
             RebuildRoomConnectionsFromDoors();
             
-            // Setup room visibility: chỉ show Start room, ẩn tất cả rooms khác
-            Room rebuiltStartRoom = null;
-            foreach (var room in allRooms)
-            {
-                if (room.roomData != null && room.roomData.roomType == RoomType.Start)
-                {
-                    rebuiltStartRoom = room;
-                    break;
-                }
-            }
-            
-            // Nếu không tìm thấy Start room, dùng room đầu tiên
-            if (rebuiltStartRoom == null && allRooms.Count > 0)
-                rebuiltStartRoom = allRooms[0];
-            
-            foreach (var room in allRooms)
-            {
-                if (room.roomInstance != null)
-                {
-                    bool isStart = (room == rebuiltStartRoom);
-                    room.roomInstance.SetActive(isStart);
-                }
-            }
+            // Setup room visibility
+            bool isRestoringFromSave = PlayerPrefs.GetInt("RestoreDungeonFromSave", 0) == 1;
 
-            // Cập nhật Respawn_Point vào trung tâm start room
-            if (rebuiltStartRoom != null && rebuiltStartRoom.roomInstance != null)
+            if (!isRestoringFromSave)
             {
-                Vector3 spawnCenter = rebuiltStartRoom.roomInstance.transform.position + new Vector3(6f, 6f, 0);
-                foreach (var tm in rebuiltStartRoom.roomInstance.GetComponentsInChildren<Tilemap>())
+                // New game: chỉ show Start room, ẩn tất cả rooms khác
+                Room rebuiltStartRoom = null;
+                foreach (var room in allRooms)
                 {
-                    if (tm.name.Contains("Floor"))
+                    if (room.roomData != null && room.roomData.roomType == RoomType.Start)
                     {
-                        tm.CompressBounds();
-                        var b = tm.cellBounds;
-                        if (b.size.x > 1)
-                        {
-                            spawnCenter = tm.CellToWorld(new Vector3Int(
-                                b.xMin + b.size.x / 2,
-                                b.yMin + b.size.y / 2, 0));
-                            break;
-                        }
+                        rebuiltStartRoom = room;
+                        break;
                     }
                 }
-                UpdateRespawnPoint(spawnCenter);
+                
+                // Nếu không tìm thấy Start room, dùng room đầu tiên
+                if (rebuiltStartRoom == null && allRooms.Count > 0)
+                    rebuiltStartRoom = allRooms[0];
+                
+                foreach (var room in allRooms)
+                {
+                    if (room.roomInstance != null)
+                    {
+                        bool isStart = (room == rebuiltStartRoom);
+                        room.roomInstance.SetActive(isStart);
+                    }
+                }
+
+                // Cập nhật Respawn_Point vào trung tâm start room
+                if (rebuiltStartRoom != null && rebuiltStartRoom.roomInstance != null)
+                {
+                    Vector3 spawnCenter = rebuiltStartRoom.roomInstance.transform.position + new Vector3(6f, 6f, 0);
+                    foreach (var tm in rebuiltStartRoom.roomInstance.GetComponentsInChildren<Tilemap>())
+                    {
+                        if (tm.name.Contains("Floor"))
+                        {
+                            tm.CompressBounds();
+                            var b = tm.cellBounds;
+                            if (b.size.x > 1)
+                            {
+                                spawnCenter = tm.CellToWorld(new Vector3Int(
+                                    b.xMin + b.size.x / 2,
+                                    b.yMin + b.size.y / 2, 0));
+                                break;
+                            }
+                        }
+                    }
+                    UpdateRespawnPoint(spawnCenter);
+                }
+            }
+            else
+            {
+                // Restoring from save: activate ALL rooms temporarily so ApplySaveData
+                // can read their bounds. ApplySaveData will deactivate the wrong rooms.
+                foreach (var room in allRooms)
+                {
+                    if (room.roomInstance != null)
+                        room.roomInstance.SetActive(true);
+                }
+                Debug.Log("[DungeonManager] RestoreDungeonFromSave: all rooms temporarily activated for save restore.");
             }
             
             // Set camera background = đen
@@ -522,6 +586,35 @@ namespace ProceduralGeneration.Core
         #endregion
         
         #region Unity Lifecycle
+
+        private bool IsRuntimeSceneTransform(Transform candidate)
+        {
+            return candidate != null && candidate.gameObject.scene.IsValid() && candidate.gameObject.scene.isLoaded;
+        }
+
+        private void EnsureRuntimeDungeonContainer()
+        {
+            if (IsRuntimeSceneTransform(dungeonContainer))
+                return;
+
+            Transform childContainer = transform.Find("DungeonContainer");
+            if (IsRuntimeSceneTransform(childContainer))
+            {
+                dungeonContainer = childContainer;
+                return;
+            }
+
+            GameObject sceneContainer = GameObject.Find("DungeonContainer");
+            if (sceneContainer != null && sceneContainer.scene.IsValid() && sceneContainer.scene.isLoaded)
+            {
+                dungeonContainer = sceneContainer.transform;
+                return;
+            }
+
+            GameObject container = new GameObject("DungeonContainer");
+            dungeonContainer = container.transform;
+            dungeonContainer.SetParent(this.transform, false);
+        }
         
         private void Awake()
         {
@@ -543,6 +636,9 @@ namespace ProceduralGeneration.Core
                 {
                 }
             }
+
+            // Nếu reference đang trỏ vào Prefab Asset (scene invalid), ép tạo/tìm container runtime.
+            EnsureRuntimeDungeonContainer();
             
             // Rebuild room list nếu có rooms sẵn trong scene (Editor-generated dungeon)
             if (dungeonContainer != null && dungeonContainer.childCount > 0)
@@ -564,13 +660,8 @@ namespace ProceduralGeneration.Core
             allRooms = new List<Room>();
             mainPath = new List<Room>();
             
-            // Create container if not exists
-            if (dungeonContainer == null)
-            {
-                GameObject container = new GameObject("DungeonContainer");
-                dungeonContainer = container.transform;
-                dungeonContainer.SetParent(this.transform);
-            }
+            // Ensure runtime container is always a scene object (never prefab asset transform).
+            EnsureRuntimeDungeonContainer();
             
             // Validate room database
             if (roomDatabase == null || roomDatabase.Count == 0)
