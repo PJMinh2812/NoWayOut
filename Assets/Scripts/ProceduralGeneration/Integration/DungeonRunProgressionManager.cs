@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProceduralGeneration.Core;
 using NWO;
+using Core;
 using System.Collections;
 using System.IO;
 
@@ -273,6 +274,18 @@ namespace ProceduralGeneration.Integration
 
             MovePlayerToRespawnPoint();
             movePlayerRetryCoroutine = StartCoroutine(MovePlayerToRespawnPointReliable());
+
+            // Update RoomTransitionManager để biết player ở phòng start
+            Room startRoom = dungeonManager.GetStartRoom();
+            if (startRoom != null)
+            {
+                var transitionManager = FindFirstObjectByType<RoomTransitionManager>();
+                if (transitionManager != null)
+                {
+                    transitionManager.SetCurrentRoom(startRoom);
+                    Debug.Log($"[RunProgression] Set current room to start room after map advance");
+                }
+            }
 
             if (DungeonLightingManager.Instance != null)
             {
