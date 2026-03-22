@@ -624,6 +624,10 @@ namespace NWO
             if (CoinManager.Instance != null)
                 CoinManager.Instance.SpawnCoinsFromBoss(transform.position);
 
+            // Drop heart boss vật lý khi chết
+            if (HeartManager.Instance != null)
+                HeartManager.Instance.SpawnHeartsFromBoss(transform.position);
+
             // Ẩn health bar ngay khi chết (giống Enemy2D)
             _healthBarController?.OnEnemyDied();
 

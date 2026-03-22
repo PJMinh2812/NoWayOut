@@ -270,7 +270,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!95 &52334639
 Animator:
   serializedVersion: 7
@@ -434,7 +434,7 @@ Transform:
   m_GameObject: {fileID: 52334638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 19.42, y: 0.66, z: 0}
+  m_LocalPosition: {x: 3.83, y: -14.42, z: 0}
   m_LocalScale: {x: 4.487225, y: 4.901916, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -485,7 +485,7 @@ MonoBehaviour:
   tripleSpreadAngle: 30
   wakeUpSound: {fileID: 0}
   rageSound: {fileID: 0}
-  chargeSound: {fileID: 0}
+  chargeSound: {fileID: 8300000, guid: 0daa92c916e673e40b41d6e1c3b0ae7c, type: 3}
   fireballSound: {fileID: 0}
   attackSound: {fileID: 0}
   hurtSound: {fileID: 0}
@@ -521,11 +521,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.85
+      value: -12.99
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.07
+      value: -9.59
       objectReference: {fileID: 0}
     - target: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1585,8 +1585,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1861838832788933468, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7764408827994811293, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
+      propertyPath: hurtSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 7dd90d27ac1a3514ab411cffe57f839d, type: 3}
+    - target: {fileID: 7764408827994811293, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
+      propertyPath: attackSound
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7764408827994811293, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
+      propertyPath: wakeUpSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 96ab6f984a964134eb01d342e5f5a7d9, type: 3}
     - target: {fileID: 8120151341609914589, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
       propertyPath: m_LocalPosition.x
       value: 17.3536
@@ -1646,8 +1658,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2906174065039693800, guid: dce052b3682576c4481ba6fc22071711, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4893846924125201303, guid: dce052b3682576c4481ba6fc22071711, type: 3}
+      propertyPath: hurtSound
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4893846924125201303, guid: dce052b3682576c4481ba6fc22071711, type: 3}
+      propertyPath: deathSound
+      value: 
+      objectReference: {fileID: 8300000, guid: e7f0641c883824248b02e76f1dc9e8ba, type: 3}
+    - target: {fileID: 4893846924125201303, guid: dce052b3682576c4481ba6fc22071711, type: 3}
+      propertyPath: wakeUpSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 2c43a8dd4cee1c54da83115311cf8a1b, type: 3}
     - target: {fileID: 4893846924125201303, guid: dce052b3682576c4481ba6fc22071711, type: 3}
       propertyPath: fireballPrefab
       value: 

@@ -115,6 +115,14 @@ namespace NWO
                 Debug.Log("[GameManager] Auto-created CoinManager");
             }
 
+            // Auto-create HeartManager nếu chưa có
+            if (FindFirstObjectByType<HeartManager>() == null)
+            {
+                var heartObj = new GameObject("HeartManager");
+                heartObj.AddComponent<HeartManager>();
+                Debug.Log("[GameManager] Auto-created HeartManager");
+            }
+
             // Auto-create KeyBindManager nếu chưa có
             if (KeyBindManager.Instance == null && FindFirstObjectByType<KeyBindManager>() == null)
             {

@@ -121,6 +121,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 4724336660381910795}
   - {fileID: 8768414570441884168}
   - {fileID: 1639651484560348458}
   m_Father: {fileID: 0}
@@ -160,6 +161,61 @@ MonoBehaviour:
   wallFillRight: {fileID: 0}
   doorPrefab: {fileID: 0}
   trapTypes: []
+--- !u!1 &1327552470788034804
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4724336660381910795}
+  - component: {fileID: 592648034427729724}
+  m_Layer: 0
+  m_Name: spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4724336660381910795
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327552470788034804}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 7.28, y: 8.06, z: -0.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6890432764278868220}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &592648034427729724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327552470788034804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35846ba69b349f34284c8287dd4c929f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.GateEnemySpawner
+  marshmallowPrefab: {fileID: 6817190312291341347, guid: 890de67a2027f9544927027491459402, type: 3}
+  zombiePrefab: {fileID: 8130035309132286076, guid: f0f3f8ade13620a42b45957b57815e13, type: 3}
+  minSpawnCount: 6
+  maxSpawnCount: 8
+  spawnRadius: 3
+  triggerRadius: 9
+  spawnDelay: 0.2
+  spawnOnce: 1
+  linkedDoor: {fileID: 0}
+  showGizmos: 1
+  triggerUpgradeOnClear: 1
 --- !u!1 &1590149592246419063
 GameObject:
   m_ObjectHideFlags: 0
@@ -5744,7 +5800,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2

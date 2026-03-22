@@ -471,6 +471,11 @@ namespace NWO
             if (isDead) return;
 
             isDead = true;
+
+            // Drop heart boss vật lý khi chết
+            if (HeartManager.Instance != null)
+                HeartManager.Instance.SpawnHeartsFromBoss(transform.position);
+
             healthBarController?.OnEnemyDied();
 
             SafeSetTrigger(HashDeath);
