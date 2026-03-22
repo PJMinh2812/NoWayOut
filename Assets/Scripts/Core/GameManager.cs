@@ -402,6 +402,18 @@ namespace NWO
                 Debug.Log($"[GameManager] Restored room by grid ({data.currentRoomGridX},{data.currentRoomGridY}): {roomActivated}");
             }
 
+            // If saved grid points to the wrong room (commonly stale Start room), prefer room containing saved player position.
+            if (roomActivated && restoredRoom != null && !IsRoomContainingPosition(restoredRoom, savedPosition))
+            {
+                Room positionRoom = ActivateProceduralRoomAtPosition(savedPosition);
+                if (positionRoom != null)
+                {
+                    restoredRoom = positionRoom;
+                    roomActivated = true;
+                    Debug.Log($"[GameManager] Grid-restored room did not contain saved position. Overrode by position to room ({positionRoom.gridPosition.x},{positionRoom.gridPosition.y}).");
+                }
+            }
+
             // Restore player position
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
@@ -471,6 +483,16 @@ namespace NWO
 
                         if (activatedByGrid)
                             activeRoom = FindRoomByGridPosition(dungeonManager, data.currentRoomGridX, data.currentRoomGridY);
+
+                        if (activatedByGrid && activeRoom != null && !IsRoomContainingPosition(activeRoom, savedPosition))
+                        {
+                            Room positionRoom = ActivateProceduralRoomAtPosition(savedPosition);
+                            if (positionRoom != null)
+                            {
+                                activeRoom = positionRoom;
+                                activatedByGrid = true;
+                            }
+                        }
                     }
 
                     if (!activatedByGrid)
@@ -685,6 +707,22 @@ namespace NWO
             }
 
             return null;
+        }
+
+        private bool IsRoomContainingPosition(Room room, Vector3 worldPos)
+        {
+            if (room == null || room.roomInstance == null)
+                return false;
+
+            var renderers = room.roomInstance.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return false;
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            return bounds.Contains(worldPos);
         }
 
         private bool TryActivateRoomByGridFallback(DungeonManager dungeonManager, int gridX, int gridY)

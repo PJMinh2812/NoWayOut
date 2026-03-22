@@ -97,8 +97,20 @@ namespace NWO
 
                 // Save current active room grid position
                 Room activeRoom = null;
+                if (player != null)
+                {
+                    activeRoom = FindRoomContainingPosition(dungeonManager, player.transform.position);
+
+                    if (activeRoom == null && TryFindRoomGridByPositionFromContainer(dungeonManager, player.transform.position, out int posGridX, out int posGridY))
+                    {
+                        data.hasCurrentRoom = true;
+                        data.currentRoomGridX = posGridX;
+                        data.currentRoomGridY = posGridY;
+                    }
+                }
+
                 var transitionMgr = RoomTransitionManager.Instance;
-                if (transitionMgr != null)
+                if (activeRoom == null && !data.hasCurrentRoom && transitionMgr != null)
                     activeRoom = transitionMgr.GetCurrentRoom();
 
                 // Fallback: find the active room from DungeonManager
@@ -118,22 +130,13 @@ namespace NWO
                     }
                 }
 
-                if (activeRoom == null)
-                {
-                    var playerObj = GameObject.FindGameObjectWithTag("Player");
-                    if (playerObj != null)
-                    {
-                        activeRoom = FindRoomContainingPosition(dungeonManager, playerObj.transform.position);
-                    }
-                }
-
                 if (activeRoom != null)
                 {
                     data.hasCurrentRoom = true;
                     data.currentRoomGridX = activeRoom.gridPosition.x;
                     data.currentRoomGridY = activeRoom.gridPosition.y;
                 }
-                else if (TryFindActiveRoomGridFromContainer(dungeonManager, out int activeGridX, out int activeGridY))
+                else if (!data.hasCurrentRoom && TryFindActiveRoomGridFromContainer(dungeonManager, out int activeGridX, out int activeGridY))
                 {
                     data.hasCurrentRoom = true;
                     data.currentRoomGridX = activeGridX;
@@ -156,6 +159,9 @@ namespace NWO
                 data.hasRunProgressionState = true;
                 data.runCurrentRound = runProgression.CurrentRound;
                 data.runCurrentMap = runProgression.CurrentMap;
+                data.runOpenedGoalChestMask = runProgression.OpenedGoalChestMask;
+                data.hasRunCurrentMapCompleted = true;
+                data.runCurrentMapCompleted = runProgression.IsCurrentMapCompleted;
             }
 
             // Checkpoint
@@ -318,6 +324,57 @@ namespace NWO
             return false;
         }
 
+        private bool TryFindRoomGridByPositionFromContainer(DungeonManager dungeonManager, Vector3 worldPos, out int gridX, out int gridY)
+        {
+            gridX = 0;
+            gridY = 0;
+
+            if (dungeonManager == null || dungeonManager.dungeonContainer == null)
+                return false;
+
+            Transform bestChild = null;
+            float bestDistance = float.MaxValue;
+            var container = dungeonManager.dungeonContainer;
+
+            for (int i = 0; i < container.childCount; i++)
+            {
+                Transform child = container.GetChild(i);
+                if (!TryParseRoomGridFromName(child.name, out int roomX, out int roomY))
+                    continue;
+
+                var renderers = child.GetComponentsInChildren<Renderer>(true);
+                if (renderers == null || renderers.Length == 0)
+                    continue;
+
+                Bounds bounds = renderers[0].bounds;
+                for (int r = 1; r < renderers.Length; r++)
+                    bounds.Encapsulate(renderers[r].bounds);
+
+                if (bounds.Contains(worldPos))
+                {
+                    gridX = roomX;
+                    gridY = roomY;
+                    return true;
+                }
+
+                float distance = Vector2.Distance(new Vector2(worldPos.x, worldPos.y), new Vector2(bounds.center.x, bounds.center.y));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestChild = child;
+                }
+            }
+
+            if (bestChild != null && TryParseRoomGridFromName(bestChild.name, out int bestX, out int bestY))
+            {
+                gridX = bestX;
+                gridY = bestY;
+                return true;
+            }
+
+            return false;
+        }
+
         private bool TryParseRoomGridFromName(string roomName, out int gridX, out int gridY)
         {
             gridX = 0;
@@ -361,6 +418,9 @@ namespace NWO
         public bool hasRunProgressionState;
         public int runCurrentRound;
         public int runCurrentMap;
+        public int runOpenedGoalChestMask;
+        public bool hasRunCurrentMapCompleted;
+        public bool runCurrentMapCompleted;
 
         // Checkpoint
         public bool hasCheckpoint;

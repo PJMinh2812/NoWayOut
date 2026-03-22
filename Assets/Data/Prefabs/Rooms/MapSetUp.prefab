@@ -46,6 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Integration.DungeonRunProgressionManager
   dungeonManager: {fileID: 996395734912149117, guid: 097c52c3bfd3a3e43bb22d1482c300c3, type: 3}
   portalPrefab: {fileID: 6552206968115152121, guid: 64b1c10679024824387df742a5e7f80a, type: 3}
+  goalChestPrefab: {fileID: 6094608133795487659, guid: 879e8bae67d0c8146ba7445fcfdb300c, type: 3}
   player: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
   totalRounds: 3
   mapsPerRound: 5
@@ -55,3 +56,13 @@ MonoBehaviour:
   branchIncreasePerRound: 0.05
   autoCompleteWhenNoEnemiesAlive: 1
   minAutoCompleteDelay: 2
+  portalSpawnRetryInterval: 0.5
+  portalSpawnMaxRetries: 6
+  totalGoalChests: 3
+  goalChestOffset: {x: 1.5, y: 0}
+  loadEndingSceneOnRunFinish: 1
+  goodEndingSceneName: Ending_Good
+  badEndingSceneName: Ending_Bad
+  forceFixedSpawnOnNewMap: 1
+  fixedSpawnPosition: {x: 6, y: 6}
+  spawnMapAtPlayerCurrentPosition: 1

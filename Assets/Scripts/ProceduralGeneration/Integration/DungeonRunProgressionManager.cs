@@ -5,6 +5,7 @@ using Core;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Rendering.Universal;
 
 namespace ProceduralGeneration.Integration
 {
@@ -17,6 +18,7 @@ namespace ProceduralGeneration.Integration
         [Header("References")]
         [SerializeField] private DungeonManager dungeonManager;
         [SerializeField] private GameObject portalPrefab;
+        [SerializeField] private GameObject goalChestPrefab;
         [SerializeField] private Transform player;
 
         [Header("Run Structure")]
@@ -34,6 +36,17 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private float minAutoCompleteDelay = 2f;
         [SerializeField] private float portalSpawnRetryInterval = 0.5f;
         [SerializeField] private int portalSpawnMaxRetries = 6;
+
+        [Header("Goal Chest")]
+        [SerializeField] private int totalGoalChests = 3;
+        [SerializeField] private Vector2 goalChestOffsetDirection = new Vector2(1f, 0f);
+        [SerializeField] private float goalChestDistanceFromPortal = 0.6f;
+        [SerializeField] private bool syncGoalChestLightWithPortal = true;
+
+        [Header("Run Endings")]
+        [SerializeField] private bool loadEndingSceneOnRunFinish = true;
+        [SerializeField] private string goodEndingSceneName = "Ending_Good";
+        [SerializeField] private string badEndingSceneName = "Ending_Bad";
 
         [Header("Spawn Override")]
         [Tooltip("Ep player ve toa do co dinh moi khi tao map moi")]
@@ -53,10 +66,18 @@ namespace ProceduralGeneration.Integration
         private int forcedSeedForCurrentGenerate;
         private bool hasPendingMapSpawnOverride;
         private Vector3 pendingMapSpawnPosition;
+        private bool isRestoringMapFromSave;
+        private int openedGoalChestMask;
+        private int openedGoalChestCount;
+        private GameObject spawnedGoalChest;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
         public bool IsRunFinished => currentRound > totalRounds;
+        public bool IsCurrentMapCompleted => currentMapCompleted;
+        public int OpenedGoalChestMask => openedGoalChestMask;
+        public int OpenedGoalChestCount => openedGoalChestCount;
+        public int TotalGoalChests => Mathf.Max(1, totalGoalChests);
 
         private void Awake()
         {
@@ -94,7 +115,10 @@ namespace ProceduralGeneration.Integration
             {
                 currentRound = Mathf.Clamp(data.runCurrentRound, 1, Mathf.Max(1, totalRounds));
                 currentMap = Mathf.Clamp(data.runCurrentMap, 1, Mathf.Max(1, mapsPerRound));
+                SetOpenedGoalChestMask(data.runOpenedGoalChestMask);
             }
+
+            bool shouldRestoreMapCompleted = data.hasRunCurrentMapCompleted && data.runCurrentMapCompleted;
 
             if (data.hasMapAnchor)
             {
@@ -125,7 +149,14 @@ namespace ProceduralGeneration.Integration
             PlayerPrefs.Save();
 
             int requestedSeed = hasForcedSeedForCurrentGenerate ? forcedSeedForCurrentGenerate : 0;
+            isRestoringMapFromSave = true;
             GenerateCurrentMap();
+            if (shouldRestoreMapCompleted)
+            {
+                MarkCurrentMapCompleted();
+                Debug.Log($"[RunProgression] Restored current map completion state for {currentRound}-{currentMap}.");
+            }
+            isRestoringMapFromSave = false;
             int generatedSeed = dungeonManager != null ? dungeonManager.GetCurrentSeed() : 0;
             Debug.Log($"[RunProgression] Restored saved map seedSource={seedSource}, requestedSeed={requestedSeed}, generatedSeed={generatedSeed}, round={currentRound}, map={currentMap}");
             return true;
@@ -155,8 +186,14 @@ namespace ProceduralGeneration.Integration
 
         private void Update()
         {
-            if (IsRunFinished || currentMapCompleted)
+            if (IsRunFinished)
                 return;
+
+            if (currentMapCompleted)
+            {
+                EnsureCompletionObjectsPresent();
+                return;
+            }
 
             if (!autoCompleteWhenNoEnemiesAlive)
                 return;
@@ -172,6 +209,21 @@ namespace ProceduralGeneration.Integration
             }
         }
 
+        private void EnsureCompletionObjectsPresent()
+        {
+            if (ShouldSpawnGoalChestOnCurrentMap() && spawnedGoalChest == null)
+            {
+                SpawnGoalChestAtGoalRoom();
+            }
+
+            if (spawnedPortal == null)
+            {
+                bool spawned = SpawnPortalAtGoalRoom();
+                if (!spawned && portalSpawnRetryCoroutine == null)
+                    portalSpawnRetryCoroutine = StartCoroutine(RetrySpawnPortalAtGoalRoom());
+            }
+        }
+
         /// <summary>
         /// Đánh dấu map hiện tại đã hoàn thành và spawn portal ở Goal room.
         /// </summary>
@@ -181,6 +233,7 @@ namespace ProceduralGeneration.Integration
                 return;
 
             currentMapCompleted = true;
+            SpawnGoalChestAtGoalRoom();
             bool spawned = SpawnPortalAtGoalRoom();
             if (!spawned && portalSpawnRetryCoroutine == null)
                 portalSpawnRetryCoroutine = StartCoroutine(RetrySpawnPortalAtGoalRoom());
@@ -222,6 +275,20 @@ namespace ProceduralGeneration.Integration
                 }
             }
 
+            bool isFinalMap = currentRound >= totalRounds && currentMap >= mapsPerRound;
+            if (isFinalMap)
+            {
+                bool finished = HandleRunFinished();
+                if (!finished)
+                {
+                    // Ending scene is not configured, keep current map state (e.g. 3-5)
+                    // and ensure completion objects remain visible.
+                    EnsureCompletionObjectsPresent();
+                }
+
+                return finished;
+            }
+
             if (spawnAnchorWorldPosition.HasValue)
             {
                 hasPendingMapSpawnOverride = true;
@@ -246,13 +313,6 @@ namespace ProceduralGeneration.Integration
                 currentMap = 1;
             }
 
-            if (currentRound > totalRounds)
-            {
-                DestroySpawnedPortal();
-                Debug.Log("[RunProgression] Completed all maps (3-5). Run finished!");
-                return true;
-            }
-
             GenerateCurrentMap();
             return true;
         }
@@ -268,6 +328,7 @@ namespace ProceduralGeneration.Integration
             Vector3 desiredSpawnPosition = ResolveDesiredSpawnPosition();
 
             DestroySpawnedPortal();
+            DestroySpawnedGoalChest();
             currentMapCompleted = false;
 
             if (portalSpawnRetryCoroutine != null)
@@ -309,6 +370,7 @@ namespace ProceduralGeneration.Integration
             }
 
             AlignGeneratedDungeonToSpawnPosition(desiredSpawnPosition);
+            TrySpawnRunStartFragments();
 
             // Update RoomTransitionManager để biết player ở phòng start
             Room startRoom = dungeonManager.GetStartRoom();
@@ -329,6 +391,28 @@ namespace ProceduralGeneration.Integration
 
             mapGeneratedAt = Time.time;
             Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
+        }
+
+        private void TrySpawnRunStartFragments()
+        {
+            // Chỉ spawn fragment cố định ở run mới map 1-1.
+            if (isRestoringMapFromSave)
+                return;
+
+            if (currentRound != 1 || currentMap != 1)
+                return;
+
+            LightFragmentSpawner spawner = dungeonManager != null
+                ? dungeonManager.GetComponent<LightFragmentSpawner>()
+                : null;
+
+            if (spawner == null && dungeonManager != null)
+                spawner = dungeonManager.gameObject.AddComponent<LightFragmentSpawner>();
+
+            if (spawner == null)
+                return;
+
+            spawner.SpawnFragmentsForRunStart(dungeonManager);
         }
 
         private Vector3 ResolveDesiredSpawnPosition()
@@ -462,8 +546,98 @@ namespace ProceduralGeneration.Integration
                 portal = spawnedPortal.AddComponent<GoalPortal>();
 
             portal.Setup(this);
+            TrySyncGoalChestLightWithPortal();
             Debug.Log($"[RunProgression] Portal spawned at goal room for map {currentRound}-{currentMap}.");
             return true;
+        }
+
+        private bool SpawnGoalChestAtGoalRoom()
+        {
+            if (!ShouldSpawnGoalChestOnCurrentMap())
+                return false;
+
+            if (goalChestPrefab == null)
+            {
+                Debug.LogWarning("[RunProgression] goalChestPrefab chua gan.");
+                return false;
+            }
+
+            if (spawnedGoalChest != null)
+                return true;
+
+            Room goalRoom = dungeonManager.GetGoalRoom();
+            if (goalRoom == null || goalRoom.roomInstance == null)
+            {
+                Debug.LogWarning("[RunProgression] Goal room chua san sang de spawn chest.");
+                return false;
+            }
+
+            Vector3 goalCenter = goalRoom.roomInstance.transform.position +
+                                 new Vector3(goalRoom.actualSize.x * 0.5f, goalRoom.actualSize.y * 0.5f, 0f);
+
+            Vector2 direction = goalChestOffsetDirection.sqrMagnitude > 0.001f
+                ? goalChestOffsetDirection.normalized
+                : Vector2.right;
+            float distance = Mathf.Max(0.5f, goalChestDistanceFromPortal);
+            Vector3 chestSpawnPosition = goalCenter + new Vector3(direction.x, direction.y, 0f) * distance;
+
+            spawnedGoalChest = Instantiate(goalChestPrefab, chestSpawnPosition, Quaternion.identity, goalRoom.roomInstance.transform);
+            spawnedGoalChest.name = $"GoalChest_{currentRound}_{currentMap}";
+
+            GoalChest chest = spawnedGoalChest.GetComponent<GoalChest>();
+            if (chest == null)
+                chest = spawnedGoalChest.AddComponent<GoalChest>();
+
+            chest.Setup(this);
+            TrySyncGoalChestLightWithPortal();
+            Debug.Log($"[RunProgression] Goal chest spawned at map {currentRound}-{currentMap}. pos={chestSpawnPosition}");
+            return true;
+        }
+
+        private void TrySyncGoalChestLightWithPortal()
+        {
+            if (!syncGoalChestLightWithPortal)
+                return;
+
+            if (spawnedGoalChest == null || spawnedPortal == null)
+                return;
+
+            Light2D[] portalLights = spawnedPortal.GetComponentsInChildren<Light2D>(true);
+            if (portalLights == null || portalLights.Length == 0)
+            {
+                Debug.Log("[RunProgression] Portal has no Light2D to sync for chest.");
+                return;
+            }
+
+            Light2D source = portalLights[0];
+            Light2D target = spawnedGoalChest.GetComponentInChildren<Light2D>(true);
+            if (target == null)
+                target = spawnedGoalChest.AddComponent<Light2D>();
+
+            CopyLight2D(source, target);
+            Debug.Log("[RunProgression] Synced chest Light2D from portal.");
+        }
+
+        private static void CopyLight2D(Light2D source, Light2D target)
+        {
+            if (source == null || target == null)
+                return;
+
+            target.lightType = source.lightType;
+            target.color = source.color;
+            target.intensity = source.intensity;
+            target.pointLightInnerRadius = source.pointLightInnerRadius;
+            target.pointLightOuterRadius = source.pointLightOuterRadius;
+            target.pointLightInnerAngle = source.pointLightInnerAngle;
+            target.pointLightOuterAngle = source.pointLightOuterAngle;
+            target.falloffIntensity = source.falloffIntensity;
+            target.volumeIntensity = source.volumeIntensity;
+            target.lightOrder = source.lightOrder;
+            target.blendStyleIndex = source.blendStyleIndex;
+            target.shadowsEnabled = source.shadowsEnabled;
+            target.shadowIntensity = source.shadowIntensity;
+            target.shadowVolumeIntensity = source.shadowVolumeIntensity;
+            target.enabled = source.enabled;
         }
 
         private System.Collections.IEnumerator RetrySpawnPortalAtGoalRoom()
@@ -474,6 +648,7 @@ namespace ProceduralGeneration.Integration
             for (int i = 0; i < retries && spawnedPortal == null; i++)
             {
                 yield return new WaitForSeconds(delay);
+                SpawnGoalChestAtGoalRoom();
                 if (SpawnPortalAtGoalRoom())
                     break;
             }
@@ -547,6 +722,97 @@ namespace ProceduralGeneration.Integration
             if (spawnedPortal != null)
                 Destroy(spawnedPortal);
             spawnedPortal = null;
+        }
+
+        private void DestroySpawnedGoalChest()
+        {
+            if (spawnedGoalChest != null)
+                Destroy(spawnedGoalChest);
+            spawnedGoalChest = null;
+        }
+
+        private bool ShouldSpawnGoalChestOnCurrentMap()
+        {
+            if (currentMap != mapsPerRound)
+                return false;
+
+            if (currentRound < 1 || currentRound > TotalGoalChests)
+                return false;
+
+            return !IsChestOpenedForRound(currentRound);
+        }
+
+        public bool TryOpenGoalChest()
+        {
+            if (!ShouldSpawnGoalChestOnCurrentMap())
+                return false;
+
+            if (IsChestOpenedForRound(currentRound))
+                return false;
+
+            openedGoalChestMask |= 1 << (currentRound - 1);
+            openedGoalChestCount = CountSetBits(openedGoalChestMask);
+
+            Debug.Log($"[RunProgression] Opened goal chest {openedGoalChestCount}/{TotalGoalChests} at map {currentRound}-{currentMap}.");
+            return true;
+        }
+
+        public bool IsCurrentRoundGoalChestOpened()
+        {
+            return IsChestOpenedForRound(currentRound);
+        }
+
+        private bool IsChestOpenedForRound(int round)
+        {
+            if (round < 1 || round > TotalGoalChests)
+                return false;
+
+            int bit = 1 << (round - 1);
+            return (openedGoalChestMask & bit) != 0;
+        }
+
+        private void SetOpenedGoalChestMask(int mask)
+        {
+            int maxMask = (1 << Mathf.Min(31, TotalGoalChests)) - 1;
+            openedGoalChestMask = mask & maxMask;
+            openedGoalChestCount = CountSetBits(openedGoalChestMask);
+        }
+
+        private static int CountSetBits(int value)
+        {
+            int count = 0;
+            int v = value;
+            while (v != 0)
+            {
+                count += v & 1;
+                v >>= 1;
+            }
+
+            return count;
+        }
+
+        private bool HandleRunFinished()
+        {
+            Debug.Log($"[RunProgression] Completed all maps (3-5). Chests {openedGoalChestCount}/{TotalGoalChests}.");
+
+            if (!loadEndingSceneOnRunFinish)
+            {
+                Debug.LogWarning("[RunProgression] loadEndingSceneOnRunFinish=false. Keeping current final map state.");
+                return false;
+            }
+
+            string endingScene = openedGoalChestCount >= TotalGoalChests
+                ? goodEndingSceneName
+                : badEndingSceneName;
+
+            if (string.IsNullOrWhiteSpace(endingScene))
+            {
+                Debug.LogWarning("[RunProgression] Ending scene name trong. Bo qua chuyen scene ending.");
+                return false;
+            }
+
+            SceneLoader.LoadScene(endingScene);
+            return true;
         }
     }
 }
