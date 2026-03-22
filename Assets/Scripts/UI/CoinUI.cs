@@ -144,7 +144,7 @@ namespace NWO
             _coinText.fontStyle = FontStyles.Bold;
             _coinText.alignment = TextAlignmentOptions.MidlineLeft;
             _coinText.raycastTarget = false;
-            _coinText.enableWordWrapping = false;
+            _coinText.textWrappingMode = TextWrappingModes.NoWrap;
             if (TMP_Settings.defaultFontAsset != null)
                 _coinText.font = TMP_Settings.defaultFontAsset;
 

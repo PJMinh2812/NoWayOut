@@ -524,7 +524,6 @@ namespace NWO
             }
             
             // Wait for attack animation to reach hit frame (deal damage halfway through)
-            float attackAnimDuration = 0.4f; // Duration of attack animation
             yield return _waitAttackHalf;
             
             // Deal damage only after animation has progressed

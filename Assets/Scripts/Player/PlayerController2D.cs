@@ -74,7 +74,6 @@ namespace NWO
         private float _afterImageTimer;
 
         private int _originalLayer;
-        private static int _dashLayer = -1;
         private Light2D _fallbackPlayerLight;
 
         /// <summary>Tăng tốc độ di chuyển tối đa (upgrade system)</summary>
