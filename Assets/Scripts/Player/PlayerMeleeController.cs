@@ -71,6 +71,9 @@ namespace NWO
         public bool IsAttacking => _isAttacking;
         public int CurrentCombo => _currentCombo;
         public bool CanAttack => !_isAttacking && CanAttackByStatus();
+        public int BaseDamage => baseDamage;
+        public float AttackRange => attackRange;
+        public float KnockbackForce => knockbackForce;
 
         // Cached animator hashes
         private static readonly int HashIsAttacking = Animator.StringToHash("IsAttacking");
