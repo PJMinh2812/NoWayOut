@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Text;
 
 namespace NWO
 {
@@ -68,7 +69,19 @@ namespace NWO
         private Button _settingsButton;
         private GameObject _mainPanelRoot;
         private readonly List<GameObject> _upgradeSlots = new();
-        private GameObject _upgradeRowGo;
+        private TextMeshProUGUI _characterStatsText;
+
+        private PlayerController2D _playerController;
+        private PlayerHealth2D _playerHealth;
+        private PlayerStamina _playerStamina;
+        private PlayerMeleeController _playerMelee;
+        private PlayerSpellController _playerSpell;
+        private PlayerShooter2D _playerShooter;
+        private PlayerStatusEffects _playerStatusEffects;
+
+        private readonly StringBuilder _statsBuilder = new(256);
+        private float _statsRefreshTimer;
+        private const float StatsRefreshInterval = 0.10f;
 
         private void Start()
         {
@@ -96,7 +109,7 @@ namespace NWO
             }
 
             if (string.IsNullOrWhiteSpace(pausedTitle) || pausedTitle.Trim().ToUpperInvariant() == "PAUSED")
-                pausedTitle = "DỪNG";
+                pausedTitle = "PAUSE";
 
             // Ẩn menu pause khi bắt đầu
             if (pauseMenuPanel != null)
@@ -117,6 +130,10 @@ namespace NWO
 
             if (_settingsButton != null)
                 _settingsButton.onClick.AddListener(ToggleSettings);
+
+            EnsureLegacyStatsText();
+            TryBindPlayerReferences();
+            RefreshCharacterStatsUI();
         }
 
         private string _rebindActionName;
@@ -177,6 +194,16 @@ namespace NWO
                 else
                     PauseGame();
             }
+
+            if (GameIsPaused)
+            {
+                _statsRefreshTimer -= Time.unscaledDeltaTime;
+                if (_statsRefreshTimer <= 0f)
+                {
+                    _statsRefreshTimer = StatsRefreshInterval;
+                    RefreshCharacterStatsUI();
+                }
+            }
         }
 
         public void PauseGame()
@@ -192,6 +219,9 @@ namespace NWO
 
             // Cập nhật slot hiển thị nâng cấp đã chọn
             RefreshUpgradeSlots();
+            EnsureLegacyStatsText();
+            _statsRefreshTimer = 0f;
+            RefreshCharacterStatsUI();
 
             Debug.Log("[PauseMenuUI] Game Paused");
         }
@@ -308,8 +338,8 @@ namespace NWO
             panelStrokeRt.anchorMin = new Vector2(0.5f, 0.5f);
             panelStrokeRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelStrokeRt.pivot = new Vector2(0.5f, 0.5f);
-            panelStrokeRt.sizeDelta = new Vector2(980f, 360f);
-            panelStrokeRt.anchoredPosition = new Vector2(0f, 40f);
+            panelStrokeRt.sizeDelta = new Vector2(980f, 520f);
+            panelStrokeRt.anchoredPosition = new Vector2(0f, 10f);
             _mainPanelRoot = panelStrokeGo;
 
             var panelGo = NewUiImage("Panel", panelStrokeGo.transform, panelColor);
@@ -317,7 +347,7 @@ namespace NWO
             panelRt.anchorMin = new Vector2(0.5f, 0.5f);
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelRt.pivot = new Vector2(0.5f, 0.5f);
-            panelRt.sizeDelta = new Vector2(960f, 340f);
+            panelRt.sizeDelta = new Vector2(960f, 500f);
             panelRt.anchoredPosition = Vector2.zero;
 
             // Ribbon title
@@ -415,73 +445,86 @@ namespace NWO
             _settingsPanel = BuildSettingsPanel(overlayGo.transform);
             _settingsPanel.SetActive(false);
 
-            // Icon row - hiển thị nâng cấp đã chọn
-            var rowGo = new GameObject("IconRow");
-            rowGo.transform.SetParent(panelGo.transform, false);
-            var rowRt = rowGo.AddComponent<RectTransform>();
-            rowRt.anchorMin = new Vector2(0.08f, 0.52f);
-            rowRt.anchorMax = new Vector2(0.92f, 0.52f);
-            rowRt.pivot = new Vector2(0.5f, 0.5f);
-            rowRt.sizeDelta = new Vector2(0f, 90f);
-            rowRt.anchoredPosition = new Vector2(0f, 10f);
-            _upgradeRowGo = rowGo;
-
-            var h = rowGo.AddComponent<HorizontalLayoutGroup>();
-            h.childAlignment = TextAnchor.MiddleCenter;
-            h.spacing = 18f;
-            h.childForceExpandHeight = false;
-            h.childForceExpandWidth = false;
-
+            // Không hiển thị row icon nâng cấp trong pause menu
             _upgradeSlots.Clear();
-            for (int i = 0; i < 9; i++)
-            {
-                var slotStroke = NewUiImage($"SlotStroke_{i}", rowGo.transform, panelStrokeColor);
-                var slotStrokeRt = slotStroke.GetComponent<RectTransform>();
-                slotStrokeRt.sizeDelta = new Vector2(66f, 66f);
 
-                var slot = NewUiImage($"Slot_{i}", slotStroke.transform, new Color(0.08f, 0.09f, 0.10f, 1f));
-                var slotRt = slot.GetComponent<RectTransform>();
-                slotRt.anchorMin = new Vector2(0.5f, 0.5f);
-                slotRt.anchorMax = new Vector2(0.5f, 0.5f);
-                slotRt.pivot = new Vector2(0.5f, 0.5f);
-                slotRt.sizeDelta = new Vector2(58f, 58f);
-                slotRt.anchoredPosition = Vector2.zero;
+            // Character stats panel
+            var statsStrokeGo = NewUiImage("CharacterStatsStroke", panelGo.transform, panelStrokeColor);
+            var statsStrokeRt = statsStrokeGo.GetComponent<RectTransform>();
+            statsStrokeRt.anchorMin = new Vector2(0.06f, 0.16f);
+            statsStrokeRt.anchorMax = new Vector2(0.94f, 0.76f);
+            statsStrokeRt.pivot = new Vector2(0.5f, 0.5f);
+            statsStrokeRt.offsetMin = Vector2.zero;
+            statsStrokeRt.offsetMax = Vector2.zero;
 
-                // Mặc định hiển thị "+"
-                var isStar = i == 0;
-                var iconSprite = isStar ? slotStarSprite : slotPlusSprite;
-                if (iconSprite != null)
-                {
-                    var iconGo = new GameObject($"SlotIcon_{i}");
-                    iconGo.transform.SetParent(slot.transform, false);
-                    var icon = iconGo.AddComponent<Image>();
-                    icon.sprite = iconSprite;
-                    icon.preserveAspect = true;
-                    icon.color = Color.white;
-                    var rt = icon.GetComponent<RectTransform>();
-                    rt.anchorMin = new Vector2(0.5f, 0.5f);
-                    rt.anchorMax = new Vector2(0.5f, 0.5f);
-                    rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.sizeDelta = new Vector2(34f, 34f);
-                    rt.anchoredPosition = Vector2.zero;
-                }
-                else
-                {
-                    var symbol = isStar ? "★" : "+";
-                    var t = NewTmpText($"SlotText_{i}", slot.transform, symbol, 40, new Color(0.95f, 0.95f, 0.95f, 0.85f));
-                    t.alignment = TextAlignmentOptions.Center;
-                    StretchToFull(t.rectTransform);
-                }
+            var statsViewportGo = NewUiImage("CharacterStatsViewport", statsStrokeGo.transform, new Color(0.08f, 0.09f, 0.10f, 1f));
+            var statsViewportRt = statsViewportGo.GetComponent<RectTransform>();
+            StretchToFull(statsViewportRt);
+            statsViewportRt.offsetMin = new Vector2(4f, 4f);
+            statsViewportRt.offsetMax = new Vector2(-20f, -4f);
 
-                _upgradeSlots.Add(slot);
-            }
+            var statsMask = statsViewportGo.AddComponent<Mask>();
+            statsMask.showMaskGraphic = true;
+
+            var statsScrollRect = statsViewportGo.AddComponent<ScrollRect>();
+            statsScrollRect.horizontal = false;
+            statsScrollRect.vertical = true;
+            statsScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            statsScrollRect.scrollSensitivity = 30f;
+
+            var statsContentGo = new GameObject("CharacterStatsContent");
+            statsContentGo.transform.SetParent(statsViewportGo.transform, false);
+            var statsContentRt = statsContentGo.AddComponent<RectTransform>();
+            statsContentRt.anchorMin = new Vector2(0f, 1f);
+            statsContentRt.anchorMax = new Vector2(1f, 1f);
+            statsContentRt.pivot = new Vector2(0.5f, 1f);
+            statsContentRt.offsetMin = new Vector2(0f, 0f);
+            statsContentRt.offsetMax = new Vector2(0f, 0f);
+
+            _characterStatsText = NewTmpText("CharacterStatsText", statsContentGo.transform, "", 18f, new Color(0.98f, 0.96f, 0.92f, 0.96f));
+            _characterStatsText.alignment = TextAlignmentOptions.TopLeft;
+            _characterStatsText.textWrappingMode = TextWrappingModes.Normal;
+            _characterStatsText.overflowMode = TextOverflowModes.Overflow;
+            _characterStatsText.lineSpacing = 2f;
+            var statsTextRt = _characterStatsText.rectTransform;
+            statsTextRt.anchorMin = new Vector2(0f, 1f);
+            statsTextRt.anchorMax = new Vector2(1f, 1f);
+            statsTextRt.pivot = new Vector2(0.5f, 1f);
+            statsTextRt.offsetMin = new Vector2(12f, 0f);
+            statsTextRt.offsetMax = new Vector2(-20f, 0f);
+
+            var statsFitter = _characterStatsText.gameObject.AddComponent<ContentSizeFitter>();
+            statsFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            statsFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var contentFitter = statsContentGo.AddComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var statsScrollbar = NewVerticalScrollbar(
+                "CharacterStatsScrollbar",
+                statsStrokeGo.transform,
+                new Color(1f, 1f, 1f, 0.16f),
+                new Color(0.90f, 0.82f, 0.63f, 0.95f));
+            var statsScrollbarRt = statsScrollbar.GetComponent<RectTransform>();
+            statsScrollbarRt.anchorMin = new Vector2(1f, 0f);
+            statsScrollbarRt.anchorMax = new Vector2(1f, 1f);
+            statsScrollbarRt.pivot = new Vector2(1f, 0.5f);
+            statsScrollbarRt.sizeDelta = new Vector2(12f, 0f);
+            statsScrollbarRt.anchoredPosition = new Vector2(-4f, 0f);
+
+            statsScrollRect.viewport = statsViewportRt;
+            statsScrollRect.content = statsContentRt;
+            statsScrollRect.verticalScrollbar = statsScrollbar;
+            statsScrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            statsScrollRect.verticalScrollbarSpacing = 2f;
 
             // Bottom buttons bar
             var buttonsGo = new GameObject("Buttons");
             buttonsGo.transform.SetParent(panelGo.transform, false);
             var buttonsRt = buttonsGo.AddComponent<RectTransform>();
-            buttonsRt.anchorMin = new Vector2(0.12f, 0.10f);
-            buttonsRt.anchorMax = new Vector2(0.88f, 0.10f);
+            buttonsRt.anchorMin = new Vector2(0.12f, 0.04f);
+            buttonsRt.anchorMax = new Vector2(0.88f, 0.04f);
             buttonsRt.pivot = new Vector2(0.5f, 0f);
             buttonsRt.sizeDelta = new Vector2(0f, 90f);
             buttonsRt.anchoredPosition = new Vector2(0f, 0f);
@@ -497,6 +540,187 @@ namespace NWO
             quitButton = NewBigButton(buttonsGo.transform, "QUIT", "⚙", quitButtonSprite);
 
             pauseMenuPanel = root;
+        }
+
+        private void TryBindPlayerReferences()
+        {
+            if (_playerController == null)
+                _playerController = FindFirstObjectByType<PlayerController2D>();
+
+            if (_playerController == null)
+                return;
+
+            if (_playerHealth == null)
+                _playerHealth = _playerController.GetComponent<PlayerHealth2D>();
+            if (_playerStamina == null)
+                _playerStamina = _playerController.GetComponent<PlayerStamina>();
+            if (_playerMelee == null)
+                _playerMelee = _playerController.GetComponent<PlayerMeleeController>();
+            if (_playerSpell == null)
+                _playerSpell = _playerController.GetComponent<PlayerSpellController>();
+            if (_playerShooter == null)
+                _playerShooter = _playerController.GetComponent<PlayerShooter2D>();
+            if (_playerStatusEffects == null)
+                _playerStatusEffects = _playerController.GetComponent<PlayerStatusEffects>();
+        }
+
+        private void EnsureLegacyStatsText()
+        {
+            if (_characterStatsText != null || pauseMenuPanel == null)
+                return;
+
+            var statsBgGo = NewUiImage("CharacterStatsLegacyBg", pauseMenuPanel.transform, new Color(0.08f, 0.09f, 0.10f, 0.82f));
+            var rt = statsBgGo.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.04f, 0.04f);
+            rt.anchorMax = new Vector2(0.52f, 0.40f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            statsBgGo.AddComponent<Mask>().showMaskGraphic = true;
+
+            var scroll = statsBgGo.AddComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 30f;
+
+            var contentGo = new GameObject("CharacterStatsLegacyContent");
+            contentGo.transform.SetParent(statsBgGo.transform, false);
+            var contentRt = contentGo.AddComponent<RectTransform>();
+            contentRt.anchorMin = new Vector2(0f, 1f);
+            contentRt.anchorMax = new Vector2(1f, 1f);
+            contentRt.pivot = new Vector2(0.5f, 1f);
+            contentRt.offsetMin = Vector2.zero;
+            contentRt.offsetMax = Vector2.zero;
+
+            _characterStatsText = NewTmpText("CharacterStatsLegacyText", contentGo.transform, "", 16f, new Color(0.98f, 0.96f, 0.92f, 0.96f));
+            _characterStatsText.alignment = TextAlignmentOptions.TopLeft;
+            _characterStatsText.textWrappingMode = TextWrappingModes.Normal;
+            _characterStatsText.overflowMode = TextOverflowModes.Overflow;
+            _characterStatsText.lineSpacing = 1f;
+            var textRt = _characterStatsText.rectTransform;
+            textRt.anchorMin = new Vector2(0f, 1f);
+            textRt.anchorMax = new Vector2(1f, 1f);
+            textRt.pivot = new Vector2(0.5f, 1f);
+            textRt.offsetMin = new Vector2(12f, 0f);
+            textRt.offsetMax = new Vector2(-20f, 0f);
+
+            var textFitter = _characterStatsText.gameObject.AddComponent<ContentSizeFitter>();
+            textFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            textFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var contentFitter = contentGo.AddComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var legacyScrollbar = NewVerticalScrollbar(
+                "CharacterStatsLegacyScrollbar",
+                statsBgGo.transform,
+                new Color(1f, 1f, 1f, 0.16f),
+                new Color(0.90f, 0.82f, 0.63f, 0.95f));
+            var legacyScrollbarRt = legacyScrollbar.GetComponent<RectTransform>();
+            legacyScrollbarRt.anchorMin = new Vector2(1f, 0f);
+            legacyScrollbarRt.anchorMax = new Vector2(1f, 1f);
+            legacyScrollbarRt.pivot = new Vector2(1f, 0.5f);
+            legacyScrollbarRt.sizeDelta = new Vector2(12f, 0f);
+            legacyScrollbarRt.anchoredPosition = new Vector2(-4f, 0f);
+
+            scroll.viewport = rt;
+            scroll.content = contentRt;
+            scroll.verticalScrollbar = legacyScrollbar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scroll.verticalScrollbarSpacing = 2f;
+        }
+
+        private void RefreshCharacterStatsUI()
+        {
+            if (_characterStatsText == null)
+                return;
+
+            TryBindPlayerReferences();
+
+            if (_playerHealth == null)
+            {
+                _characterStatsText.text = "KHONG TIM THAY PLAYER";
+                return;
+            }
+
+            float damageMul = _playerStatusEffects != null ? _playerStatusEffects.DamageMultiplier : 1f;
+            float moveMul = _playerStatusEffects != null ? _playerStatusEffects.MoveSpeedMultiplier : 1f;
+
+            int meleeBase = _playerMelee != null ? _playerMelee.BaseDamage : 0;
+            int meleeEffective = Mathf.RoundToInt(meleeBase * damageMul);
+
+            int spell1Base = _playerSpell != null ? _playerSpell.GetSpellDamage(1) : 0;
+            int spell2Base = _playerSpell != null ? _playerSpell.GetSpellDamage(2) : 0;
+            int spell3Base = _playerSpell != null ? _playerSpell.GetSpellDamage(3) : 0;
+            int spell1Effective = Mathf.RoundToInt(spell1Base * damageMul);
+            int spell2Effective = Mathf.RoundToInt(spell2Base * damageMul);
+            int spell3Effective = Mathf.RoundToInt(spell3Base * damageMul);
+
+            float spell1Cd = _playerSpell != null ? _playerSpell.GetSpellCooldown(1) : 0f;
+            float spell2Cd = _playerSpell != null ? _playerSpell.GetSpellCooldown(2) : 0f;
+            float spell3Cd = _playerSpell != null ? _playerSpell.GetSpellCooldown(3) : 0f;
+            float spell1Range = _playerSpell != null ? _playerSpell.GetSpellRange(1) : 0f;
+            float spell2Range = _playerSpell != null ? _playerSpell.GetSpellRange(2) : 0f;
+            float spell3Range = _playerSpell != null ? _playerSpell.GetSpellRange(3) : 0f;
+
+            float moveSpeed = _playerController != null ? _playerController.MaxMoveSpeed : 0f;
+            float dashSpeed = _playerController != null ? _playerController.DashSpeed : 0f;
+            float effectiveMoveSpeed = moveSpeed * moveMul;
+
+            float staminaRegen = _playerStamina != null ? _playerStamina.RegenPerSecond : 0f;
+            float healthRegen = _playerHealth.RegenerationPerSecond;
+            float invincibleWindow = _playerHealth.InvincibleDuration;
+            float meleeRange = _playerMelee != null ? _playerMelee.AttackRange : 0f;
+            float knockback = _playerMelee != null ? _playerMelee.KnockbackForce : 0f;
+            float fireRate = _playerShooter != null ? _playerShooter.FireRatePerSecond : 0f;
+
+            _statsBuilder.Clear();
+            _statsBuilder.Append("THONG SO NHAN VAT\n\n");
+            _statsBuilder.Append("SINH TON\n");
+            _statsBuilder.Append("  HP: ").Append(_playerHealth.CurrentHealth).Append('/').Append(_playerHealth.MaxHealth)
+                .Append("    STA: ");
+
+            if (_playerStamina != null)
+            {
+                _statsBuilder.Append(Mathf.RoundToInt(_playerStamina.CurrentStamina))
+                    .Append('/')
+                    .Append(Mathf.RoundToInt(_playerStamina.MaxStamina))
+                    .Append("\n  Regen HP: ").Append(healthRegen.ToString("0.##")).Append("/s")
+                    .Append("    Regen STA: ").Append(staminaRegen.ToString("0.##")).Append("/s")
+                    .Append("    I-Frame: ").Append(invincibleWindow.ToString("0.##")).Append("s");
+            }
+            else
+            {
+                _statsBuilder.Append("--")
+                    .Append("\n  Regen HP: ").Append(healthRegen.ToString("0.##")).Append("/s")
+                    .Append("    I-Frame: ").Append(invincibleWindow.ToString("0.##")).Append("s");
+            }
+
+            _statsBuilder.Append("\n\nCHI SO CHIEN DAU\n");
+            
+
+            _statsBuilder.Append("\n  Spell DMG: ")
+                .Append(spell1Effective).Append('/').Append(spell2Effective).Append('/').Append(spell3Effective)
+                .Append("\n  Spell CD: ").Append(spell1Cd.ToString("0.##")).Append('/').Append(spell2Cd.ToString("0.##")).Append('/').Append(spell3Cd.ToString("0.##"))
+                .Append("    Spell RNG: ").Append(spell1Range.ToString("0.##")).Append('/').Append(spell2Range.ToString("0.##")).Append('/').Append(spell3Range.ToString("0.##"));
+
+            _statsBuilder.Append("\n  Fire Rate: ")
+                .Append(fireRate.ToString("0.##"))
+                .Append("/s")
+                .Append("    Move: ").Append(effectiveMoveSpeed.ToString("0.00"))
+                .Append(" (Base ").Append(moveSpeed.ToString("0.00")).Append(")")
+                .Append("    Dash: ").Append(dashSpeed.ToString("0.00"));
+
+            if (Mathf.Abs(damageMul - 1f) > 0.001f || Mathf.Abs(moveMul - 1f) > 0.001f)
+            {
+                _statsBuilder.Append("\n\nBUFF\n  DMG x").Append(damageMul.ToString("0.##"))
+                    .Append("    MOVE x").Append(moveMul.ToString("0.##"));
+            }
+
+            _characterStatsText.text = _statsBuilder.ToString();
         }
 
         private GameObject BuildSettingsPanel(Transform parent)
@@ -821,6 +1045,36 @@ namespace NWO
             if (TMP_Settings.defaultFontAsset != null)
                 t.font = TMP_Settings.defaultFontAsset;
             return t;
+        }
+
+        private static Scrollbar NewVerticalScrollbar(string name, Transform parent, Color trackColor, Color handleColor)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+
+            var trackImage = go.AddComponent<Image>();
+            trackImage.color = trackColor;
+
+            var scrollbar = go.AddComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+
+            var slidingAreaGo = new GameObject("SlidingArea");
+            slidingAreaGo.transform.SetParent(go.transform, false);
+            var slidingAreaRt = slidingAreaGo.AddComponent<RectTransform>();
+            StretchToFull(slidingAreaRt);
+            slidingAreaRt.offsetMin = new Vector2(2f, 2f);
+            slidingAreaRt.offsetMax = new Vector2(-2f, -2f);
+
+            var handleGo = new GameObject("Handle");
+            handleGo.transform.SetParent(slidingAreaGo.transform, false);
+            var handleImage = handleGo.AddComponent<Image>();
+            handleImage.color = handleColor;
+            var handleRt = handleImage.GetComponent<RectTransform>();
+            StretchToFull(handleRt);
+
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.handleRect = handleRt;
+            return scrollbar;
         }
 
         /// <summary>

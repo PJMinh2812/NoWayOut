@@ -28,6 +28,8 @@ namespace NWO
         public int CurrentHealth { get; private set; }
         public int MaxHealth => maxHealth;
         public bool IsDead { get; private set; }
+        public float RegenerationPerSecond => regenerationPerSecond;
+        public float InvincibleDuration => invincibleDuration;
 
         private float _invincibleTimer;
         private PlayerSpellController _spellController;
