@@ -16535,6 +16535,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NightBorne
       objectReference: {fileID: 0}
+    - target: {fileID: 1861838832788933468, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
+      propertyPath: m_TagString
+      value: enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 7764408827994811293, guid: 19ea8953d8db1ad4e83dbb2455843708, type: 3}
       propertyPath: maxHealth
       value: 400

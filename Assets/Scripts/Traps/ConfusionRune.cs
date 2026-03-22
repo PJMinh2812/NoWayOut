@@ -100,6 +100,8 @@ namespace NWO
                 return;
             }
 
+            RunAIDirectorTelemetry.RecordTrapTriggered(this);
+
             // Áp dụng confusion effect
             statusEffects.ApplyEffect(StatusEffectType.Confusion, confusionDuration, 1f, this);
             

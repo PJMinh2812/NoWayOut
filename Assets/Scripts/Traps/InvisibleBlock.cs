@@ -80,6 +80,7 @@ public class InvisibleBlock : MonoBehaviour
         if (playerCtrl != null && playerCtrl.IsDashing) return;
 
         hasBeenHit = true;
+        RunAIDirectorTelemetry.RecordTrapTriggered(this);
         
         // Phát âm thanh "BONK!"
         if (bonkSound != null)
