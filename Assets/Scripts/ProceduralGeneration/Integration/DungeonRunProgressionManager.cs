@@ -1,6 +1,8 @@
 using UnityEngine;
 using ProceduralGeneration.Core;
 using NWO;
+using System.Collections;
+using System.IO;
 
 namespace ProceduralGeneration.Integration
 {
@@ -31,12 +33,20 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private float portalSpawnRetryInterval = 0.5f;
         [SerializeField] private int portalSpawnMaxRetries = 6;
 
+        [Header("Spawn Override")]
+        [Tooltip("Ep player ve toa do co dinh moi khi tao map moi")]
+        [SerializeField] private bool forceFixedSpawnOnNewMap = true;
+        [SerializeField] private Vector2 fixedSpawnPosition = new Vector2(6f, 6f);
+
         private int currentRound = 1;
         private int currentMap = 1;
         private bool currentMapCompleted;
         private float mapGeneratedAt;
         private GameObject spawnedPortal;
         private Coroutine portalSpawnRetryCoroutine;
+        private Coroutine movePlayerRetryCoroutine;
+        private bool hasForcedSeedForCurrentGenerate;
+        private int forcedSeedForCurrentGenerate;
 
         public int CurrentRound => currentRound;
         public int CurrentMap => currentMap;
@@ -57,7 +67,77 @@ namespace ProceduralGeneration.Integration
 
         private void Start()
         {
+            if (!TryRestoreMapFromSave())
+            {
+                GenerateCurrentMap();
+            }
+        }
+
+        private bool TryRestoreMapFromSave()
+        {
+            bool restoreFromSave = PlayerPrefs.GetInt("RestoreDungeonFromSave", 0) == 1 ||
+                                   PlayerPrefs.GetInt("LoadFromSave", 0) == 1;
+            if (!restoreFromSave)
+                return false;
+
+            SaveData data = LoadSaveDataDirectly();
+            if (data == null)
+                return false;
+
+            if (data.hasRunProgressionState)
+            {
+                currentRound = Mathf.Clamp(data.runCurrentRound, 1, Mathf.Max(1, totalRounds));
+                currentMap = Mathf.Clamp(data.runCurrentMap, 1, Mathf.Max(1, mapsPerRound));
+            }
+
+            string seedSource = "none";
+            if (data.hasDungeonSeed && data.dungeonSeed != 0)
+            {
+                hasForcedSeedForCurrentGenerate = true;
+                forcedSeedForCurrentGenerate = data.dungeonSeed;
+                seedSource = "save";
+            }
+            else
+            {
+                int fallbackSeed = PlayerPrefs.GetInt("LastDungeonSeed", 0);
+                if (fallbackSeed != 0)
+                {
+                    hasForcedSeedForCurrentGenerate = true;
+                    forcedSeedForCurrentGenerate = fallbackSeed;
+                    seedSource = "playerprefs";
+                }
+            }
+
+            PlayerPrefs.SetInt("RestoreDungeonFromSave", 0);
+            PlayerPrefs.Save();
+
+            int requestedSeed = hasForcedSeedForCurrentGenerate ? forcedSeedForCurrentGenerate : 0;
             GenerateCurrentMap();
+            int generatedSeed = dungeonManager != null ? dungeonManager.GetCurrentSeed() : 0;
+            Debug.Log($"[RunProgression] Restored saved map seedSource={seedSource}, requestedSeed={requestedSeed}, generatedSeed={generatedSeed}, round={currentRound}, map={currentMap}");
+            return true;
+        }
+
+        private SaveData LoadSaveDataDirectly()
+        {
+            if (SaveManager.Instance != null)
+            {
+                return SaveManager.Instance.LoadSaveData();
+            }
+
+            string savePath = Path.Combine(Application.persistentDataPath, "savegame.json");
+            if (!File.Exists(savePath))
+                return null;
+
+            try
+            {
+                string json = File.ReadAllText(savePath);
+                return JsonUtility.FromJson<SaveData>(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private void Update()
@@ -169,10 +249,35 @@ namespace ProceduralGeneration.Integration
             dungeonManager.archetype1RoomCount = roomCount;
             dungeonManager.archetype2RoomCount = roomCount;
             dungeonManager.branchProbability = branchProb;
-            dungeonManager.useRandomSeed = true;
+
+            if (hasForcedSeedForCurrentGenerate && forcedSeedForCurrentGenerate != 0)
+            {
+                dungeonManager.seed = forcedSeedForCurrentGenerate;
+                dungeonManager.useRandomSeed = false;
+            }
+            else
+            {
+                dungeonManager.useRandomSeed = true;
+            }
+
             dungeonManager.GenerateDungeon();
 
+            hasForcedSeedForCurrentGenerate = false;
+            forcedSeedForCurrentGenerate = 0;
+
+            if (movePlayerRetryCoroutine != null)
+            {
+                StopCoroutine(movePlayerRetryCoroutine);
+                movePlayerRetryCoroutine = null;
+            }
+
             MovePlayerToRespawnPoint();
+            movePlayerRetryCoroutine = StartCoroutine(MovePlayerToRespawnPointReliable());
+
+            if (DungeonLightingManager.Instance != null)
+            {
+                DungeonLightingManager.Instance.RefreshSpecialRoomLights();
+            }
 
             mapGeneratedAt = Time.time;
             Debug.Log($"[RunProgression] Generated map {currentRound}-{currentMap} | rooms={roomCount}, branch={branchProb:0.00}");
@@ -241,9 +346,50 @@ namespace ProceduralGeneration.Integration
             if (player == null)
                 return;
 
+            if (forceFixedSpawnOnNewMap)
+            {
+                Vector3 fixedPos = new Vector3(fixedSpawnPosition.x, fixedSpawnPosition.y, player.position.z);
+                player.position = fixedPos;
+
+                GameObject forcedRespawnPoint = GameObject.Find("Respawn_Point");
+                if (forcedRespawnPoint == null)
+                    forcedRespawnPoint = new GameObject("Respawn_Point");
+
+                forcedRespawnPoint.transform.position = fixedPos;
+
+                var forcedRb = player.GetComponent<Rigidbody2D>();
+                if (forcedRb != null)
+                {
+                    forcedRb.linearVelocity = Vector2.zero;
+                    forcedRb.angularVelocity = 0f;
+                }
+
+                return;
+            }
+
             GameObject respawnPoint = GameObject.Find("Respawn_Point");
             if (respawnPoint != null)
+            {
                 player.position = respawnPoint.transform.position;
+
+                var rb = player.GetComponent<Rigidbody2D>();
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector2.zero;
+                    rb.angularVelocity = 0f;
+                }
+            }
+        }
+
+        private IEnumerator MovePlayerToRespawnPointReliable()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                yield return new WaitForEndOfFrame();
+                MovePlayerToRespawnPoint();
+            }
+
+            movePlayerRetryCoroutine = null;
         }
 
         private void DestroySpawnedPortal()

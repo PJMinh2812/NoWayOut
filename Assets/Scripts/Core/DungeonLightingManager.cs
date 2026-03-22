@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using ProceduralGeneration.Core;
+using ProceduralGeneration.Data;
 
 namespace NWO
 {
@@ -13,6 +14,13 @@ namespace NWO
     /// </summary>
     public class DungeonLightingManager : MonoBehaviour
     {
+        private enum RoomLightSetupResult
+        {
+            Waiting,
+            Ready,
+            Missing
+        }
+
         public static DungeonLightingManager Instance { get; private set; }
         public int CollectedFragments => fragmentsCollected;
 
@@ -41,10 +49,20 @@ namespace NWO
         [SerializeField] private float playerLightIntensity = 1.1f;
         [SerializeField] private Color playerLightColor = new Color(0.9f, 0.85f, 0.7f); // Vàng nhạt yếu
         
-        [Header("Start Room Light")]
+        [Header("Special Room Lights")]
         [Tooltip("Intensity ánh sáng phòng Start (full sáng)")]
-        [SerializeField] private float startRoomLightIntensity = 1f;
+        [SerializeField] private float startRoomLightIntensity = 6f;
         [SerializeField] private Color startRoomLightColor = Color.white;
+        [Tooltip("Intensity ánh sáng phòng Goal (full sáng)")]
+        [SerializeField] private float goalRoomLightIntensity = 6f;
+        [SerializeField] private Color goalRoomLightColor = Color.white;
+        [Tooltip("Ep renderer trong Start/Goal sang unlit de luon sang, khong phu thuoc Light2D")]
+        [SerializeField] private bool forceSpecialRoomsUnlit = true;
+        [Tooltip("Neu khong tao duoc Start room light, tang tam Global Light de tranh toi den")]
+        [SerializeField] private bool useGlobalLightFallbackOnSpecialRoomFailure = false;
+        [SerializeField] private float fallbackGlobalLightIntensity = 0.6f;
+        [SerializeField] private int specialRoomLightMaxAttempts = 30;
+        [SerializeField] private float specialRoomLightRetryInterval = 0.2f;
         
         [Header("References (auto-find)")]
         [SerializeField] private Light2D globalLight;
@@ -60,7 +78,10 @@ namespace NWO
         private int lastAppliedFragmentCount = -1;
         private float nextPlayerLightRecoverTime;
         private const string PlayerLightObjectName = "PlayerLight";
+        private const string StartRoomLightObjectName = "StartRoomLight";
+        private const string GoalRoomLightObjectName = "GoalRoomLight";
         private bool subscribedToGameManager;
+        private Coroutine specialRoomLightsCoroutine;
         
         private void Awake()
         {
@@ -77,8 +98,8 @@ namespace NWO
             SetupGlobalLight();
             SetupPlayerLight();
             
-            // Start Room light dùng coroutine để đợi rooms sẵn sàng
-            StartCoroutine(SetupStartRoomLightWhenReady());
+            // Special room lights dùng coroutine để đợi rooms sẵn sàng
+            RefreshSpecialRoomLights();
             
             // Convert tất cả sprites sang Lit material để phản ứng với ánh sáng
             StartCoroutine(ConvertSpritesToLitMaterial());
@@ -317,101 +338,239 @@ namespace NWO
         #endregion
         
         #region Start Room Light
+
+        public void RefreshSpecialRoomLights()
+        {
+            if (specialRoomLightsCoroutine != null)
+            {
+                StopCoroutine(specialRoomLightsCoroutine);
+            }
+
+            specialRoomLightsCoroutine = StartCoroutine(SetupSpecialRoomLightsWhenReady());
+        }
         
         /// <summary>
-        /// Đợi cho rooms sẵn sàng rồi mới tạo Start Room light
+        /// Đợi cho rooms sẵn sàng rồi mới tạo special room lights
         /// </summary>
-        private System.Collections.IEnumerator SetupStartRoomLightWhenReady()
+        private System.Collections.IEnumerator SetupSpecialRoomLightsWhenReady()
         {
             // Đợi 1 frame để DungeonManager.Awake() chạy xong
             yield return null;
             yield return null;
             
-            // Thử tối đa 10 lần, mỗi lần cách 0.3s
-            for (int attempt = 0; attempt < 10; attempt++)
+            int maxAttempts = Mathf.Max(5, specialRoomLightMaxAttempts);
+            float retryInterval = Mathf.Max(0.05f, specialRoomLightRetryInterval);
+
+            // Thử nhiều lần để cover các scene generate chậm
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
-                if (TrySetupStartRoomLight())
+                RoomLightSetupResult startResult = TrySetupRoomLight(RoomType.Start, StartRoomLightObjectName, startRoomLightIntensity, startRoomLightColor);
+                RoomLightSetupResult goalResult = TrySetupRoomLight(RoomType.Goal, GoalRoomLightObjectName, goalRoomLightIntensity, goalRoomLightColor);
+
+                bool startReady = startResult == RoomLightSetupResult.Ready;
+                bool goalReadyOrOptional = goalResult == RoomLightSetupResult.Ready || goalResult == RoomLightSetupResult.Missing;
+
+                if (startReady && goalReadyOrOptional)
                 {
+                    RestoreGlobalDarknessProfile();
+
+                    if (goalResult == RoomLightSetupResult.Missing)
+                    {
+                        Debug.LogWarning("[DungeonLighting] Goal room not found in current map. Start room light is active.");
+                    }
+
+                    specialRoomLightsCoroutine = null;
                     yield break;
                 }
                 
-                yield return new WaitForSeconds(0.3f);
+                yield return new WaitForSeconds(retryInterval);
             }
             
-            Debug.LogError("[DungeonLighting] Failed to create Start Room light after 10 attempts!");
+            specialRoomLightsCoroutine = null;
+            ApplySpecialRoomFailureFallback();
+            Debug.LogError($"[DungeonLighting] Failed to create Start room light after {maxAttempts} attempts!");
+        }
+
+        private void ApplySpecialRoomFailureFallback()
+        {
+            if (!useGlobalLightFallbackOnSpecialRoomFailure)
+                return;
+
+            if (globalLight == null)
+                SetupGlobalLight();
+
+            if (globalLight == null)
+                return;
+
+            float target = Mathf.Max(globalLight.intensity, fallbackGlobalLightIntensity);
+            globalLight.intensity = target;
+            globalLight.color = Color.white;
+
+            Debug.LogWarning($"[DungeonLighting] Applied fallback global light intensity={target:0.00}");
+        }
+
+        private void RestoreGlobalDarknessProfile()
+        {
+            if (globalLight == null)
+                SetupGlobalLight();
+
+            if (globalLight == null)
+                return;
+
+            globalLight.intensity = globalLightIntensity;
+            globalLight.color = globalLightColor;
         }
         
         /// <summary>
-        /// Thử tạo Start Room light. Return true nếu thành công.
+        /// Thử tạo room light cho room type chỉ định. Return true nếu thành công.
         /// </summary>
-        private bool TrySetupStartRoomLight()
+        private RoomLightSetupResult TrySetupRoomLight(RoomType roomType, string lightObjectName, float intensity, Color color)
         {
             var dungeonManager = FindFirstObjectByType<DungeonManager>();
             if (dungeonManager == null)
             {
-                return false;
+                return RoomLightSetupResult.Waiting;
             }
             
             var allRooms = dungeonManager.GetAllRooms();
             if (allRooms == null || allRooms.Count == 0)
             {
-                return false;
+                return RoomLightSetupResult.Waiting;
             }
             
-            Room startRoom = null;
+            Room targetRoom = null;
             foreach (var room in allRooms)
             {
                 if (room.roomData != null && 
-                    room.roomData.roomType == ProceduralGeneration.Data.RoomType.Start)
+                    room.roomData.roomType == roomType)
                 {
-                    startRoom = room;
+                    targetRoom = room;
                     break;
                 }
             }
             
-            if (startRoom == null || startRoom.roomInstance == null)
+            if (targetRoom == null || targetRoom.roomInstance == null)
             {
-                return false;
+                return RoomLightSetupResult.Missing;
             }
-            
-            // Kiểm tra đã có RoomLight chưa
-            var existing = startRoom.roomInstance.transform.Find("StartRoomLight");
-            if (existing != null)
-            {
-                return true;
-            }
-            
+
             // Tính kích thước room từ renderer bounds
             float roomRadius = 10f; // Default lớn hơn
-            Vector3 center = startRoom.roomInstance.transform.position;
-            
-            var renderers = startRoom.roomInstance.GetComponentsInChildren<Renderer>(true);
+            Vector3 center = targetRoom.roomInstance.transform.position;
+
+            var renderers = targetRoom.roomInstance.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length > 0)
             {
                 Bounds bounds = renderers[0].bounds;
                 foreach (var r in renderers)
                     bounds.Encapsulate(r.bounds);
-                
+
                 // Radius = đường chéo / 2 + buffer
                 roomRadius = Mathf.Max(bounds.size.x, bounds.size.y) * 0.75f;
                 center = bounds.center;
             }
             
-            // Tạo Light2D Point cho Start Room
-            var lightObj = new GameObject("StartRoomLight");
-            lightObj.transform.SetParent(startRoom.roomInstance.transform);
+            // Kiểm tra đã có RoomLight chưa
+            var existing = targetRoom.roomInstance.transform.Find(lightObjectName);
+            if (existing != null)
+            {
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+
+                var existingLight = existing.GetComponent<Light2D>();
+                if (existingLight == null)
+                    existingLight = existing.gameObject.AddComponent<Light2D>();
+
+                existingLight.enabled = true;
+                existingLight.lightType = Light2D.LightType.Point;
+                existing.position = new Vector3(center.x, center.y, 0f);
+                existingLight.pointLightOuterRadius = roomRadius;
+                existingLight.pointLightInnerRadius = roomRadius * 0.7f;
+                existingLight.intensity = intensity;
+                existingLight.color = color;
+                existingLight.shadowIntensity = 0f;
+
+                if (forceSpecialRoomsUnlit)
+                {
+                    ApplyAlwaysVisibleMaterial(targetRoom.roomInstance);
+                }
+                return RoomLightSetupResult.Ready;
+            }
+            
+            // Tạo Light2D Point cho special room
+            var lightObj = new GameObject(lightObjectName);
+            lightObj.transform.SetParent(targetRoom.roomInstance.transform);
             lightObj.transform.position = new Vector3(center.x, center.y, 0);
             
             var roomLight = lightObj.AddComponent<Light2D>();
             roomLight.lightType = Light2D.LightType.Point;
             roomLight.pointLightOuterRadius = roomRadius;
             roomLight.pointLightInnerRadius = roomRadius * 0.7f;
-            roomLight.intensity = startRoomLightIntensity;
-            roomLight.color = startRoomLightColor;
-            roomLight.shadowIntensity = 0f; // Không đổ bóng trong start room
+            roomLight.intensity = intensity;
+            roomLight.color = color;
+            roomLight.shadowIntensity = 0f; // Không đổ bóng trong special rooms
+
+            if (forceSpecialRoomsUnlit)
+            {
+                ApplyAlwaysVisibleMaterial(targetRoom.roomInstance);
+            }
             
-            Debug.Log($"[DungeonLighting] ★ Start Room light CREATED! radius={roomRadius}, center={center}");
-            return true;
+            Debug.Log($"[DungeonLighting] ★ {roomType} room light CREATED! radius={roomRadius}, center={center}");
+            return RoomLightSetupResult.Ready;
+        }
+
+        private void ApplyAlwaysVisibleMaterial(GameObject roomRoot)
+        {
+            if (roomRoot == null)
+                return;
+
+            Material unlitMaterial = FindUnlitMaterial();
+            if (unlitMaterial == null)
+                return;
+
+            var spriteRenderers = roomRoot.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                var sr = spriteRenderers[i];
+                if (sr == null)
+                    continue;
+
+                sr.sharedMaterial = unlitMaterial;
+                sr.color = Color.white;
+            }
+
+            var tilemapRenderers = roomRoot.GetComponentsInChildren<UnityEngine.Tilemaps.TilemapRenderer>(true);
+            for (int i = 0; i < tilemapRenderers.Length; i++)
+            {
+                var tr = tilemapRenderers[i];
+                if (tr == null)
+                    continue;
+
+                tr.sharedMaterial = unlitMaterial;
+            }
+        }
+
+        private Material FindUnlitMaterial()
+        {
+            Material mat = Resources.Load<Material>("Sprite-Unlit-Default");
+            if (mat != null) return mat;
+
+            Shader unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (unlitShader != null)
+            {
+                mat = new Material(unlitShader);
+                mat.name = "Sprite-Unlit-Default (Auto)";
+                return mat;
+            }
+
+            unlitShader = Shader.Find("Sprites/Default");
+            if (unlitShader != null)
+            {
+                mat = new Material(unlitShader);
+                return mat;
+            }
+
+            return null;
         }
         
         #endregion
@@ -526,12 +685,35 @@ namespace NWO
                 Debug.LogError("[DungeonLighting] Cannot find Sprite-Lit-Default material! Sprites sẽ không phản ứng với ánh sáng.");
                 yield break;
             }
+
+            // Collect Start/Goal room instances to SKIP them from Lit conversion
+            var specialRoomTransforms = new System.Collections.Generic.HashSet<Transform>();
+            var dungeonManager = FindFirstObjectByType<DungeonManager>();
+            if (dungeonManager != null)
+            {
+                var allRooms = dungeonManager.GetAllRooms();
+                if (allRooms != null)
+                {
+                    foreach (var room in allRooms)
+                    {
+                        if (room.roomData != null && room.roomInstance != null &&
+                            (room.roomData.roomType == RoomType.Start || room.roomData.roomType == RoomType.Goal))
+                        {
+                            specialRoomTransforms.Add(room.roomInstance.transform);
+                        }
+                    }
+                }
+            }
             
-            // Convert tất cả SpriteRenderer trong scene
+            // Convert tất cả SpriteRenderer trong scene (TRỪ Start/Goal rooms)
             int converted = 0;
             var allRenderers = FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var sr in allRenderers)
             {
+                // Skip sprites belonging to Start/Goal rooms
+                if (IsChildOfAny(sr.transform, specialRoomTransforms))
+                    continue;
+
                 if (sr.sharedMaterial != null && sr.sharedMaterial.name.Contains("Default") 
                     && !sr.sharedMaterial.name.Contains("Lit"))
                 {
@@ -546,10 +728,14 @@ namespace NWO
                 }
             }
             
-            // Convert TilemapRenderer
+            // Convert TilemapRenderer (TRỪ Start/Goal rooms)
             var tilemapRenderers = FindObjectsByType<UnityEngine.Tilemaps.TilemapRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var tr in tilemapRenderers)
             {
+                // Skip tilemaps belonging to Start/Goal rooms
+                if (IsChildOfAny(tr.transform, specialRoomTransforms))
+                    continue;
+
                 if (tr.sharedMaterial != null && tr.sharedMaterial.name.Contains("Default")
                     && !tr.sharedMaterial.name.Contains("Lit"))
                 {
@@ -558,7 +744,26 @@ namespace NWO
                 }
             }
             
-            Debug.Log($"[DungeonLighting] ★ Converted {converted} renderers to Sprite-Lit-Default material");
+            Debug.Log($"[DungeonLighting] ★ Converted {converted} renderers to Sprite-Lit-Default material (skipped {specialRoomTransforms.Count} special rooms)");
+
+            // Re-apply special room lighting/material because conversion above can override room settings.
+            RefreshSpecialRoomLights();
+        }
+
+        /// <summary>
+        /// Kiểm tra xem một transform có phải là con của bất kỳ transform nào trong danh sách không
+        /// </summary>
+        private bool IsChildOfAny(Transform child, System.Collections.Generic.HashSet<Transform> parents)
+        {
+            if (parents.Count == 0) return false;
+            Transform current = child;
+            while (current != null)
+            {
+                if (parents.Contains(current))
+                    return true;
+                current = current.parent;
+            }
+            return false;
         }
         
         /// <summary>

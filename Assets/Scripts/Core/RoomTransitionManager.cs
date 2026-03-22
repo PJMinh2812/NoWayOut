@@ -292,6 +292,14 @@ namespace Core
         {
             return currentActiveRoom;
         }
+
+        /// <summary>
+        /// Force set current active room (used by save/load restore flow).
+        /// </summary>
+        public void SetCurrentRoom(Room room)
+        {
+            currentActiveRoom = room;
+        }
         
         /// <summary>
         /// Convert tất cả SpriteRenderer + TilemapRenderer trong room sang Sprite-Lit-Default
@@ -300,6 +308,13 @@ namespace Core
         private void ConvertRoomSpritesToLit(Room room)
         {
             if (room?.roomInstance == null) return;
+
+            // Skip Start/Goal rooms — they use Unlit material to stay always bright
+            if (room.roomData != null &&
+                (room.roomData.roomType == RoomType.Start || room.roomData.roomType == RoomType.Goal))
+            {
+                return;
+            }
             
             Shader litShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default");
             if (litShader == null) return;
