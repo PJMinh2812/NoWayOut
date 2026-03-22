@@ -23,8 +23,14 @@ namespace NWO
         [Header("UI (Optional)")]
         [SerializeField] private GameObject healthBarPrefab;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip attackSound;
+        [SerializeField] private AudioClip hurtSound;
+        [SerializeField] private AudioClip deathSound;
+
         private int _currentHealth;
         private Rigidbody2D _rb;
+        private AudioSource _audioSource;
         private PlayerController2D _player;
         private PlayerHealth2D _playerHealth;
         private UI.Enemy2DHealthBarController _healthBarController;
@@ -69,6 +75,12 @@ namespace NWO
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
+            _audioSource = GetComponent<AudioSource>();
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
+
             _player = FindFirstObjectByType<PlayerController2D>();
             
             if (_player != null)
@@ -203,7 +215,11 @@ namespace NWO
             // Show floating damage number
             UI.DamagePopup.Spawn(transform.position, amount);
 
-            if (_currentHealth <= 0)
+            if (_currentHealth > 0)
+            {
+                PlaySound(hurtSound);
+            }
+            else
             {
                 Die();
             }
@@ -227,6 +243,8 @@ namespace NWO
                 animator.SetTrigger(HashDeath);
                 animator.SetBool(HashIsDead, true);
             }
+
+            PlaySound(deathSound);
 
             // disable physics and collisions
             var cols = GetComponents<Collider2D>();
@@ -266,6 +284,8 @@ namespace NWO
                 animator.SetBool(HashIsAttacking, true);
             }
 
+            PlaySound(attackSound);
+
             // Wait for attack animation to reach hit frame (deal damage halfway through animation)
             yield return _waitAttackHalf;
 
@@ -297,6 +317,12 @@ namespace NWO
             // Start cooldown before next attack
             yield return _waitAttackCooldown;
             _canAttack = true;
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (clip != null && _audioSource != null)
+                _audioSource.PlayOneShot(clip);
         }
 
         private void OnDestroy()
