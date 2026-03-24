@@ -91,6 +91,8 @@ public class SlipperyFloor : MonoBehaviour
         var playerCtrl = player.GetComponent<NWO.PlayerController2D>();
         if (playerCtrl != null && playerCtrl.IsDashing) return;
 
+        RunAIDirectorTelemetry.RecordTrapTriggered(this);
+
         // Phát âm thanh trượt
         if (slideSound != null && now >= lastSlideSoundTime + slideSoundCooldown)
         {

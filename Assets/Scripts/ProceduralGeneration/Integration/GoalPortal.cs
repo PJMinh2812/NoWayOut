@@ -18,11 +18,12 @@ namespace ProceduralGeneration.Integration
         [SerializeField] private bool autoFindProgressionManager = true;
 
         [Header("Debug")]
-        [SerializeField] private bool verboseLogs = true;
+        [SerializeField] private bool verboseLogs = false;
 
         private DungeonRunProgressionManager progressionManager;
         private bool playerInTrigger;
         private bool hasWarnedMissingManager;
+        private Transform triggerPlayerTransform;
         private readonly HashSet<int> playerBodyIdsInTrigger = new HashSet<int>();
 
         public void Setup(DungeonRunProgressionManager manager)
@@ -93,8 +94,15 @@ namespace ProceduralGeneration.Integration
                 if (verboseLogs)
                     Debug.Log("[GoalPortal] Nhan phim xac nhan, dang thu chuyen map...");
 
-                bool advanced = progressionManager.TryAdvanceToNextMap();
-                if (!advanced)
+                Vector3 spawnAnchor = triggerPlayerTransform != null
+                    ? new Vector3(triggerPlayerTransform.position.x, triggerPlayerTransform.position.y, 0f)
+                    : new Vector3(transform.position.x, transform.position.y, 0f);
+
+                if (verboseLogs)
+                    Debug.Log($"[GoalPortal] Using spawn anchor {spawnAnchor}");
+
+                bool advanced = progressionManager.TryAdvanceToNextMap(spawnAnchor);
+                if (!advanced && verboseLogs)
                     Debug.Log("[GoalPortal] Chua the qua map tiep theo (map co the chua hoan thanh). ");
             }
         }
@@ -106,6 +114,7 @@ namespace ProceduralGeneration.Integration
                 int bodyId = GetPlayerBodyId(other);
                 playerBodyIdsInTrigger.Add(bodyId);
                 playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+                triggerPlayerTransform = ResolvePlayerTransform(other);
 
                 if (verboseLogs)
                     Debug.Log($"[GoalPortal] Player da vao trigger portal. overlap={playerBodyIdsInTrigger.Count}");
@@ -119,6 +128,7 @@ namespace ProceduralGeneration.Integration
                 int bodyId = GetPlayerBodyId(other);
                 playerBodyIdsInTrigger.Add(bodyId);
                 playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+                triggerPlayerTransform = ResolvePlayerTransform(other);
             }
         }
 
@@ -129,6 +139,8 @@ namespace ProceduralGeneration.Integration
                 int bodyId = GetPlayerBodyId(other);
                 playerBodyIdsInTrigger.Remove(bodyId);
                 playerInTrigger = playerBodyIdsInTrigger.Count > 0;
+                if (!playerInTrigger)
+                    triggerPlayerTransform = null;
 
                 if (verboseLogs)
                     Debug.Log($"[GoalPortal] Player da ra khoi trigger portal. overlap={playerBodyIdsInTrigger.Count}");
@@ -153,6 +165,15 @@ namespace ProceduralGeneration.Integration
         {
             Rigidbody2D attachedRb = other.attachedRigidbody;
             return attachedRb != null ? attachedRb.GetInstanceID() : other.GetInstanceID();
+        }
+
+        private static Transform ResolvePlayerTransform(Collider2D other)
+        {
+            Rigidbody2D attachedRb = other.attachedRigidbody;
+            if (attachedRb != null)
+                return attachedRb.transform;
+
+            return other.transform;
         }
 
         private bool WasConfirmPressedThisFrame()

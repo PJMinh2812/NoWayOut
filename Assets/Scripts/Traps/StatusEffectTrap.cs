@@ -149,6 +149,8 @@ namespace NWO
                 return;
             }
 
+            RunAIDirectorTelemetry.RecordTrapTriggered(this);
+
             // Áp dụng effect dựa vào loại
             if (effectType == StatusEffectType.Burn || effectType == StatusEffectType.Poison)
             {

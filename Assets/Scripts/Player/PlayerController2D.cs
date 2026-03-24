@@ -59,6 +59,8 @@ namespace NWO
         public Vector2 DashDirection { get; private set; }
         public float DashProgress => _dashMaxDuration > 0f ? Mathf.Clamp01(_dashElapsed / _dashMaxDuration) : 0f;
         public bool IsFacingRight { get; private set; } = true;
+        public float MaxMoveSpeed => maxMoveSpeed;
+        public float DashSpeed => dashSpeed;
 
         private Rigidbody2D _rb;
         private PlayerStamina _stamina;

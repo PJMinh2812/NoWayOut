@@ -146,6 +146,7 @@ public class HiddenSpikes : MonoBehaviour
     private void TriggerSpikes()
     {
         isTriggered = true;
+        RunAIDirectorTelemetry.RecordTrapTriggered(this);
         
         if (warningEffect != null)
         {

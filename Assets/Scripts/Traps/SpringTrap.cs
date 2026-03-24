@@ -73,6 +73,7 @@ public class SpringTrap : MonoBehaviour
         if (playerCtrl != null && playerCtrl.IsDashing) return;
 
         isOnCooldown = true;
+        RunAIDirectorTelemetry.RecordTrapTriggered(this);
         
         // Phát âm thanh lò xo "BOING!"
         if (springSound != null)

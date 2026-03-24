@@ -435,6 +435,10 @@ public void RestartGame()
     isGameOver = false;
     gameOverUI.SetActive(false);
 
+    // Auto-save trước khi reset
+    if (SaveManager.Instance != null)
+        SaveManager.Instance.SaveGame();
+
     // THÔNG MINH: Thử regenerate map KHÔNG cần reload scene
     var mapManager = FindFirstObjectByType<Dungeon.MapInitializationManager>();
     if (mapManager != null)
@@ -472,11 +476,145 @@ var legacyBuilder = FindFirstObjectByType<UnityDungeonTilemapBuilder>();
 
 → `CS0618` = warning khi dùng API/class đánh dấu `[Obsolete]`. `UnityDungeonTilemapBuilder` đã deprecated nhưng vẫn cần cho backward compatibility. `#pragma warning disable/restore` = tắt warning vùng nhỏ, không ảnh hưởng toàn project.
 
+### 2.6 Progression & Ending Integration
+
+GameManager tích hợp với hệ thống progression run mới:
+
+```csharp
+// Auto-create DungeonRunProgressionManager nếu chưa có
+if (FindFirstObjectByType<DungeonRunProgressionManager>() == null)
+{
+    var progObj = new GameObject("DungeonRunProgressionManager");
+    progObj.AddComponent<DungeonRunProgressionManager>();
+}
+
+// Auto-create SaveManager
+if (SaveManager.Instance == null && FindFirstObjectByType<SaveManager>() == null)
+{
+    var saveObj = new GameObject("SaveManager");
+    saveObj.AddComponent<SaveManager>();
+}
+```
+
+Khi player hoàn thành run (qua portal ở map 3-5):
+
+```csharp
+// DungeonRunProgressionManager.HandleRunFinished()
+bool finished = HandleRunFinished();
+
+if (finished)
+{
+    // Ending scene được load bởi SceneLoader
+    // Good Ending: nếu mở đủ 3/3 chests
+    // Bad Ending: nếu mở < 3/3 chests
+    // SaveManager tự reset progression state cho run tiếp theo
+}
+```
+
+**Liên kết save/load:**
+
+Khi load game (Continue):
+
+- SaveManager khôi phục `runCurrentRound`, `runCurrentMap`, `runOpenedGoalChestMask`
+- DungeonRunProgressionManager nhận state từ SaveData
+- Map được regenerate với đúng seed cũ
+- Player spawn tại map anchor đã lưu
+
+**Q**: _GameManager quản lý gì khác ngoài Light Fragments?_
+→ GameManager là **central hub** auto-create tất cả major managers (Progression, Save, Lighting, Minimap, UI, ...). Khi scene load, GameManager Awake trước → tạo sẵn hệ thống cần thiết → các component khác chỉ cần FindFirstObjectByType để tìm.
+
 ---
 
-## 3. UI Scripts — Auto-Created Components
+## 3. SceneLoader.cs — Async Scene Management
 
-### 3.1 LightFragmentUI.cs (261 dòng)
+**File**: [SceneLoader.cs](file:///e:/%21FPT/7.SP26/PRU213/NoWayOut/Assets/Scripts/Core/SceneLoader.cs) (150+ dòng)
+
+### 3.1 Singleton & DontDestroyOnLoad
+
+```csharp
+public sealed class SceneLoader : MonoBehaviour
+{
+    private static SceneLoader _instance;
+
+    public static void LoadScene(string sceneName)
+    {
+        EnsureInstance();
+        _instance.StartCoroutine(_instance.LoadSceneCoroutine(sceneName));
+    }
+
+    private static void EnsureInstance()
+    {
+        if (_instance != null) return;
+
+        var go = new GameObject("SceneLoader");
+        _instance = go.AddComponent<SceneLoader>();
+        DontDestroyOnLoad(go);  // ← Tồn tại xuyên scene transitions
+    }
+}
+```
+
+**Q**: _Tại sao SceneLoader cần `DontDestroyOnLoad`?_
+→ Khi chuyển scene, Unity unload scene cũ → destroy tất cả objects. Nếu SceneLoader ở scene cũ → bị destroy, không kịp load scene mới. `DontDestroyOnLoad` giữ SceneLoader sống qua transitions → có thể load multiple scenes liên tiếp.
+
+### 3.2 Async Loading Flow
+
+```csharp
+private IEnumerator LoadSceneCoroutine(string sceneName)
+{
+    BuildUiIfNeeded();  // Tạo loading canvas nếu chưa có
+    _isLoadingScene = true;
+    SetUiVisible(true);
+    SetProgress(0f);
+
+    // Async load scene
+    var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+    op.allowSceneActivation = false;  // Đợi chúng ta bảo mới activate
+
+    // Track progress 0 → 0.9
+    while (op.progress < 0.9f)
+    {
+        SetProgress(op.progress / 0.9f);
+        yield return null;  // Wait next frame
+    }
+
+    // Show 100% mới activate scene
+    SetProgress(1f);
+    yield return new WaitForSecondsRealtime(minVisibleSeconds); // Giữ loading UI tối thiểu 0.4s
+
+    op.allowSceneActivation = true;  // Thực hiện scene activation
+    while (!op.isDone) yield return null;  // Chờ scene fully activate
+
+    _isLoadingScene = false;
+    if (_blockCount <= 0)
+        SetUiVisible(false);
+}
+```
+
+**Q**: _`allowSceneActivation = false` — tại sao cần?_
+→ Mặc định scene load xong liền activate (unload cũ, load mới, initialize). Với `allowSceneActivation = false` → scene load sẵn nhưng chưa activate → ta có thể hiện loading UI/animation trước khi bật scene mới.
+
+**Q**: _`op.progress` đạt 0.9 rồi lại set 1.0 — tại sao không tự động?_
+→ Unity `LoadSceneAsync.progress` chỉ đạt 0.9 (đó là 90% load), 10% còn lại là scene initialization sau activation. Nên set progress tới 1.0 theo manual timing.
+
+### 3.3 Blocking Mode — Xử lý work sau load
+
+Khi load ending scene, game cần thời gian apply save data / setup ending UI:
+
+```csharp
+// Khi chuyển đến ending scene
+SceneLoader.BeginBlocking("Loading Ending...");
+yield return new WaitForSeconds(1f);  // Apply save data, setup UI
+SceneLoader.EndBlocking();  // Ẩn loading overlay
+```
+
+**Q**: _`BeginBlocking` / `EndBlocking` làm gì khác với thường?_
+→ Thường: load scene xong → ẩn loading UI. Blocking mode: load scene xong → **GIỮ loading UI hiện**, cho code kịp apply dữ liệu. Gọi `EndBlocking()` mới ẩn.
+
+---
+
+## 4. UI Scripts — Auto-Created Components
+
+### 4.1 LightFragmentUI.cs (261 dòng)
 
 **Vị trí UI**: Top-right corner — hiện "✦ 1/3"
 
@@ -515,7 +653,7 @@ if (notificationTimer <= 0.5f)
     notificationGroup.alpha = notificationTimer / 0.5f; // Fade out trong 0.5s cuối
 ```
 
-### 3.2 FlashOfTruthUI.cs (208 dòng)
+### 4.2 FlashOfTruthUI.cs (208 dòng)
 
 **Vị trí UI**: Bottom-left corner — radial cooldown circle
 
@@ -539,7 +677,7 @@ else                                  → "READY"
 **Q**: _`Image.FillMethod.Radial360` hoạt động thế nào?_
 → Vẽ image theo hình quạt 360°. `fillAmount = 0.5` → bán nguyệt. `fillAmount = 1.0` → tròn đầy. `fillOrigin = Top` → bắt đầu từ đỉnh (12h). Dùng cho circular cooldown indicator.
 
-### 3.3 LightingHotbarUI.cs (410 dòng)
+### 4.3 LightingHotbarUI.cs (410 dòng)
 
 **Vị trí UI**: Bottom-right corner — 5 slot items
 
@@ -649,3 +787,56 @@ private void UpdateGlowAnimation()
 **Q16**: `cameraSmoothSpeed * Time.deltaTime` trong Lerp — kỹ thuật gì?
 
 > **Exponential damping**: mỗi frame di chuyển tỷ lệ với khoảng cách còn lại. Gần target → chậm dần → mượt. Khác linear Lerp (tăng t đều → tốc độ đều).
+
+---
+
+## ❓ Phần 5: Progression & Ending Integration (Mới)
+
+**Q17**: GameManager auto-create những component nào liên quan tới progression?
+
+> `DungeonRunProgressionManager` (quản lý run 3×5 maps), `SaveManager` (save/load state), và các UI như `MinimapManager`, `DungeonLightingManager`. Tất cả auto-create trong Awake() để đảm bảo game chạy ngay dù designer quên setup.
+
+**Q18**: Khi player qua portal ở map 3-5, luồng chuyển ending thế nào?
+
+> 1. `GoalPortal.TryAdvanceToNextMap()` gọi `DungeonRunProgressionManager.TryAdvanceToNextMap()`.
+> 2. Kiểm tra là map cuối run → gọi `HandleRunFinished()`.
+> 3. `HandleRunFinished()` chọn ending scene dựa theo `openedGoalChestCount`:
+>    - `>= totalGoalChests` → `goodEndingSceneName`
+>    - `< totalGoalChests` → `badEndingSceneName`
+> 4. Gọi `SceneLoader.LoadScene(endingScene)` → async load + show loading UI.
+
+**Q19**: `DontDestroyOnLoad` trong SceneLoader — tại sao cần?
+
+> SceneLoader xuyên suốt tất cả scene transitions. Khi chuyển scene, Unity unload scene cũ → destroy tất cả objects. `DontDestroyOnLoad` giữ SceneLoader sống → có thể load multiple scenes liên tiếp. Nếu không → SceneLoader sẽ bị hủy trước khi load scene mới.
+
+**Q20**: `LoadSceneAsync` với `allowSceneActivation = false` — lợi ích?
+
+> Mặc định load xong → activate ngay. Với `false` → load sẵn nhưng chưa activate → ta hiển thị loading UI an toàn trước khi "bật" scene mới. Điều này tránh hiện tượng UI lag khi scene activate.
+
+**Q21**: Khi load ending scene, làm sao ensure UI setup xong trước khi player nhìn thấy?
+
+> Dùng `SceneLoader.BeginBlocking("message")` → load scene (UI ẩn đi), rồi apply dữ liệu ending (progress, chest count, ...), cuối cùng gọi `EndBlocking()` → show scene. `BeginBlocking/EndBlocking` giữ loading overlay để player đợi.
+
+**Q22**: Save/load progression state liên quan tới những dữ liệu nào?
+
+> - `runCurrentRound`, `runCurrentMap`: vị trí hiện tại trong run.
+> - `runOpenedGoalChestMask`: bitmask những chest đã mở (không cho farm lại).
+> - `hasDungeonSeed`, `dungeonSeed`: seed map để continue ra đúng layout.
+> - `mapAnchor`: vị trí world của Respawn_Point → continue ở đúng chỗ cũ.
+> - `runCurrentMapCompleted`: map đã clear → portal/chest phải hiện lên.
+
+**Q23**: Tại sao restart game tự động save trước khi reset?
+
+> Khi player chọn Restart trong Game Over UI, gọi `GameManager.RestartGame()` → `SaveManager.SaveGame()` → lưu toàn bộ state (HP, position, progression, ...) → sau đó regenerate dungeon. Mục đích: nếu user quit giữa chừng → load lại đúng tiến trình.
+
+**Q24**: Ending scene có tương tác gì với progression system?
+
+> Ending scene là **terminal state** của run. Nó có thể:
+>
+> - Hiển thị số lượng chest đã mở (từ `openedGoalChestCount`).
+> - Phát ending animation/music khác nhau tùy good/bad.
+> - Cung cấp nút "Return to Menu" (reset progression) hoặc "New Run" (bắt đầu run mới).
+
+**Q25**: `allowSceneActivation = true` sau khi `SetProgress(1f)` — tại sao không ngay?
+
+> Nếu activate ngay khi progress 0.9 → có lag spike (Unity cần initialize scene objects, scripts, ...). Chờ `minVisibleSeconds` (0.4s) → loading overlay an toàn, player không bị sốc hình ảnh → rồi activate → trình tự mượt. Đây là UX best practice cho async loading.

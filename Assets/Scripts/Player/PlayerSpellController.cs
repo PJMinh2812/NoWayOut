@@ -50,6 +50,10 @@ namespace NWO
         public int CurrentSpell => _currentSpell;
         public bool IsCasting => _isCasting;
 
+        public int Spell01Damage => spell01Damage;
+        public int Spell02Damage => spell02Damage;
+        public int Spell03Damage => spell03Damage;
+
         private void Awake()
         {
             _animator = GetComponent<Animator>();
@@ -245,6 +249,8 @@ namespace NWO
             var proj = projectile.GetComponent<SpellProjectile>();
             if (proj != null)
             {
+                proj.SetDamage(GetSpellDamage(_currentSpell));
+
                 float spellRange = _currentSpell switch
                 {
                     1 => spell01Range,
@@ -321,6 +327,39 @@ namespace NWO
             // Thử tìm trong children
             sr = prefab.GetComponentInChildren<SpriteRenderer>();
             return sr != null ? sr.sprite : null;
+        }
+
+        public int GetSpellDamage(int spellNumber)
+        {
+            return spellNumber switch
+            {
+                1 => spell01Damage,
+                2 => spell02Damage,
+                3 => spell03Damage,
+                _ => 0
+            };
+        }
+
+        public float GetSpellCooldown(int spellNumber)
+        {
+            return spellNumber switch
+            {
+                1 => spell01Cooldown,
+                2 => spell02Cooldown,
+                3 => spell03Cooldown,
+                _ => 0f
+            };
+        }
+
+        public float GetSpellRange(int spellNumber)
+        {
+            return spellNumber switch
+            {
+                1 => spell01Range,
+                2 => spell02Range,
+                3 => spell03Range,
+                _ => 0f
+            };
         }
 
         // === Upgrade System Modifiers ===

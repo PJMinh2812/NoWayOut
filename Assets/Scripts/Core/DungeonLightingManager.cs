@@ -36,7 +36,7 @@ namespace NWO
         
         [Header("Global Darkness")]
         [Tooltip("Ambient light gần 0 → dungeon tối hoàn toàn, kinh dị")]
-        [SerializeField] private float globalLightIntensity = 0.075f;
+        [SerializeField] private float globalLightIntensity = 0.1f;
         [SerializeField] private Color globalLightColor = new Color(0.05f, 0.05f, 0.1f); // Gần đen hoàn toàn
         
         [Header("Player Light")]

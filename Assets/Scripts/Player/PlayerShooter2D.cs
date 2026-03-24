@@ -16,6 +16,8 @@ namespace NWO
         [SerializeField] private float muzzleDistance = 0.5f;
 
         private float _cooldown;
+        public float FireCooldown => fireCooldown;
+        public float FireRatePerSecond => fireCooldown > 0.0001f ? 1f / fireCooldown : 0f;
 
         /// <summary>Giảm fire cooldown (tăng tốc độ bắn). Giá trị dương = giảm cooldown.</summary>
         public void AddFireRate(float reductionAmount)
