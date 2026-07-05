@@ -100,3 +100,6 @@ InitTestScene*.unity*
 
 # Local review notes
 /md_explain/*.md
+
+# Internal dev docs, not part of the public project
+/Docs/
