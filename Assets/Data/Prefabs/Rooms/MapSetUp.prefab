@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8533151823297217243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7886205225013690307}
+  - component: {fileID: 3370001372165436477}
+  - component: {fileID: 7751135918131685352}
+  m_Layer: 0
+  m_Name: MapSetUp
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7886205225013690307
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8533151823297217243}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 72.14449, y: 118.29384, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3370001372165436477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8533151823297217243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 241186dfd97604e49bcc07ba183ed7c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Integration.DungeonRunProgressionManager
+  dungeonManager: {fileID: 996395734912149117, guid: 097c52c3bfd3a3e43bb22d1482c300c3, type: 3}
+  portalPrefab: {fileID: 6552206968115152121, guid: 64b1c10679024824387df742a5e7f80a, type: 3}
+  goalChestPrefab: {fileID: 6094608133795487659, guid: 879e8bae67d0c8146ba7445fcfdb300c, type: 3}
+  player: {fileID: 3422755636636085212, guid: 858631930e94b1c4499f0eae3edc2e4e, type: 3}
+  totalRounds: 3
+  mapsPerRound: 5
+  baseArchetypeRoomCount: 4
+  roomIncreasePerRound: 1
+  baseBranchProbability: 0.1
+  branchIncreasePerRound: 0.05
+  enableAIDirector: 1
+  targetClearTimeSeconds: 75
+  clearTimeToleranceSeconds: 20
+  targetEndHealthRatio: 0.65
+  endHealthTolerance: 0.2
+  targetDamageTaken: 20
+  damageTakenTolerance: 12
+  targetTrapTriggers: 2
+  trapTriggerTolerance: 2
+  aiDifficultyStep: 0.15
+  aiRoomScale: 3
+  aiBranchScale: 0.18
+  minAiDifficultyBias: -0.35
+  maxAiDifficultyBias: 0.35
+  trapIntensityScale: 0.6
+  autoCompleteWhenNoEnemiesAlive: 1
+  autoCompleteWhenEnemyManagerMissing: 0
+  minAutoCompleteDelay: 2
+  portalSpawnRetryInterval: 0.5
+  portalSpawnMaxRetries: 6
+  totalGoalChests: 3
+  goalChestOffsetDirection: {x: 1, y: 0}
+  goalChestDistanceFromPortal: 2.5
+  syncGoalChestLightWithPortal: 1
+  loadEndingSceneOnRunFinish: 1
+  goodEndingSceneName: Ending_Good
+  badEndingSceneName: Ending_Bad
+  endingManager: {fileID: 7751135918131685352}
+  forceFixedSpawnOnNewMap: 1
+  fixedSpawnPosition: {x: 6, y: 6}
+  spawnMapAtPlayerCurrentPosition: 1
+--- !u!114 &7751135918131685352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8533151823297217243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de57ae532f1f41f41b2907a051d193fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Integration.EndingManager
+  goodEndingVideo: {fileID: 32900000, guid: 91c6dee3f80117e489f5c35a52a4d58d, type: 3}
+  badEndingVideo: {fileID: 32900000, guid: d85e5af456131e1429f601b7e4055437, type: 3}
+  enableEndingVideo: 1
+  allowSkip: 1
+  skipKey: 32
+  externalAudioSource: {fileID: 0}

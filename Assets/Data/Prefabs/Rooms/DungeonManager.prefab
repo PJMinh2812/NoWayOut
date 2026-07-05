@@ -1,0 +1,180 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1347270950468095262
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2879463093977404098}
+  - component: {fileID: 996395734912149117}
+  - component: {fileID: 680703552218715041}
+  - component: {fileID: 8922980268531112191}
+  m_Layer: 0
+  m_Name: DungeonManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2879463093977404098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347270950468095262}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.65698, y: -1.52047, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &996395734912149117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347270950468095262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c52e4b1ae77cb64b9db439a43e3af0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Core.DungeonManager
+  seed: 8640
+  useRandomSeed: 1
+  worldScale: 2
+  archetype1RoomCount: 4
+  archetype2RoomCount: 4
+  branchProbability: 0.1
+  roomDatabase:
+  - {fileID: 11400000, guid: c976b5636b5b79e4e937569f162390e1, type: 2}
+  - {fileID: 11400000, guid: 9a1d2f4e45fdcb240ab01692eb4238c3, type: 2}
+  - {fileID: 11400000, guid: ee5fd03c083a6874c98279e214afea5a, type: 2}
+  - {fileID: 11400000, guid: 2a38dc0ff8ccb03479a49eb717c818e2, type: 2}
+  - {fileID: 11400000, guid: a5e1c9e4c94dce9439b3b8ba94a630a2, type: 2}
+  - {fileID: 11400000, guid: ad75ea85da059ef4688d6ca9728f29b3, type: 2}
+  roomTypePrefabPools:
+  - roomType: 1
+    prefabs:
+    - {fileID: 1899830273991222154, guid: 9e193a06a00d939418a9202a485e0139, type: 3}
+    - {fileID: 4466476258470180416, guid: 7d6a641946a8e5142aee06dc52f5cd36, type: 3}
+  - roomType: 2
+    prefabs:
+    - {fileID: 900997120644949915, guid: 7107e9e94abb37941a3ab4404b4a737e, type: 3}
+  - roomType: 3
+    prefabs:
+    - {fileID: 2839078991265060477, guid: 7371ace42438ca74f87ca45168fe40f4, type: 3}
+  - roomType: 4
+    prefabs:
+    - {fileID: 3423774674793753551, guid: b6896cedef5e3da4a87b68e15835698a, type: 3}
+  trapDatabase:
+  - {fileID: 11400000, guid: 262240ae23fc1e445b71bf7f0331d4e0, type: 2}
+  - {fileID: 11400000, guid: 75b631a456fa7544c9ec2521982d6254, type: 2}
+  - {fileID: 11400000, guid: 24561adaadd27ad47be1c33c760720af, type: 2}
+  spawnTraps: 1
+  autoFillTiles: 1
+  floorTiles:
+  - {fileID: 11400000, guid: 06008a6efffee194795ca3b2e383c3ec, type: 2}
+  wallCenter: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallTopLeft: {fileID: 11400000, guid: de32722432f8e4345a8087d30d2b05c3, type: 2}
+  wallTopRight: {fileID: 11400000, guid: 215afc0683970fd4c8a91957fa37e882, type: 2}
+  wallBottomLeft: {fileID: 11400000, guid: 88b5da40a5045844ea889c823791b13e, type: 2}
+  wallBottomRight: {fileID: 11400000, guid: a0fa9970ca7f5844ba0d93bfddb574db, type: 2}
+  wallTop: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallBottom: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallLeft: {fileID: 11400000, guid: de32722432f8e4345a8087d30d2b05c3, type: 2}
+  wallRight: {fileID: 11400000, guid: 215afc0683970fd4c8a91957fa37e882, type: 2}
+  wallFillTop: {fileID: 0}
+  wallFillBottom: {fileID: 0}
+  wallFillLeft: {fileID: 0}
+  wallFillRight: {fileID: 0}
+  doorPrefab: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
+  trapTypes: []
+  dangerCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 9
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 10
+      inSlope: 9
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  dungeonContainer: {fileID: 0}
+  showDebugGizmos: 1
+  verboseLogging: 1
+--- !u!114 &680703552218715041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347270950468095262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2be0e03ff5fb1bf4d8ab825067a8d352, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralGeneration.Components.RoomVisualGenerator
+  floorColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  wallColor: {r: 0.2, g: 0.2, b: 0.25, a: 1}
+  doorColor: {r: 0.6, g: 0.4, b: 0.2, a: 1}
+  tileSize: 10
+  wallThickness: 1.5
+  activeDoorOpeningDepth: 3
+  autoFillTiles: 1
+  floorTiles:
+  - {fileID: 11400000, guid: 06008a6efffee194795ca3b2e383c3ec, type: 2}
+  wallCenter: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallTopLeft: {fileID: 11400000, guid: de32722432f8e4345a8087d30d2b05c3, type: 2}
+  wallTopRight: {fileID: 11400000, guid: 215afc0683970fd4c8a91957fa37e882, type: 2}
+  wallBottomLeft: {fileID: 11400000, guid: 88b5da40a5045844ea889c823791b13e, type: 2}
+  wallBottomRight: {fileID: 11400000, guid: a0fa9970ca7f5844ba0d93bfddb574db, type: 2}
+  wallTop: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallBottom: {fileID: 11400000, guid: 3e0a2fde3383889488ae1e0015de067e, type: 2}
+  wallLeft: {fileID: 11400000, guid: de32722432f8e4345a8087d30d2b05c3, type: 2}
+  wallRight: {fileID: 11400000, guid: 215afc0683970fd4c8a91957fa37e882, type: 2}
+  wallFillTop: {fileID: 0}
+  wallFillBottom: {fileID: 0}
+  wallFillLeft: {fileID: 0}
+  wallFillRight: {fileID: 0}
+  doorPrefab: {fileID: 7294783713783457589, guid: 4c32ddc1359f7954a8f9a42049a78a04, type: 3}
+  trapTypes:
+  - {fileID: 0}
+--- !u!114 &8922980268531112191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347270950468095262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e3e0514e5104c04a984966aef321421, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NWO.LightFragmentSpawner
+  lightFragmentPrefab: {fileID: 0}
+  totalFragments: 3
+  spawnInRoomTypes: 0100000002000000
+  fragmentSprite: {fileID: 0}
+  fragmentColor: {r: 1, g: 0.95, b: 0.6, a: 1}
+  fragmentScale: 0.8

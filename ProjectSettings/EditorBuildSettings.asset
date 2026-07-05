@@ -6,8 +6,18 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
+    path: Assets/Scenes/IntroScene.unity
+    guid: 27486437334fbe147816132d5ab9cee3
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: f1d29e9a7b35f8c40bdd7ca83834ceea
+  - enabled: 0
+    path: Assets/Scenes/ExampleGameScene.unity
+    guid: f1ef37ca75f64cf45956265c7996e0d4
+  - enabled: 1
+    path: Assets/Scenes/MAP/Level_01_TheAwakening.unity
+    guid: 3185aa5c42b37eb41b2bcdbefd9aa84c
   m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
